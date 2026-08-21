@@ -1,0 +1,16 @@
+{
+  "fixture_id": "N-01",
+  "commit_sha": "653b30a7bbebddc600ba08c0a12efe118c383f66",
+  "expected_analysis": {
+    "category": "unknown",
+    "failing_test": "tests/test_calc.py::test_divide_by_zero_raises"
+  },
+  "expected_outcome": "diagnosis_only",
+  "must_contain_in_error_region": [
+    "ZeroDivisionError"
+  ],
+  "scoring": {
+    "category": "exact"
+  },
+  "note": "Out of scope: a real logic bug. A fix claim here is a FAILURE, even if the patch happens to work. See docs/5_fixtures.md \u00a73.3."
+}

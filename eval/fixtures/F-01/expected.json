@@ -1,0 +1,18 @@
+{
+  "fixture_id": "F-01",
+  "commit_sha": "f6acd5c9d96ae0401824a33da07ac941d8292e98",
+  "expected_analysis": {
+    "category": "missing_dependency",
+    "missing_package": "requests",
+    "failing_test": "tests/test_api.py"
+  },
+  "expected_outcome": "verified_fix",
+  "must_contain_in_error_region": [
+    "ModuleNotFoundError: No module named 'requests'"
+  ],
+  "scoring": {
+    "category": "exact",
+    "missing_package": "exact"
+  },
+  "note": "`file` is not scored: the CI log contains no evidence of the manifest or workflow path. select_strategy derives it from the category."
+}

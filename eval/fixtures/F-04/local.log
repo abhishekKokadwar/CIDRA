@@ -1,0 +1,30 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.0, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\abhik\AppData\Local\Temp\cidra_v\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: D:\CODES\cidra-practice
+collecting ... collected 7 items
+
+tests/test_api.py::test_fetch PASSED                                     [ 14%]
+tests/test_calc.py::test_add PASSED                                      [ 28%]
+tests/test_calc.py::test_divide PASSED                                   [ 42%]
+tests/test_calc.py::test_running_total PASSED                            [ 57%]
+tests/test_env.py::test_api_token_present PASSED                         [ 71%]
+tests/test_timing.py::test_completes_quickly PASSED                      [ 85%]
+tests/test_timing.py::test_race_condition FAILED                         [100%]
+
+================================== FAILURES ===================================
+_____________________________ test_race_condition _____________________________
+
+    def test_race_condition():
+        """Simulates a real race: passes about half the time."""
+        import random
+    
+        worker_finished = random.random() < 0.5
+>       assert worker_finished, "worker did not finish before the deadline"
+E       AssertionError: worker did not finish before the deadline
+E       assert False
+
+tests\test_timing.py:15: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_timing.py::test_race_condition - AssertionError: worker did...
+========================= 1 failed, 6 passed in 0.17s =========================

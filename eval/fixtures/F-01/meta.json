@@ -1,0 +1,11 @@
+{
+  "fixture_id": "F-01",
+  "rank": 1,
+  "class": "missing_dependency",
+  "repo": "<user>/cidra-practice",
+  "branch": "fix-01-missing-dep",
+  "commit_sha": "f6acd5c9d96ae0401824a33da07ac941d8292e98",
+  "github_run_id": null,
+  "captured_at": null,
+  "log_lines": 0
+}

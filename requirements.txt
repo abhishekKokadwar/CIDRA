@@ -1,0 +1,7 @@
+langgraph
+pydantic
+docker
+fastapi
+uvicorn
+openai
+python-dotenv

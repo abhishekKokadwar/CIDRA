@@ -1,0 +1,17 @@
+{
+  "fixture_id": "F-04",
+  "commit_sha": "7e95684d9e042776181fa40f9275b14808c5c7b8",
+  "expected_analysis": {
+    "category": "flaky_test",
+    "failing_test": "tests/test_timing.py::test_race_condition",
+    "file": "tests/test_timing.py"
+  },
+  "expected_outcome": "flaky_detected",
+  "must_contain_in_error_region": [
+    "worker did not finish before the deadline"
+  ],
+  "scoring": {
+    "category": "exact",
+    "failing_test": "exact"
+  }
+}

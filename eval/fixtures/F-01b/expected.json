@@ -1,0 +1,19 @@
+{
+  "fixture_id": "F-01b",
+  "commit_sha": "c4b3de5972e6b79963d66a1f68b1935339e7d4cf",
+  "expected_analysis": {
+    "category": "missing_dependency",
+    "missing_package": "pyyaml",
+    "failing_test": "tests/test_calc.py",
+    "file": "requirements.txt"
+  },
+  "expected_outcome": "verified_fix",
+  "must_contain_in_error_region": [
+    "ModuleNotFoundError: No module named 'yaml'"
+  ],
+  "scoring": {
+    "category": "exact",
+    "missing_package": "exact"
+  },
+  "note": "Import name 'yaml' vs PyPI name 'pyyaml' \u2014 the fix must use the installable name. This gap is the point of the fixture."
+}

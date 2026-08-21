@@ -1,0 +1,11 @@
+{
+  "fixture_id": "F-02",
+  "rank": 2,
+  "class": "assertion_error",
+  "repo": "<user>/cidra-practice",
+  "branch": "fix-02-assertion",
+  "commit_sha": "53b9cafcac277deac440aa86181c83d101df2125",
+  "github_run_id": null,
+  "captured_at": null,
+  "log_lines": 0
+}

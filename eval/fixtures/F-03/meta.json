@@ -1,0 +1,11 @@
+{
+  "fixture_id": "F-03",
+  "rank": 3,
+  "class": "env_config_error",
+  "repo": "<user>/cidra-practice",
+  "branch": "fix-03-env-config",
+  "commit_sha": "cbb715330828c0ea5e7a3cfa6c0e149957e12b36",
+  "github_run_id": null,
+  "captured_at": null,
+  "log_lines": 0
+}

@@ -1,0 +1,18 @@
+{
+  "fixture_id": "F-02",
+  "commit_sha": "53b9cafcac277deac440aa86181c83d101df2125",
+  "expected_analysis": {
+    "category": "assertion_error",
+    "failing_test": "tests/test_calc.py::test_add",
+    "file": "tests/test_calc.py"
+  },
+  "expected_outcome": "verified_fix",
+  "must_contain_in_error_region": [
+    "assert 4 == 5"
+  ],
+  "scoring": {
+    "category": "exact",
+    "failing_test": "exact",
+    "file": "exact"
+  }
+}

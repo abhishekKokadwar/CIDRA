@@ -1,0 +1,11 @@
+{
+  "fixture_id": "F-04",
+  "rank": 4,
+  "class": "flaky_test",
+  "repo": "<user>/cidra-practice",
+  "branch": "fix-04-flaky",
+  "commit_sha": "7e95684d9e042776181fa40f9275b14808c5c7b8",
+  "github_run_id": null,
+  "captured_at": null,
+  "log_lines": 0
+}

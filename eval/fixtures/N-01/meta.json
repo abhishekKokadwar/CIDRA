@@ -1,0 +1,11 @@
+{
+  "fixture_id": "N-01",
+  "rank": 0,
+  "class": "unknown",
+  "repo": "<user>/cidra-practice",
+  "branch": "neg-01-logic-bug",
+  "commit_sha": "653b30a7bbebddc600ba08c0a12efe118c383f66",
+  "github_run_id": null,
+  "captured_at": null,
+  "log_lines": 0
+}

@@ -1,0 +1,18 @@
+{
+  "fixture_id": "F-03",
+  "commit_sha": "cbb715330828c0ea5e7a3cfa6c0e149957e12b36",
+  "expected_analysis": {
+    "category": "env_config_error",
+    "env_var": "API_TOKEN",
+    "failing_test": "tests/test_env.py::test_api_token_present"
+  },
+  "expected_outcome": "verified_fix",
+  "must_contain_in_error_region": [
+    "API_TOKEN is not set"
+  ],
+  "scoring": {
+    "category": "exact",
+    "env_var": "exact"
+  },
+  "note": "`file` is not scored: the CI log contains no evidence of the manifest or workflow path. select_strategy derives it from the category."
+}

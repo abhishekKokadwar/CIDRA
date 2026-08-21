@@ -1,0 +1,11 @@
+{
+  "fixture_id": "F-02b",
+  "rank": 2,
+  "class": "assertion_error",
+  "repo": "<user>/cidra-practice",
+  "branch": "fix-02b-loop-boundary",
+  "commit_sha": "31a89ee7f43f0d1bb3a1055a4fc51397b82e87ad",
+  "github_run_id": null,
+  "captured_at": null,
+  "log_lines": 0
+}
