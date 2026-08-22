@@ -50,6 +50,21 @@ def test_missing_dependency_is_verified():
     assert s["fix_attempts"] == 1
 
 
+def test_env_config_never_claims_a_fix():
+    # An env-config break lives in .github/workflows/ci.yml, and nothing in the
+    # pipeline reads that file: the sandbox takes its environment from ci_env.
+    # So the failure does not even reproduce here (the harness supplies the very
+    # var the break removed) and no fix could be verified if it did. What matters
+    # is that CIDRA says so instead of inventing a result. docs/4_architecture.md 5.1.
+    a = Analysis(category="env_config_error", confidence=0.9, evidence="API_TOKEN missing",
+                 proposed_action="restore env block", env_var="API_TOKEN")
+    s = _run("t-f03", "F-03", "fix-03-env-config", a)
+    assert s["outcome"] in ("failed", "diagnosis_only"), s["outcome"]
+    assert s.get("verified", False) is False, "claimed a fix it cannot verify"
+    assert s["_llm_fix_calls"] == 0, "burned an LLM call on an unverifiable class"
+    assert s.get("fix_strategy") is None
+
+
 def test_flaky_is_detected_and_never_patched():
     a = Analysis(category="flaky_test", confidence=0.8, evidence="random",
                  proposed_action="none", failing_test="tests/test_timing.py::test_race_condition")

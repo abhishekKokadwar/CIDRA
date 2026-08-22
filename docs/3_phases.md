@@ -12,6 +12,34 @@ Exit criteria are the only thing that marks a phase done — not "I wrote the co
 
 ---
 
+## Status as of 2026-08-22
+
+| Phase | State | Evidence |
+| --- | --- | --- |
+| 0 — Skeleton & toy graph | **done** | graph compiles and terminates; structured output via forced tool call |
+| 1 — Fixture corpus | **done** | 7 fixtures, practice repo live at `helpmecode69/cidra-practice` (green `main` + 7 break branches) |
+| 2 — Log ingestion + isolation | **done** | `fetch_log` pulls from the Actions API; Tier 1 **7/7** on real CI logs |
+| 3 — Root-cause analysis | **done** | Tier 2 **7/7** on real CI logs (`claude-haiku-4.5`) |
+| 4 — Docker sandbox | **done** | `test_sandbox.py` **15/15**; `repro_check.py` **8/8** red |
+| 5 — Fix + verify loop | **done** | `test_pipeline.py` **6/6** on real Docker; zero false `verified` claims |
+| **6 — Output (comment) + safety artifact** | **← next** | not started |
+| 7 — Live webhook + demo polish | not started | committed for 2026-09-05 |
+
+**Test suites:** `test_graph.py` 23/23 · `test_github.py` 9/9 · `test_sandbox.py` 15/15 ·
+`test_pipeline.py` 6/6 · `eval/run_eval.py` Tier 1 7/7, Tier 2 7/7 · `eval/repro_check.py` 8/8.
+
+`repro_check` runs 8 checks over 7 fixtures and F-04 is the flaky one, so an occasional
+7/8 is the fixture working as designed, not a regression — that is the whole point of F-04.
+
+**Known gaps carried into Phase 6:**
+- `docs/7_prompts.md` (a Phase 3 deliverable) is still unwritten.
+- `docs/6_sandbox_spec.md` §6 documents only `run_in_sandbox`; the `Session` class that
+  replaced it for multi-step runs is undocumented.
+- Haiku-vs-Sonnet eval comparison is unrun — blocked on OpenRouter credits, not on code.
+- `generate_fix` has never run against a live model; every pipeline test mocks it.
+
+---
+
 ## Horizon 1 — Hackathon build (by 2026-09-05)
 
 ### Phase 0 — Skeleton & toy graph
@@ -26,8 +54,8 @@ Deliverables:
   Pydantic (proves the §8 decision works before it's load-bearing).
 
 Exit criteria:
-- [ ] Toy graph runs via one command and prints state after each node.
-- [ ] One Pydantic-validated structured JSON response received from Claude.
+- [x] Toy graph runs via one command and prints state after each node.
+- [x] One Pydantic-validated structured JSON response received from Claude. *(via OpenRouter, forced tool call)*
 
 If behind schedule: this phase cannot be cut — everything depends on it. Keep it to a few hours.
 
@@ -47,8 +75,8 @@ Deliverables:
   analysis JSON (hand-written ground truth) for each fixture.
 
 Exit criteria:
-- [ ] At least 1 fixture for rank-1 and rank-2 classes exist with saved logs + expected JSON.
-- [ ] Rank-3 and rank-4 fixtures exist at minimum as broken commits (logs can follow in Phase 2).
+- [x] At least 1 fixture for rank-1 and rank-2 classes exist with saved logs + expected JSON. *(7 fixtures: F-01, F-01b, F-02, F-02b, F-03, F-04, N-01)*
+- [x] Rank-3 and rank-4 fixtures exist at minimum as broken commits (logs can follow in Phase 2). *(all 7 have real `raw.log` from GitHub Actions, captured in Phase 2)*
 
 If behind schedule: don't cut this — cut fixture *count* (1 per class instead of 2-3), not the
 phase itself. Everything downstream needs it.
@@ -65,9 +93,9 @@ Deliverables:
 - Runs against every Phase 1 fixture.
 
 Exit criteria:
-- [ ] For every fixture log, the isolated region visibly contains the actual error (manually
-      verified once, then locked in as a regression check).
-- [ ] No RAG/embeddings — confirmed unnecessary per the understanding doc §6.
+- [x] For every fixture log, the isolated region visibly contains the actual error (manually
+      verified once, then locked in as a regression check). *(Tier 1 7/7 against real CI logs; `test_github.py` 9/9)*
+- [x] No RAG/embeddings — confirmed unnecessary per the understanding doc §6.
 
 If behind schedule: this is cheap and central — don't cut, but don't gold-plate either
 (no need for adaptive window sizing; fixed windows are fine).
@@ -84,9 +112,9 @@ Deliverables:
 - First real eval table entries: correct-category % per class, run against all fixtures.
 
 Exit criteria:
-- [ ] Correct `category` on 100% of rank-1/2 fixtures, best-effort on rank-3/4.
-- [ ] Malformed JSON never crashes the graph — always resolves to either a valid retry or a
-      clean "diagnosis failed" state.
+- [x] Correct `category` on 100% of rank-1/2 fixtures, best-effort on rank-3/4. *(Tier 2 7/7 on real CI logs, `anthropic/claude-haiku-4.5`)*
+- [x] Malformed JSON never crashes the graph — always resolves to either a valid retry or a
+      clean "diagnosis failed" state. *(forced tool call + bounded retry; `test_analysis_retries_then_gives_up`)*
 
 If behind schedule: don't cut — this is the node that makes the rest of the graph legible.
 
@@ -106,10 +134,14 @@ Deliverables:
 - `6_sandbox_spec.md`: exact flags, image contents, lifecycle, threat-model table.
 
 Exit criteria:
-- [ ] Every Phase 1 fixture reproduces **red** (the original failure) in the sandbox.
-- [ ] Confirmed via `docker ps`/`docker volume ls` after a run: nothing left behind.
-- [ ] At least 2 of the 4 adversarial cases from §6 tested and contained (full set can finish
-      in Phase 6).
+- [x] Every Phase 1 fixture reproduces **red** (the original failure) in the sandbox.
+      *(`eval/repro_check.py` 8/8. Two caveats: F-04 is flaky by construction, so it
+      intermittently reports 7/8 — expected. And F-03 reproduces red here only because
+      `repro_check` runs without `ci_env`; inside the full pipeline, which supplies
+      `API_TOKEN`, it does not reproduce at all — see Phase 5.)*
+- [x] Confirmed via `docker ps`/`docker volume ls` after a run: nothing left behind. *(`test_container_is_removed`)*
+- [x] At least 2 of the 4 adversarial cases from §6 tested and contained (full set can finish
+      in Phase 6). *(`test_sandbox.py` 15/15: no network, no docker socket, no host secrets, pids limit holds, timeout kills)*
 
 If behind schedule: do not cut hardening rules to save time. Cut fixture coverage instead
 (fewer classes reproduced) before ever loosening a safety rule.
@@ -129,11 +161,23 @@ Deliverables:
 - Eval table updated: reproduced-red %, verified-green % per class.
 
 Exit criteria:
-- [ ] Rank-1 fixture: verified green 100%.
-- [ ] Rank-2 fixture: verified green on at least the built fixture(s).
-- [ ] Rank-3: at least diagnosis-correct; green if time allows.
-- [ ] Flaky-test: correctly classified as flaky (not "fixed") on its fixture.
-- [ ] Zero false "verified" claims anywhere (hard invariant from §7 — check this explicitly).
+- [x] Rank-1 fixture: verified green 100%. *(F-01 → `verified_fix`, real Docker)*
+- [x] Rank-2 fixture: verified green on at least the built fixture(s). *(F-02 path proven; `patch_source` strategy live)*
+- [x] Rank-3: at least diagnosis-correct; green if time allows. *(diagnosis correct. Deliberately NOT green — see the env_config note below)*
+- [x] Flaky-test: correctly classified as flaky (not "fixed") on its fixture. *(F-04 → `flaky_detected`, 0 fix attempts)*
+- [x] Zero false "verified" claims anywhere (hard invariant from §7 — check this explicitly). *(`test_pipeline.py` 6/6: an unappliable patch yields `verified: False`; N-01 and F-03 never claim a fix)*
+
+**Rank-3 (`env_config_error`) is deliberately diagnosis-only.** This is the "downgrade rather
+than ship an unverified fix" clause below, exercised on purpose rather than under time
+pressure. The break lives in `.github/workflows/ci.yml`, and nothing in the pipeline reads
+that file — the sandbox takes its environment from `ci_env` and invokes `pytest` directly. So
+an env-config failure neither reproduces in the sandbox (the harness supplies the very
+variable the break removed) nor could have a patch verified if it did. `env_config_error` is
+therefore absent from `STRATEGIES`: `select_strategy` returns `None`, routing straight to the
+report with **0 LLM calls**. Analysis still classifies it correctly; only the repair path is
+out of scope. Real support (parse the workflow's `env:` block, inject it into the sandbox,
+prove red-without / green-with) is **Option C** in
+[4_architecture.md](4_architecture.md) §5.1, deferred until workflow fixes need to reach a PR.
 
 If behind schedule: downgrade the lowest-ranked class still failing to diagnosis-only rather
 than shipping an unverified "fix." This is the §7 invariant — never compromise it for scope.
