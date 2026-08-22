@@ -18,10 +18,15 @@ from cidra.state import DebugState
 
 # Which file each category is allowed to touch. Deterministic, no LLM.
 # See docs/4_architecture.md §5.1.
+#
+# env_config_error has no entry on purpose: the fix would edit
+# .github/workflows/ci.yml, but the sandbox invokes pytest directly and never
+# reads that file, so verify_fix could never actually confirm the patch
+# worked. Leaving it out routes straight to diagnosis_only (0 LLM calls)
+# instead of "verifying" against a sandbox that can't see the change.
 STRATEGIES = {
     "missing_dependency": "append_requirement",
     "assertion_error": "patch_source",
-    "env_config_error": "patch_workflow",
 }
 
 
@@ -60,8 +65,6 @@ def _context(state: DebugState) -> str:
     session = session_for(state["run_id"])
     analysis = state.get("analysis")
     wanted = [f for f in (analysis.file if analysis else None, "requirements.txt") if f]
-    if state.get("fix_strategy") == "patch_workflow" and state.get("workflow_file"):
-        wanted.append(state["workflow_file"])
 
     parts = [f"<error>\n{state.get('error_region', '')}\n</error>"]
     for path in dict.fromkeys(wanted):

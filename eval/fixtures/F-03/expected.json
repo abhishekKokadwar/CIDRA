@@ -6,7 +6,7 @@
     "env_var": "API_TOKEN",
     "failing_test": "tests/test_env.py::test_api_token_present"
   },
-  "expected_outcome": "verified_fix",
+  "expected_outcome": "diagnosis_only",
   "must_contain_in_error_region": [
     "API_TOKEN is not set"
   ],
@@ -14,5 +14,5 @@
     "category": "exact",
     "env_var": "exact"
   },
-  "note": "`file` is not scored: the CI log contains no evidence of the manifest or workflow path. select_strategy derives it from the category."
+  "note": "`file` is not scored: the CI log contains no evidence of the manifest or workflow path. Outcome is diagnosis_only, not verified_fix: the repair edits .github/workflows/ci.yml, which the sandbox never reads (it invokes pytest directly), so verify_fix cannot confirm it. env_config_error is deliberately absent from STRATEGIES. See docs/4_architecture.md 5.1 for the path to real verification."
 }

@@ -409,15 +409,34 @@ graph LR
     S{"select_strategy<br/>on analysis.category"}
     S -->|missing_dependency| D["append to requirements.txt<br/><i>template-driven, LLM optional</i>"]
     S -->|assertion_error| A["patch assertion/fixture<br/><i>LLM-generated diff</i>"]
-    S -->|env_config_error| E["edit .github/workflows/*.yml<br/><i>LLM-generated diff</i>"]
+    S -->|env_config_error| U2["no strategy (for now)<br/>→ diagnosis_only"]
     S -->|unknown| U["no strategy<br/>→ diagnosis_only"]
 
     style D fill:#e8f5e9,stroke:#2e7d32
     style U fill:#eceff1,stroke:#546e7a
+    style U2 fill:#eceff1,stroke:#546e7a
 ```
 
 Note `missing_dependency` (rank 1) is nearly template-driven — `analysis.missing_package`
 plus an append. That's *why* it's rank 1: highest reliability, least LLM dependence.
+
+**Decision: `env_config_error` has no fix strategy yet (2026-08-22).** `patch_workflow`
+would edit `.github/workflows/ci.yml`, but the sandbox never reads that file — it invokes
+`pytest` directly, so a workflow edit is invisible to `verify_fix`. Applying the patch and
+then "verifying" it in the sandbox would either fail a correct fix or pass one that was
+never actually exercised. Both violate the one rule that matters most: never claim a fix
+that wasn't verified.
+
+So `env_config_error` is intentionally absent from `STRATEGIES` in `cidra/nodes/fix.py`.
+`select_strategy` returns `fix_strategy: None`, and `route_after_strategy` sends it straight
+to `compose_report` — same path as `unknown` — for `outcome: diagnosis_only` with zero LLM
+calls. This is correct behavior for a fixture like F-03 (env-config break), not a stub: it's
+the honest answer given what the sandbox can actually verify today.
+
+**Reintroduce it (Option C) when workflow fixes need to go further than diagnosis** — e.g.
+opening a PR in Phase 6/7. That requires the sandbox to parse `ci.yml`'s `env:` block and
+inject those vars before running the test, so the sandbox run fails without the fix and
+passes with it — i.e., *real* verification of a workflow-level change, not sandbox theater.
 
 ---
 

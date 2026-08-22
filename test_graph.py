@@ -93,6 +93,18 @@ def test_no_strategy_skips_the_fix_loop():
     assert routers.route_after_strategy({"fix_strategy": "append_requirement"}) == "generate_fix"
 
 
+def test_env_config_has_no_fix_strategy():
+    # The fix would edit .github/workflows/ci.yml, but the sandbox runs pytest
+    # directly and never reads it, so verify_fix could not confirm the patch.
+    # Diagnosis-only is the honest outcome. See docs/4_architecture.md 5.1.
+    from cidra.nodes.fix import STRATEGIES, select_strategy
+
+    assert "env_config_error" not in STRATEGIES
+    a = Analysis(category="env_config_error", confidence=0.9, evidence="e", proposed_action="p")
+    assert select_strategy({"analysis": a}) == {"fix_strategy": None}
+    assert routers.route_after_strategy({"fix_strategy": None}) == "compose_report"
+
+
 def test_fix_loop_is_bounded():
     assert routers.route_after_verify({"verified": False, "fix_attempts": 2}) == "generate_fix"
     assert routers.route_after_verify({"verified": False, "fix_attempts": 3}) == "compose_report"
