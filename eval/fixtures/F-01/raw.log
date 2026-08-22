@@ -1,0 +1,208 @@
+##[cidra-file]0_test.txt
+﻿2026-08-21T14:50:02.6926856Z Current runner version: '2.336.0'
+2026-08-21T14:50:02.6953894Z ##[group]Runner Image Provisioner
+2026-08-21T14:50:02.6954947Z Hosted Compute Agent
+2026-08-21T14:50:02.6955680Z Version: 20260729.566
+2026-08-21T14:50:02.6956521Z Commit: cf7153fe6e25b664e8693c24944bf2b00355d109
+2026-08-21T14:50:02.6957477Z Build Date: 2026-07-29T19:17:02Z
+2026-08-21T14:50:02.6958283Z Worker ID: {9594e328-5d4d-4a84-9fae-1a4d2bcee612}
+2026-08-21T14:50:02.6959287Z Azure Region: eastus
+2026-08-21T14:50:02.6959965Z ##[endgroup]
+2026-08-21T14:50:02.6962075Z ##[group]Operating System
+2026-08-21T14:50:02.6962860Z Ubuntu
+2026-08-21T14:50:02.6963472Z 24.04.4
+2026-08-21T14:50:02.6964183Z LTS
+2026-08-21T14:50:02.6964798Z ##[endgroup]
+2026-08-21T14:50:02.6965486Z ##[group]Runner Image
+2026-08-21T14:50:02.6966284Z Image: ubuntu-24.04
+2026-08-21T14:50:02.6966930Z Version: 20260816.277.1
+2026-08-21T14:50:02.6968605Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260816.277/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-21T14:50:02.6970601Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260816.277
+2026-08-21T14:50:02.6971782Z ##[endgroup]
+2026-08-21T14:50:02.6973866Z ##[group]GITHUB_TOKEN Permissions
+2026-08-21T14:50:02.6976203Z Contents: read
+2026-08-21T14:50:02.6976968Z Metadata: read
+2026-08-21T14:50:02.6977693Z Packages: read
+2026-08-21T14:50:02.6978334Z ##[endgroup]
+2026-08-21T14:50:02.6980744Z Secret source: Actions
+2026-08-21T14:50:02.6982439Z Prepare workflow directory
+2026-08-21T14:50:02.7599627Z Prepare all required actions
+2026-08-21T14:50:02.7654217Z Getting action download info
+2026-08-21T14:50:02.9132626Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-08-21T14:50:03.3943356Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-08-21T14:50:04.0985088Z Complete job name: test
+2026-08-21T14:50:04.1612154Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-21T14:50:04.1619996Z ##[group]Run actions/checkout@v4
+2026-08-21T14:50:04.1620983Z with:
+2026-08-21T14:50:04.1621610Z   repository: helpmecode69/cidra-practice
+2026-08-21T14:50:04.1628140Z   token: ***
+2026-08-21T14:50:04.1628744Z   ssh-strict: true
+2026-08-21T14:50:04.1629409Z   ssh-user: git
+2026-08-21T14:50:04.1630021Z   persist-credentials: true
+2026-08-21T14:50:04.1630692Z   clean: true
+2026-08-21T14:50:04.1631305Z   sparse-checkout-cone-mode: true
+2026-08-21T14:50:04.1632142Z   fetch-depth: 1
+2026-08-21T14:50:04.1632740Z   fetch-tags: false
+2026-08-21T14:50:04.1633367Z   show-progress: true
+2026-08-21T14:50:04.1633865Z   lfs: false
+2026-08-21T14:50:04.1634277Z   submodules: false
+2026-08-21T14:50:04.1634682Z   set-safe-directory: true
+2026-08-21T14:50:04.1635139Z   allow-unsafe-pr-checkout: false
+2026-08-21T14:50:04.1635875Z env:
+2026-08-21T14:50:04.1636251Z   API_TOKEN: tok_practice_value
+2026-08-21T14:50:04.1636702Z ##[endgroup]
+2026-08-21T14:50:04.2476213Z Syncing repository: helpmecode69/cidra-practice
+2026-08-21T14:50:04.2477814Z ##[group]Getting Git version info
+2026-08-21T14:50:04.2478489Z Working directory is '/home/runner/work/cidra-practice/cidra-practice'
+2026-08-21T14:50:04.2479458Z [command]/usr/bin/git version
+2026-08-21T14:50:04.2556274Z git version 2.55.0
+2026-08-21T14:50:04.2572263Z ##[endgroup]
+2026-08-21T14:50:04.2586680Z Temporarily overriding HOME='/home/runner/work/_temp/e97dae34-2f40-4abe-9063-52834d769db1' before making global git config changes
+2026-08-21T14:50:04.2587922Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-21T14:50:04.2591305Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cidra-practice/cidra-practice
+2026-08-21T14:50:04.2651203Z Deleting the contents of '/home/runner/work/cidra-practice/cidra-practice'
+2026-08-21T14:50:04.2656335Z ##[group]Initializing the repository
+2026-08-21T14:50:04.2660075Z [command]/usr/bin/git init /home/runner/work/cidra-practice/cidra-practice
+2026-08-21T14:50:04.2830307Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-21T14:50:04.2832409Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-21T14:50:04.2837159Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-21T14:50:04.2838430Z hint: call:
+2026-08-21T14:50:04.2839258Z hint:
+2026-08-21T14:50:04.2839924Z hint: 	git config --global init.defaultBranch <name>
+2026-08-21T14:50:04.2840598Z hint:
+2026-08-21T14:50:04.2841244Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-21T14:50:04.2842650Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-21T14:50:04.2843829Z hint:
+2026-08-21T14:50:04.2844623Z hint: 	git branch -m <name>
+2026-08-21T14:50:04.2845377Z hint:
+2026-08-21T14:50:04.2846216Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-21T14:50:04.2847188Z Initialized empty Git repository in /home/runner/work/cidra-practice/cidra-practice/.git/
+2026-08-21T14:50:04.2848878Z [command]/usr/bin/git remote add origin https://github.com/helpmecode69/cidra-practice
+2026-08-21T14:50:04.3092791Z ##[endgroup]
+2026-08-21T14:50:04.3094007Z ##[group]Disabling automatic garbage collection
+2026-08-21T14:50:04.3095814Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-21T14:50:04.3220132Z ##[endgroup]
+2026-08-21T14:50:04.3220912Z ##[group]Setting up auth
+2026-08-21T14:50:04.3226959Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-21T14:50:04.3258995Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-21T14:50:04.3693574Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-21T14:50:04.3723201Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-21T14:50:04.3917968Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-21T14:50:04.3950057Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-21T14:50:04.4140569Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-21T14:50:04.4422588Z ##[endgroup]
+2026-08-21T14:50:04.4423389Z ##[group]Fetching the repository
+2026-08-21T14:50:04.4431132Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +f95cb3707e2c415fc1944d43739d28d246508900:refs/remotes/origin/fix-01-missing-dep
+2026-08-21T14:50:04.7802860Z From https://github.com/helpmecode69/cidra-practice
+2026-08-21T14:50:04.7804783Z  * [new ref]         f95cb3707e2c415fc1944d43739d28d246508900 -> origin/fix-01-missing-dep
+2026-08-21T14:50:04.7808499Z ##[endgroup]
+2026-08-21T14:50:04.7810017Z ##[group]Determining the checkout info
+2026-08-21T14:50:04.7811758Z ##[endgroup]
+2026-08-21T14:50:04.7816091Z [command]/usr/bin/git sparse-checkout disable
+2026-08-21T14:50:04.7863767Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-21T14:50:04.7892073Z ##[group]Checking out the ref
+2026-08-21T14:50:04.7896497Z [command]/usr/bin/git checkout --progress --force -B fix-01-missing-dep refs/remotes/origin/fix-01-missing-dep
+2026-08-21T14:50:04.7949563Z Switched to a new branch 'fix-01-missing-dep'
+2026-08-21T14:50:04.7955094Z branch 'fix-01-missing-dep' set up to track 'origin/fix-01-missing-dep'.
+2026-08-21T14:50:04.7959650Z ##[endgroup]
+2026-08-21T14:50:04.7996149Z [command]/usr/bin/git log -1 --format=%H
+2026-08-21T14:50:04.8020068Z f95cb3707e2c415fc1944d43739d28d246508900
+2026-08-21T14:50:04.8318376Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-21T14:50:04.8322766Z ##[group]Run actions/setup-python@v5
+2026-08-21T14:50:04.8323692Z with:
+2026-08-21T14:50:04.8324433Z   python-version: 3.11
+2026-08-21T14:50:04.8325253Z   check-latest: false
+2026-08-21T14:50:04.8333107Z   token: ***
+2026-08-21T14:50:04.8333857Z   update-environment: true
+2026-08-21T14:50:04.8334705Z   allow-prereleases: false
+2026-08-21T14:50:04.8335532Z   freethreaded: false
+2026-08-21T14:50:04.8336279Z env:
+2026-08-21T14:50:04.8336986Z   API_TOKEN: tok_practice_value
+2026-08-21T14:50:04.8337828Z ##[endgroup]
+2026-08-21T14:50:04.9396397Z ##[group]Installed versions
+2026-08-21T14:50:04.9471652Z (node:2089) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-21T14:50:04.9475070Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-21T14:50:04.9477046Z Successfully set up CPython (3.11.16)
+2026-08-21T14:50:04.9479163Z ##[endgroup]
+2026-08-21T14:50:04.9676595Z ##[group]Run pip install -r requirements.txt
+2026-08-21T14:50:04.9678288Z [36;1mpip install -r requirements.txt[0m
+2026-08-21T14:50:04.9809995Z shell: /usr/bin/bash -e {0}
+2026-08-21T14:50:04.9810927Z env:
+2026-08-21T14:50:04.9811636Z   API_TOKEN: tok_practice_value
+2026-08-21T14:50:04.9813002Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:04.9814420Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib/pkgconfig
+2026-08-21T14:50:04.9815839Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:04.9817148Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:04.9818422Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:04.9819737Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib
+2026-08-21T14:50:04.9820839Z ##[endgroup]
+2026-08-21T14:50:09.2125449Z Collecting pytest (from -r requirements.txt (line 1))
+2026-08-21T14:50:09.2560428Z   Downloading pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+2026-08-21T14:50:09.3171328Z Collecting iniconfig>=1.0.1 (from pytest->-r requirements.txt (line 1))
+2026-08-21T14:50:09.3204199Z   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+2026-08-21T14:50:09.3392951Z Collecting packaging>=22 (from pytest->-r requirements.txt (line 1))
+2026-08-21T14:50:09.3425904Z   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+2026-08-21T14:50:09.3532707Z Collecting pluggy<2,>=1.5 (from pytest->-r requirements.txt (line 1))
+2026-08-21T14:50:09.3566799Z   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2026-08-21T14:50:09.3712493Z Collecting pygments>=2.7.2 (from pytest->-r requirements.txt (line 1))
+2026-08-21T14:50:09.3750285Z   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+2026-08-21T14:50:09.3825011Z Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-08-21T14:50:09.4477003Z Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-08-21T14:50:09.4530285Z Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-08-21T14:50:09.4582465Z Downloading packaging-26.3-py3-none-any.whl (129 kB)
+2026-08-21T14:50:09.4669551Z Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+2026-08-21T14:50:09.5429897Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 13.7 MB/s  0:00:00
+2026-08-21T14:50:10.1545878Z Installing collected packages: pygments, pluggy, packaging, iniconfig, pytest
+2026-08-21T14:50:11.0779435Z 
+2026-08-21T14:50:11.0787132Z Successfully installed iniconfig-2.3.0 packaging-26.3 pluggy-1.6.0 pygments-2.21.0 pytest-9.1.1
+2026-08-21T14:50:11.1239226Z ##[group]Run pytest -v
+2026-08-21T14:50:11.1239642Z [36;1mpytest -v[0m
+2026-08-21T14:50:11.1273948Z shell: /usr/bin/bash -e {0}
+2026-08-21T14:50:11.1274157Z env:
+2026-08-21T14:50:11.1274342Z   API_TOKEN: tok_practice_value
+2026-08-21T14:50:11.1274603Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:11.1274946Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib/pkgconfig
+2026-08-21T14:50:11.1275285Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:11.1275590Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:11.1275885Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:11.1276207Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib
+2026-08-21T14:50:11.1276463Z ##[endgroup]
+2026-08-21T14:50:11.5483820Z ============================= test session starts ==============================
+2026-08-21T14:50:11.5485697Z platform linux -- Python 3.11.16, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.11.16/x64/bin/python
+2026-08-21T14:50:11.5486494Z cachedir: .pytest_cache
+2026-08-21T14:50:11.5486982Z rootdir: /home/runner/work/cidra-practice/cidra-practice
+2026-08-21T14:50:11.6911073Z collecting ... collected 5 items / 1 error
+2026-08-21T14:50:11.6911330Z 
+2026-08-21T14:50:11.6911458Z ==================================== ERRORS ====================================
+2026-08-21T14:50:11.6912003Z ______________________ ERROR collecting tests/test_api.py ______________________
+2026-08-21T14:50:11.6912636Z ImportError while importing test module '/home/runner/work/cidra-practice/cidra-practice/tests/test_api.py'.
+2026-08-21T14:50:11.6913529Z Hint: make sure your test modules/packages have valid Python names.
+2026-08-21T14:50:11.6914004Z Traceback:
+2026-08-21T14:50:11.6914497Z /opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module
+2026-08-21T14:50:11.6915206Z     return _bootstrap._gcd_import(name[level:], package, level)
+2026-08-21T14:50:11.6915653Z            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-08-21T14:50:11.6916038Z tests/test_api.py:1: in <module>
+2026-08-21T14:50:11.6916341Z     import requests
+2026-08-21T14:50:11.6916649Z E   ModuleNotFoundError: No module named 'requests'
+2026-08-21T14:50:11.6917099Z =========================== short test summary info ============================
+2026-08-21T14:50:11.6917510Z ERROR tests/test_api.py
+2026-08-21T14:50:11.6917880Z !!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+2026-08-21T14:50:11.6918364Z =============================== 1 error in 0.14s ===============================
+2026-08-21T14:50:11.7109850Z ##[error]Process completed with exit code 2.
+2026-08-21T14:50:11.7220957Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-21T14:50:11.7222100Z Post job cleanup.
+2026-08-21T14:50:11.7913900Z [command]/usr/bin/git version
+2026-08-21T14:50:11.7949607Z git version 2.55.0
+2026-08-21T14:50:11.7981221Z Temporarily overriding HOME='/home/runner/work/_temp/4488cc6a-fa8d-4972-8db2-c0b1de71e55f' before making global git config changes
+2026-08-21T14:50:11.7982153Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-21T14:50:11.7986204Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cidra-practice/cidra-practice
+2026-08-21T14:50:11.8020647Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-21T14:50:11.8062043Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-21T14:50:11.8277155Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-21T14:50:11.8302880Z http.https://github.com/.extraheader
+2026-08-21T14:50:11.8311773Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-08-21T14:50:11.8346565Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-21T14:50:11.8560796Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-21T14:50:11.8596943Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-21T14:50:11.8922216Z Cleaning up orphan processes
+2026-08-21T14:50:11.9143659Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

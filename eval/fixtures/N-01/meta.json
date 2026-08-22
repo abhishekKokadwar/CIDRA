@@ -7,5 +7,9 @@
   "commit_sha": "653b30a7bbebddc600ba08c0a12efe118c383f66",
   "github_run_id": null,
   "captured_at": null,
-  "log_lines": 0
+  "log_lines": 0,
+  "gh_repo": "helpmecode69/cidra-practice",
+  "gh_run_id": 32494275743,
+  "gh_branch": "neg-01-logic-bug",
+  "gh_sha": "4d9bd6ad690014a621fef33955f5459a64c7ddb3"
 }

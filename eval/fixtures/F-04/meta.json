@@ -7,5 +7,9 @@
   "commit_sha": "7e95684d9e042776181fa40f9275b14808c5c7b8",
   "github_run_id": null,
   "captured_at": null,
-  "log_lines": 0
+  "log_lines": 0,
+  "gh_repo": "helpmecode69/cidra-practice",
+  "gh_run_id": 32494275441,
+  "gh_branch": "fix-04-flaky",
+  "gh_sha": "88cc7d0f3d3578b68f4b635e5dc742bf55c6ceeb"
 }

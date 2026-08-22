@@ -1,0 +1,242 @@
+##[cidra-file]0_test.txt
+﻿2026-08-21T14:50:15.2557988Z Current runner version: '2.336.0'
+2026-08-21T14:50:15.2594962Z ##[group]Runner Image Provisioner
+2026-08-21T14:50:15.2596611Z Hosted Compute Agent
+2026-08-21T14:50:15.2597647Z Version: 20260729.566
+2026-08-21T14:50:15.2598766Z Commit: cf7153fe6e25b664e8693c24944bf2b00355d109
+2026-08-21T14:50:15.2600156Z Build Date: 2026-07-29T19:17:02Z
+2026-08-21T14:50:15.2601739Z Worker ID: {fa950121-bf93-45bc-a29c-ce78f7f9a073}
+2026-08-21T14:50:15.2603192Z Azure Region: eastus
+2026-08-21T14:50:15.2604216Z ##[endgroup]
+2026-08-21T14:50:15.2607383Z ##[group]Operating System
+2026-08-21T14:50:15.2608605Z Ubuntu
+2026-08-21T14:50:15.2609605Z 24.04.4
+2026-08-21T14:50:15.2611551Z LTS
+2026-08-21T14:50:15.2612589Z ##[endgroup]
+2026-08-21T14:50:15.2613716Z ##[group]Runner Image
+2026-08-21T14:50:15.2614840Z Image: ubuntu-24.04
+2026-08-21T14:50:15.2615881Z Version: 20260816.277.1
+2026-08-21T14:50:15.2618314Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260816.277/images/ubuntu/Ubuntu2404-Readme.md
+2026-08-21T14:50:15.2621596Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260816.277
+2026-08-21T14:50:15.2623385Z ##[endgroup]
+2026-08-21T14:50:15.2625795Z ##[group]GITHUB_TOKEN Permissions
+2026-08-21T14:50:15.2628988Z Contents: read
+2026-08-21T14:50:15.2630179Z Metadata: read
+2026-08-21T14:50:15.2631448Z Packages: read
+2026-08-21T14:50:15.2632561Z ##[endgroup]
+2026-08-21T14:50:15.2635973Z Secret source: Actions
+2026-08-21T14:50:15.2638477Z Prepare workflow directory
+2026-08-21T14:50:15.3245950Z Prepare all required actions
+2026-08-21T14:50:15.3322626Z Getting action download info
+2026-08-21T14:50:15.4792777Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-08-21T14:50:15.6292679Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+2026-08-21T14:50:15.8151648Z Complete job name: test
+2026-08-21T14:50:15.8926495Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-21T14:50:15.8935912Z ##[group]Run actions/checkout@v4
+2026-08-21T14:50:15.8936719Z with:
+2026-08-21T14:50:15.8937216Z   repository: helpmecode69/cidra-practice
+2026-08-21T14:50:15.8941277Z   token: ***
+2026-08-21T14:50:15.8941726Z   ssh-strict: true
+2026-08-21T14:50:15.8942170Z   ssh-user: git
+2026-08-21T14:50:15.8942616Z   persist-credentials: true
+2026-08-21T14:50:15.8943109Z   clean: true
+2026-08-21T14:50:15.8943552Z   sparse-checkout-cone-mode: true
+2026-08-21T14:50:15.8944143Z   fetch-depth: 1
+2026-08-21T14:50:15.8944584Z   fetch-tags: false
+2026-08-21T14:50:15.8945038Z   show-progress: true
+2026-08-21T14:50:15.8945479Z   lfs: false
+2026-08-21T14:50:15.8945943Z   submodules: false
+2026-08-21T14:50:15.8946415Z   set-safe-directory: true
+2026-08-21T14:50:15.8946947Z   allow-unsafe-pr-checkout: false
+2026-08-21T14:50:15.8947722Z env:
+2026-08-21T14:50:15.8948148Z   API_TOKEN: tok_practice_value
+2026-08-21T14:50:15.8948646Z ##[endgroup]
+2026-08-21T14:50:15.9995783Z Syncing repository: helpmecode69/cidra-practice
+2026-08-21T14:50:15.9998795Z ##[group]Getting Git version info
+2026-08-21T14:50:16.0000130Z Working directory is '/home/runner/work/cidra-practice/cidra-practice'
+2026-08-21T14:50:16.0002207Z [command]/usr/bin/git version
+2026-08-21T14:50:16.0050357Z git version 2.55.0
+2026-08-21T14:50:16.0075095Z ##[endgroup]
+2026-08-21T14:50:16.0090253Z Temporarily overriding HOME='/home/runner/work/_temp/d4939404-01ca-4a40-bd65-4c063b794b94' before making global git config changes
+2026-08-21T14:50:16.0092814Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-21T14:50:16.0095433Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cidra-practice/cidra-practice
+2026-08-21T14:50:16.0150123Z Deleting the contents of '/home/runner/work/cidra-practice/cidra-practice'
+2026-08-21T14:50:16.0154899Z ##[group]Initializing the repository
+2026-08-21T14:50:16.0164767Z [command]/usr/bin/git init /home/runner/work/cidra-practice/cidra-practice
+2026-08-21T14:50:16.0272146Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-08-21T14:50:16.0275668Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-08-21T14:50:16.0277220Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-08-21T14:50:16.0278405Z hint: call:
+2026-08-21T14:50:16.0279023Z hint:
+2026-08-21T14:50:16.0279810Z hint: 	git config --global init.defaultBranch <name>
+2026-08-21T14:50:16.0281130Z hint:
+2026-08-21T14:50:16.0282111Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-08-21T14:50:16.0283686Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-08-21T14:50:16.0284870Z hint:
+2026-08-21T14:50:16.0285511Z hint: 	git branch -m <name>
+2026-08-21T14:50:16.0286306Z hint:
+2026-08-21T14:50:16.0287361Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-08-21T14:50:16.0289186Z Initialized empty Git repository in /home/runner/work/cidra-practice/cidra-practice/.git/
+2026-08-21T14:50:16.0292254Z [command]/usr/bin/git remote add origin https://github.com/helpmecode69/cidra-practice
+2026-08-21T14:50:16.0372568Z ##[endgroup]
+2026-08-21T14:50:16.0373801Z ##[group]Disabling automatic garbage collection
+2026-08-21T14:50:16.0377654Z [command]/usr/bin/git config --local gc.auto 0
+2026-08-21T14:50:16.0413391Z ##[endgroup]
+2026-08-21T14:50:16.0414625Z ##[group]Setting up auth
+2026-08-21T14:50:16.0421073Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-21T14:50:16.0455923Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-21T14:50:16.0855301Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-21T14:50:16.0901259Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-21T14:50:16.1139111Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-21T14:50:16.1177528Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-21T14:50:16.1412962Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-08-21T14:50:16.1456243Z ##[endgroup]
+2026-08-21T14:50:16.1457098Z ##[group]Fetching the repository
+2026-08-21T14:50:16.1466890Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +4d9bd6ad690014a621fef33955f5459a64c7ddb3:refs/remotes/origin/neg-01-logic-bug
+2026-08-21T14:50:16.4151750Z From https://github.com/helpmecode69/cidra-practice
+2026-08-21T14:50:16.4153846Z  * [new ref]         4d9bd6ad690014a621fef33955f5459a64c7ddb3 -> origin/neg-01-logic-bug
+2026-08-21T14:50:16.4157279Z ##[endgroup]
+2026-08-21T14:50:16.4158851Z ##[group]Determining the checkout info
+2026-08-21T14:50:16.4161060Z ##[endgroup]
+2026-08-21T14:50:16.4166922Z [command]/usr/bin/git sparse-checkout disable
+2026-08-21T14:50:16.4221144Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-08-21T14:50:16.4256517Z ##[group]Checking out the ref
+2026-08-21T14:50:16.4262667Z [command]/usr/bin/git checkout --progress --force -B neg-01-logic-bug refs/remotes/origin/neg-01-logic-bug
+2026-08-21T14:50:16.4325671Z Switched to a new branch 'neg-01-logic-bug'
+2026-08-21T14:50:16.4334472Z branch 'neg-01-logic-bug' set up to track 'origin/neg-01-logic-bug'.
+2026-08-21T14:50:16.4346167Z ##[endgroup]
+2026-08-21T14:50:16.4391507Z [command]/usr/bin/git log -1 --format=%H
+2026-08-21T14:50:16.4419476Z 4d9bd6ad690014a621fef33955f5459a64c7ddb3
+2026-08-21T14:50:16.4701756Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-21T14:50:16.4704344Z ##[group]Run actions/setup-python@v5
+2026-08-21T14:50:16.4704883Z with:
+2026-08-21T14:50:16.4705284Z   python-version: 3.11
+2026-08-21T14:50:16.4705740Z   check-latest: false
+2026-08-21T14:50:16.4709332Z   token: ***
+2026-08-21T14:50:16.4709760Z   update-environment: true
+2026-08-21T14:50:16.4710248Z   allow-prereleases: false
+2026-08-21T14:50:16.4710964Z   freethreaded: false
+2026-08-21T14:50:16.4711402Z env:
+2026-08-21T14:50:16.4711807Z   API_TOKEN: tok_practice_value
+2026-08-21T14:50:16.4712294Z ##[endgroup]
+2026-08-21T14:50:16.6054685Z ##[group]Installed versions
+2026-08-21T14:50:16.6192625Z (node:2285) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-08-21T14:50:16.6195310Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-08-21T14:50:16.6196947Z Successfully set up CPython (3.11.16)
+2026-08-21T14:50:16.6198689Z ##[endgroup]
+2026-08-21T14:50:16.6405175Z ##[group]Run pip install -r requirements.txt
+2026-08-21T14:50:16.6406474Z [36;1mpip install -r requirements.txt[0m
+2026-08-21T14:50:16.6474838Z shell: /usr/bin/bash -e {0}
+2026-08-21T14:50:16.6475892Z env:
+2026-08-21T14:50:16.6476831Z   API_TOKEN: tok_practice_value
+2026-08-21T14:50:16.6478228Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:16.6479974Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib/pkgconfig
+2026-08-21T14:50:16.6482016Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:16.6483580Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:16.6485140Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:16.6486711Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib
+2026-08-21T14:50:16.6488058Z ##[endgroup]
+2026-08-21T14:50:17.5218580Z Collecting pytest (from -r requirements.txt (line 1))
+2026-08-21T14:50:17.5750990Z   Downloading pytest-9.1.1-py3-none-any.whl.metadata (7.6 kB)
+2026-08-21T14:50:17.6008233Z Collecting requests (from -r requirements.txt (line 2))
+2026-08-21T14:50:17.6051914Z   Downloading requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+2026-08-21T14:50:17.6187737Z Collecting iniconfig>=1.0.1 (from pytest->-r requirements.txt (line 1))
+2026-08-21T14:50:17.6228642Z   Downloading iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+2026-08-21T14:50:17.6385667Z Collecting packaging>=22 (from pytest->-r requirements.txt (line 1))
+2026-08-21T14:50:17.6428758Z   Downloading packaging-26.3-py3-none-any.whl.metadata (3.5 kB)
+2026-08-21T14:50:17.6687014Z Collecting pluggy<2,>=1.5 (from pytest->-r requirements.txt (line 1))
+2026-08-21T14:50:17.6768332Z   Downloading pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+2026-08-21T14:50:17.6960919Z Collecting pygments>=2.7.2 (from pytest->-r requirements.txt (line 1))
+2026-08-21T14:50:17.7019701Z   Downloading pygments-2.21.0-py3-none-any.whl.metadata (2.5 kB)
+2026-08-21T14:50:17.8309270Z Collecting charset_normalizer<4,>=2 (from requests->-r requirements.txt (line 2))
+2026-08-21T14:50:17.8352588Z   Downloading charset_normalizer-3.5.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (45 kB)
+2026-08-21T14:50:17.8572147Z Collecting idna<4,>=2.5 (from requests->-r requirements.txt (line 2))
+2026-08-21T14:50:17.8612926Z   Downloading idna-3.19-py3-none-any.whl.metadata (9.2 kB)
+2026-08-21T14:50:17.8819073Z Collecting urllib3<3,>=1.26 (from requests->-r requirements.txt (line 2))
+2026-08-21T14:50:17.8873716Z   Downloading urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+2026-08-21T14:50:17.9088732Z Collecting certifi>=2023.5.7 (from requests->-r requirements.txt (line 2))
+2026-08-21T14:50:17.9129988Z   Downloading certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+2026-08-21T14:50:17.9223116Z Downloading pytest-9.1.1-py3-none-any.whl (386 kB)
+2026-08-21T14:50:17.9339319Z Downloading pluggy-1.6.0-py3-none-any.whl (20 kB)
+2026-08-21T14:50:17.9397226Z Downloading requests-2.34.2-py3-none-any.whl (73 kB)
+2026-08-21T14:50:17.9458796Z Downloading charset_normalizer-3.5.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (262 kB)
+2026-08-21T14:50:17.9521842Z Downloading idna-3.19-py3-none-any.whl (68 kB)
+2026-08-21T14:50:17.9579742Z Downloading urllib3-2.7.0-py3-none-any.whl (131 kB)
+2026-08-21T14:50:17.9643220Z Downloading certifi-2026.7.22-py3-none-any.whl (136 kB)
+2026-08-21T14:50:17.9706065Z Downloading iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+2026-08-21T14:50:17.9777756Z Downloading packaging-26.3-py3-none-any.whl (129 kB)
+2026-08-21T14:50:17.9838260Z Downloading pygments-2.21.0-py3-none-any.whl (1.3 MB)
+2026-08-21T14:50:17.9945854Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 138.3 MB/s  0:00:00
+2026-08-21T14:50:18.0708385Z Installing collected packages: urllib3, pygments, pluggy, packaging, iniconfig, idna, charset_normalizer, certifi, requests, pytest
+2026-08-21T14:50:19.2665074Z 
+2026-08-21T14:50:19.2676805Z Successfully installed certifi-2026.7.22 charset_normalizer-3.5.1 idna-3.19 iniconfig-2.3.0 packaging-26.3 pluggy-1.6.0 pygments-2.21.0 pytest-9.1.1 requests-2.34.2 urllib3-2.7.0
+2026-08-21T14:50:19.3277424Z ##[group]Run pytest -v
+2026-08-21T14:50:19.3277719Z [36;1mpytest -v[0m
+2026-08-21T14:50:19.3316987Z shell: /usr/bin/bash -e {0}
+2026-08-21T14:50:19.3317257Z env:
+2026-08-21T14:50:19.3317463Z   API_TOKEN: tok_practice_value
+2026-08-21T14:50:19.3317791Z   pythonLocation: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:19.3318258Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib/pkgconfig
+2026-08-21T14:50:19.3318725Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:19.3319111Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:19.3319494Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64
+2026-08-21T14:50:19.3319870Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib
+2026-08-21T14:50:19.3320190Z ##[endgroup]
+2026-08-21T14:50:19.5623566Z ============================= test session starts ==============================
+2026-08-21T14:50:19.5624699Z platform linux -- Python 3.11.16, pytest-9.1.1, pluggy-1.6.0 -- /opt/hostedtoolcache/Python/3.11.16/x64/bin/python
+2026-08-21T14:50:19.5625626Z cachedir: .pytest_cache
+2026-08-21T14:50:19.5626183Z rootdir: /home/runner/work/cidra-practice/cidra-practice
+2026-08-21T14:50:19.6375744Z collecting ... collected 7 items
+2026-08-21T14:50:19.6376253Z 
+2026-08-21T14:50:19.6385407Z tests/test_api.py::test_fetch PASSED                                     [ 14%]
+2026-08-21T14:50:19.6393117Z tests/test_calc.py::test_add PASSED                                      [ 28%]
+2026-08-21T14:50:19.6400690Z tests/test_calc.py::test_divide PASSED                                   [ 42%]
+2026-08-21T14:50:19.6408344Z tests/test_calc.py::test_running_total PASSED                            [ 57%]
+2026-08-21T14:50:19.6649872Z tests/test_calc.py::test_divide_by_zero_raises FAILED                    [ 71%]
+2026-08-21T14:50:19.6657692Z tests/test_env.py::test_api_token_present PASSED                         [ 85%]
+2026-08-21T14:50:19.6810096Z tests/test_timing.py::test_completes_quickly PASSED                      [100%]
+2026-08-21T14:50:19.6811044Z 
+2026-08-21T14:50:19.6811280Z =================================== FAILURES ===================================
+2026-08-21T14:50:19.6812020Z __________________________ test_divide_by_zero_raises __________________________
+2026-08-21T14:50:19.6812519Z 
+2026-08-21T14:50:19.6812694Z     def test_divide_by_zero_raises():
+2026-08-21T14:50:19.6813167Z         import pytest
+2026-08-21T14:50:19.6813920Z         from src.calc import divide
+2026-08-21T14:50:19.6814392Z     
+2026-08-21T14:50:19.6814740Z         with pytest.raises(ValueError):
+2026-08-21T14:50:19.6815212Z >           divide(1, 0)
+2026-08-21T14:50:19.6815466Z 
+2026-08-21T14:50:19.6815625Z tests/test_calc.py:21: 
+2026-08-21T14:50:19.6816108Z _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+2026-08-21T14:50:19.6816556Z 
+2026-08-21T14:50:19.6816789Z a = 1, b = 0
+2026-08-21T14:50:19.6816994Z 
+2026-08-21T14:50:19.6817148Z     def divide(a, b):
+2026-08-21T14:50:19.6817520Z         if b is None:
+2026-08-21T14:50:19.6817935Z             raise ValueError("division by zero")
+2026-08-21T14:50:19.6818423Z >       return a / b
+2026-08-21T14:50:19.6818779Z                ^^^^^
+2026-08-21T14:50:19.6819171Z E       ZeroDivisionError: division by zero
+2026-08-21T14:50:19.6819525Z 
+2026-08-21T14:50:19.6819699Z src/calc.py:8: ZeroDivisionError
+2026-08-21T14:50:19.6820245Z =========================== short test summary info ============================
+2026-08-21T14:50:19.6821413Z FAILED tests/test_calc.py::test_divide_by_zero_raises - ZeroDivisionError: division by zero
+2026-08-21T14:50:19.6822299Z ========================= 1 failed, 6 passed in 0.11s ==========================
+2026-08-21T14:50:19.7117163Z ##[error]Process completed with exit code 1.
+2026-08-21T14:50:19.7273074Z Node 20 is being deprecated. This workflow is running with Node 24 by default. If you need to temporarily use Node 20, you can set the ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true environment variable. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+2026-08-21T14:50:19.7274392Z Post job cleanup.
+2026-08-21T14:50:19.8156848Z [command]/usr/bin/git version
+2026-08-21T14:50:19.8203347Z git version 2.55.0
+2026-08-21T14:50:19.8276530Z Temporarily overriding HOME='/home/runner/work/_temp/75f67cde-1793-4023-8809-b10d097fc857' before making global git config changes
+2026-08-21T14:50:19.8280322Z Adding repository directory to the temporary git global config as a safe directory
+2026-08-21T14:50:19.8283738Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/cidra-practice/cidra-practice
+2026-08-21T14:50:19.8325271Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-08-21T14:50:19.8377134Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-08-21T14:50:19.8639987Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-08-21T14:50:19.8670670Z http.https://github.com/.extraheader
+2026-08-21T14:50:19.8688394Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-08-21T14:50:19.8742421Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-08-21T14:50:19.9011978Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-08-21T14:50:19.9054786Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-08-21T14:50:19.9436458Z Cleaning up orphan processes
+2026-08-21T14:50:19.9722946Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-python@v5. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

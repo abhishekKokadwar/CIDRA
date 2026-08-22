@@ -11,16 +11,48 @@ from cidra.state import DebugState
 _ANSI = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")
 # GitHub Actions prefixes every line with an ISO timestamp.
 _TIMESTAMP = re.compile(r"^\S*\d{4}-\d{2}-\d{2}T[\d:.]+Z?\s?")
+# Fold/echo directives are runner chrome. ##[error] is dropped from this set on
+# purpose — it is GitHub's own annotation of the failure and the best marker in
+# the file, so _clean keeps it and ERROR_MARKERS anchors on it.
+_DIRECTIVE = re.compile(r"^##\[(?:endgroup|group|command|debug|section)\]")
 
 
 def fetch_log(state: DebugState) -> dict:
-    """Phase 2: pull from GitHub. Until then raw_log is supplied by the fixture."""
-    return {}
+    """Pull the failing job's log from GitHub Actions.
+
+    A fixture that already supplied raw_log wins, which keeps the Tier 1/Tier 2
+    eval suites offline and token-free.
+    """
+    if state.get("raw_log"):
+        return {}
+    repo, run_id = state.get("repo"), state.get("run_id")
+    if not repo or not run_id:
+        return {"analysis_error": "no raw_log and no repo/run_id to fetch one"}
+
+    from cidra.integrations.github import fetch_run_log, get_run
+
+    try:
+        raw = fetch_run_log(repo, run_id)
+    except Exception as e:
+        return {"analysis_error": f"log fetch failed: {type(e).__name__}: {e}"[:500]}
+
+    out: dict = {"raw_log": raw}
+    if not state.get("commit_sha"):
+        try:
+            run = get_run(repo, run_id)
+            out["commit_sha"] = run["head_sha"]
+            out["workflow_file"] = run.get("path")
+        except Exception:
+            pass  # the log is what matters; sha is a nicety here
+    return out
 
 
 def _clean(line: str) -> str:
+    line = line.lstrip("﻿")  # GitHub emits a BOM on the first log line
     line = _ANSI.sub("", line)
     line = _TIMESTAMP.sub("", line)
+    # A group header carries no failure signal, but its text does ("Run pytest").
+    line = _DIRECTIVE.sub("", line)
     # Progress bars rewrite one line with \r; keep only the final state.
     return line.rsplit("\r", 1)[-1].rstrip()
 

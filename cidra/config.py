@@ -20,6 +20,10 @@ BASE_URL = os.environ.get("CIDRA_BASE_URL", "https://openrouter.ai/api/v1")
 MODEL_ANALYZE = os.environ.get("CIDRA_MODEL_ANALYZE", "anthropic/claude-haiku-4.5")
 MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX", "anthropic/claude-sonnet-4.5")
 
+# GitHub. Read-only fine-grained PAT: Actions:read + Contents:read.
+GITHUB_TOKEN = os.environ.get("CIDRA_GITHUB_TOKEN", "")
+GITHUB_API = os.environ.get("CIDRA_GITHUB_API", "https://api.github.com")
+
 # Local repo used for fixture runs until the live webhook clones a real one.
 PRACTICE_REPO_DIR = os.environ.get("CIDRA_PRACTICE_REPO", "d:/CODES/cidra-practice")
 
@@ -31,6 +35,7 @@ LOG_LINES_BEFORE = 30
 LOG_LINES_AFTER = 60
 
 ERROR_MARKERS = (
+    "##[error]",  # GitHub's own annotation — the most reliable anchor in a CI log
     "Traceback",
     "ModuleNotFoundError",
     "ImportError",

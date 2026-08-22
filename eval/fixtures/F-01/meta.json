@@ -7,5 +7,9 @@
   "commit_sha": "f6acd5c9d96ae0401824a33da07ac941d8292e98",
   "github_run_id": null,
   "captured_at": null,
-  "log_lines": 0
+  "log_lines": 0,
+  "gh_repo": "helpmecode69/cidra-practice",
+  "gh_run_id": 32494274952,
+  "gh_branch": "fix-01-missing-dep",
+  "gh_sha": "f95cb3707e2c415fc1944d43739d28d246508900"
 }

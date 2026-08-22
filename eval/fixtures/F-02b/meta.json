@@ -7,5 +7,9 @@
   "commit_sha": "31a89ee7f43f0d1bb3a1055a4fc51397b82e87ad",
   "github_run_id": null,
   "captured_at": null,
-  "log_lines": 0
+  "log_lines": 0,
+  "gh_repo": "helpmecode69/cidra-practice",
+  "gh_run_id": 32494274678,
+  "gh_branch": "fix-02b-loop-boundary",
+  "gh_sha": "b02b757ec00d412d22a56006d0a18c3b2d91aa06"
 }
