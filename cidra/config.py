@@ -20,8 +20,12 @@ BASE_URL = os.environ.get("CIDRA_BASE_URL", "https://openrouter.ai/api/v1")
 MODEL_ANALYZE = os.environ.get("CIDRA_MODEL_ANALYZE", "anthropic/claude-haiku-4.5")
 MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX", "anthropic/claude-sonnet-4.5")
 
-# GitHub. Read-only fine-grained PAT: Actions:read + Contents:read.
+# GitHub, fine-grained PATs scoped to the practice repo.
+# Reads prefer the read-only token: a token that cannot write cannot be made
+# to write by a prompt injection in a CI log. GITHUB_TOKEN (Contents:rw,
+# PRs:rw) is only for code that deliberately mutates the repo — Phase 6.
 GITHUB_TOKEN = os.environ.get("CIDRA_GITHUB_TOKEN", "")
+GITHUB_TOKEN_RO = os.environ.get("CIDRA_GITHUB_TOKEN_RO", "") or GITHUB_TOKEN
 GITHUB_API = os.environ.get("CIDRA_GITHUB_API", "https://api.github.com")
 
 # Local repo used for fixture runs until the live webhook clones a real one.

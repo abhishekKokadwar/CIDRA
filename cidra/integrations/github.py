@@ -1,7 +1,9 @@
 """GitHub Actions API. The only module that talks to github.com.
 
-Read-only: a fine-grained PAT with Actions:read + Contents:read is enough for
-everything here. Nothing in this file writes to a repo.
+Read-only: every call here is a GET, and they use GITHUB_TOKEN_RO — a PAT with
+Actions:read + Contents:read. A CI log is untrusted input, so the code that
+reads one holds a token that cannot write. Repo mutation (Phase 6) belongs in
+its own module with the write-scoped token.
 
 The logs endpoint 302s to a signed blob URL that must be fetched WITHOUT the
 Authorization header — forwarding it leaks the token to Azure. httpx forwards
@@ -13,19 +15,20 @@ import zipfile
 
 import httpx
 
-from cidra.config import GITHUB_API, GITHUB_TOKEN
+from cidra.config import GITHUB_API, GITHUB_TOKEN_RO
 
 # GitHub streams the whole job archive; a runaway log shouldn't eat all memory.
 MAX_ZIP_BYTES = 50 * 1024 * 1024
 
 
 def _client() -> httpx.Client:
-    if not GITHUB_TOKEN:
-        raise ValueError("CIDRA_GITHUB_TOKEN is not set")
+    """Read-only client. Everything in this module is a GET."""
+    if not GITHUB_TOKEN_RO:
+        raise ValueError("CIDRA_GITHUB_TOKEN_RO / CIDRA_GITHUB_TOKEN is not set")
     return httpx.Client(
         base_url=GITHUB_API,
         headers={
-            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "Authorization": f"Bearer {GITHUB_TOKEN_RO}",
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         },
