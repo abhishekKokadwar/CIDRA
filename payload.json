@@ -1,4 +1,0 @@
-{
-  "model": "google/gemini-2.5-pro-exp:free",
-  "messages": [{"role": "user", "content": "hello"}]
-}
