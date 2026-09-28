@@ -8,6 +8,15 @@ inputs:
     description: 'LLM Model to use'
     required: false
     default: 'gpt-4o'
+  model_analyze:
+    description: 'LLM Model for analyze phase'
+    required: false
+  model_fix:
+    description: 'LLM Model for fix phase'
+    required: false
+  base_url:
+    description: 'Base URL for the LLM API'
+    required: false
   github_token:
     description: 'GitHub token for posting comments'
     required: false
@@ -50,6 +59,9 @@ runs:
       shell: bash
       env:
         CIDRA_API_KEY: ${{ inputs.api_key }}
+        CIDRA_BASE_URL: ${{ inputs.base_url }}
+        CIDRA_MODEL_ANALYZE: ${{ inputs.model_analyze }}
+        CIDRA_MODEL_FIX: ${{ inputs.model_fix }}
         CIDRA_GITHUB_TOKEN: ${{ inputs.github_token }}
         NVIDIA_API_KEY_KIMI: ${{ inputs.nvidia_api_key_kimi }}
         NVIDIA_API_KEY_GLM: ${{ inputs.nvidia_api_key_glm }}
