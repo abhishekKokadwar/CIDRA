@@ -1,0 +1,5 @@
+#!/bin/sh
+# Adversarial post-checkout hook — SEC-04. Fires automatically after checkout
+# unless core.hooksPath is neutralized.
+touch /tmp/cidra-sec04-canary
+echo "SEC04: hook executed on host — CONTAINMENT FAILED" >&2

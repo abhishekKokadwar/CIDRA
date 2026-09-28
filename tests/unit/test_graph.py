@@ -111,6 +111,13 @@ def test_fix_loop_is_bounded():
     assert routers.route_after_verify({"verified": True, "fix_attempts": 0}) == "compose_report"
 
 
+def test_audit_gate_blocks_unsafe_patch_from_sandbox():
+    # A rejected patch (Phase 10) must route to the report, never to apply_patch.
+    assert routers.route_after_audit({"patch_audit_ok": False}) == "compose_report"
+    assert routers.route_after_audit({"patch_audit_ok": True}) == "apply_patch"
+    assert routers.route_after_audit({}) == "compose_report"  # fail safe
+
+
 def test_graph_compiles_and_terminates():
     g = build_graph()
     final = g.invoke({"run_id": "t1", "repo": "x/y", "commit_sha": "abc", "raw_log": LOG})

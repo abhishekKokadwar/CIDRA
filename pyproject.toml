@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cidra"
+version = "0.1.0"
+description = "Continuous Integration Debugging and Repair Agent"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "CIDRA Team" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "langgraph",
+    "pydantic",
+    "docker",
+    "fastapi",
+    "uvicorn",
+    "openai",
+    "python-dotenv"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio"
+]
+
+[project.scripts]
+cidra = "cidra.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["cidra", "cidra.*"]

@@ -1,0 +1,42 @@
+name: 'CIDRA Debug & Repair'
+description: 'Autonomous CI Debugging and Repair Agent. Diagnoses failures and verifies fixes using a hardened Docker sandbox.'
+inputs:
+  api_key:
+    description: 'LLM Provider API Key (e.g., OpenAI, Gemini, Anthropic)'
+    required: true
+  model:
+    description: 'LLM Model to use'
+    required: false
+    default: 'gpt-4o'
+  github_token:
+    description: 'GitHub token for posting comments'
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install CIDRA
+      shell: bash
+      run: |
+        # In a real release, this could simply be `pip install cidra`
+        # But for the action living in this repo, we install it from the action's source path
+        pip install ${{ github.action_path }}
+        
+    - name: Pull Docker Base Image
+      shell: bash
+      run: |
+        docker build -t cidra-sandbox:base -f ${{ github.action_path }}/cidra/sandbox/Dockerfile ${{ github.action_path }}/cidra/sandbox
+
+    - name: Run CIDRA
+      shell: bash
+      env:
+        CIDRA_API_KEY: ${{ inputs.api_key }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+      run: |
+        cidra action

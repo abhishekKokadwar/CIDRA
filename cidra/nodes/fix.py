@@ -53,11 +53,30 @@ Hard rules:
 
 
 def select_strategy(state: DebugState) -> dict:
-    """Deterministic dispatch on category. No LLM call."""
+    """Deterministic dispatch on category, plus a fix-cache check. No LLM call.
+
+    Phase 11: if this exact failure (by fingerprint) has a previously VERIFIED
+    fix cached, reuse its diff and skip generate_fix (the LLM). The patch is
+    still audited (SR-13/14) and re-verified in the sandbox — the cache saves the
+    model call, never the verification, so a stale cached diff can't yield a false
+    `verified`.
+    """
+    from cidra.nodes.fingerprint import fingerprint
+    from cidra.nodes import fix_cache
+
     analysis = state.get("analysis")
     if analysis is None:
         return {}
-    return {"fix_strategy": STRATEGIES.get(analysis.category)}
+
+    out: dict = {"fix_strategy": STRATEGIES.get(analysis.category)}
+    fp = fingerprint(state.get("error_region", ""))
+    if fp:
+        out["fingerprint"] = fp
+        cached = fix_cache.get(fp)
+        if cached and cached.get("diff"):
+            out["fix_diff"] = cached["diff"]
+            out["cache_hit"] = True
+    return out
 
 
 def _context(state: DebugState) -> str:
@@ -67,6 +86,11 @@ def _context(state: DebugState) -> str:
     wanted = [f for f in (analysis.file if analysis else None, "requirements.txt") if f]
 
     parts = [f"<error>\n{state.get('error_region', '')}\n</error>"]
+    # SBFL evidence (Phase 8): a mathematical suspiciousness ranking, so the model
+    # edits where the spectrum points rather than the first file it happens to see.
+    evidence = state.get("sbfl_evidence")
+    if evidence:
+        parts.append(evidence)
     for path in dict.fromkeys(wanted):
         if session is None:
             break
@@ -131,6 +155,19 @@ def verify_fix(state: DebugState) -> dict:
     prefix = "".join(f"{k}={v} " for k, v in sorted(env.items()))
     verified_run = session.run("verify", prefix + TEST_COMMAND)
     results.append(verified_run)
+
+    # Phase 11: cache a freshly verified fix (only on a genuine verify, and not
+    # when the diff itself came from the cache — nothing new to learn). This is
+    # the sole cache writer, so only proven-green diffs are ever stored.
+    if verified_run.passed and not state.get("cache_hit"):
+        fp = state.get("fingerprint")
+        diff = state.get("fix_diff")
+        if fp and diff:
+            from cidra.nodes import fix_cache
+            analysis = state.get("analysis")
+            fix_cache.put(fp, diff, analysis.category if analysis else "unknown",
+                          meta={"run_id": state.get("run_id", "")})
+
     return {
         "verified": verified_run.passed,
         "verify_results": [*state.get("verify_results", []), *results],

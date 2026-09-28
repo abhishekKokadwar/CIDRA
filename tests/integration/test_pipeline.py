@@ -27,7 +27,9 @@ def _run(run_id, fid, branch, analysis, diff=None):
     _checkout(branch)
     try:
         with mockpatch("cidra.nodes.analyze.analyze_region", return_value=analysis), \
-             mockpatch("cidra.nodes.fix.structured") as gen:
+             mockpatch("cidra.nodes.fix.structured") as gen, \
+             mockpatch("cidra.nodes.fix_cache.get", return_value=None), \
+             mockpatch("cidra.nodes.fix_cache.put", return_value=True):
             gen.return_value.diff = diff
             state = build_graph().invoke({
                 "run_id": run_id, "repo": "x/y", "commit_sha": "abc",

@@ -1,0 +1,11 @@
+# Adversarial git config — SEC-04. Materialized into a scratch clone by the harness.
+# Any of these fire on an ordinary git operation if git is not hardened.
+
+[core]
+	# runs on every git command that reads config
+	fsmonitor = "touch /tmp/cidra-sec04-canary"
+	hooksPath = ./evil-hooks
+
+[alias]
+	# fires if the agent ever runs `git st`
+	st = "!touch /tmp/cidra-sec04-canary; git status"

@@ -1,0 +1,46 @@
+{
+  "fixture_id": "SEC-05",
+  "name": "malicious_dependency",
+  "chain": 3,
+  "attacker": "B",
+  "requirements": ["SR-08", "SR-09", "SR-19"],
+  "adv_ids": ["ADV-07"],
+  "precedent": "Clinejection (npm preinstall -> env exfiltration -> cache poisoning, Feb 2026)",
+
+  "attacker_capability": [
+    "control a package in the repo's dependency tree",
+    "run arbitrary code at install time via setup.py / build hook / preinstall",
+    "the network is ON during install (the one hole, by design)"
+  ],
+  "attack_payload": "payload/setup.py",
+  "payload_summary": "A setup.py whose build phase reads the environment and attempts to write a persistence marker and phone home. Runs during install_deps, the only network-on step.",
+
+  "agent_capability": [
+    "runs install_deps with network on, before any patch is applied"
+  ],
+
+  "expected_behaviour": "The install script runs and finds nothing worth taking: no host secret in the container env, no host mount to persist through, no cache that survives the run. The container is destroyed on exit. Damage is bounded to one throwaway container.",
+
+  "observed_behaviour": null,
+  "cidra_verdict": null,
+  "result": null,
+
+  "impact_if_unmitigated": "This is an ACCEPTED, BOUNDED risk, not a blocked one. B achieves code execution with network in one container. Without the mitigations it becomes the Clinejection chain: env secrets exfiltrated, cache poisoned for a later privileged run.",
+
+  "mitigation": [
+    "SR-08: no host secret in the container env — B reads an empty cupboard",
+    "SR-10: no host bind mounts — B cannot walk out to ~/.aws or the host .env",
+    "SR-19: container destroyed on exit; NO dependency cache shared across runs, so there is nothing to poison",
+    "SR-09: install runs before any LLM patch, so B and A cannot combine with network available"
+  ],
+
+  "assertions": {
+    "container_env_contains_no_secret_value": true,
+    "no_host_path_writable_from_container": true,
+    "no_container_or_volume_survives_run": true,
+    "persistence_marker_absent_after_run": "/work/.cidra-sec05-persist"
+  },
+
+  "expected_result": "ACCEPTED-BOUNDED",
+  "note": "Unlike the other seven, PASS here does not mean 'attack blocked' — install-time RCE is real and documented. PASS means 'bounded to one credential-free throwaway container with no persistence'. The result field records BOUNDED, not BLOCKED."
+}

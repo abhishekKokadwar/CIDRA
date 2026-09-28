@@ -1,0 +1,55 @@
+{
+  "run_id": "t-n01",
+  "repo": "x/y",
+  "commit_sha": "abc",
+  "source_dir": "worktrees\\cidra-patch-t-n01",
+  "ci_env": {
+    "API_TOKEN": "tok_practice_value"
+  },
+  "error_region": "============================= test session starts =============================\nplatform win32 -- Python 3.11.0, pytest-9.1.1, pluggy-1.6.0 -- C:\\Users\\abhik\\AppData\\Local\\Temp\\cidra_v\\Scripts\\python.exe\ncachedir: .pytest_cache\nrootdir: D:\\CODES\\cidra-practice\ncollecting ... collected 7 items\n\ntests/test_api.py::test_fetch PASSED                                     [ 14%]\ntests/test_calc.py::test_add PASSED                                      [ 28%]\ntests/test_calc.py::test_divide PASSED                                   [ 42%]\ntests/test_calc.py::test_running_total PASSED                            [ 57%]\ntests/test_calc.py::test_divide_by_zero_raises FAILED                    [ 71%]\ntests/test_env.py::test_api_token_present PASSED                         [ 85%]\ntests/test_timing.py::test_completes_quickly PASSED                      [100%]\n\n================================== FAILURES ===================================\n_________________________ test_divide_by_zero_raises __________________________\n\n    def test_divide_by_zero_raises():\n        import pytest\n        from src.calc import divide\n\n        with pytest.raises(ValueError):\n>           divide(1, 0)\n\ntests\\test_calc.py:21:\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _\n\na = 1, b = 0\n\n    def divide(a, b):\n        if b is None:\n            raise ValueError(\"division by zero\")\n>       return a / b\n               ^^^^^\nE       ZeroDivisionError: division by zero\n\nsrc\\calc.py:8: ZeroDivisionError\n=========================== short test summary info ===========================\nFAILED tests/test_calc.py::test_divide_by_zero_raises - ZeroDivisionError: di...\n========================= 1 failed, 6 passed in 2.39s =========================",
+  "log_markers": [
+    "Error:",
+    "FAILED",
+    "route_category"
+  ],
+  "fingerprint": "45fab815576f434d48cc07b2464aadff974e0f58177150ac26d65b510b773eb5",
+  "analysis": {
+    "category": "unknown",
+    "confidence": 0.4,
+    "evidence": "ZeroDivisionError",
+    "proposed_action": "needs human",
+    "file": null,
+    "line": null,
+    "failing_test": null,
+    "missing_package": null,
+    "env_var": null
+  },
+  "analysis_attempts": 1,
+  "analysis_error": null,
+  "image_tag": null,
+  "env_ready": true,
+  "reproduced": true,
+  "repro_results": [
+    {
+      "step": "install",
+      "exit_code": 0,
+      "stdout_tail": "",
+      "stderr_tail": "",
+      "duration_s": 9.469000000011874,
+      "timed_out": false
+    },
+    {
+      "step": "test",
+      "exit_code": 1,
+      "stdout_tail": "....F..                                                                  [100%]\n=================================== FAILURES ===================================\n__________________________ test_divide_by_zero_raises __________________________\n\n    def test_divide_by_zero_raises():\n        import pytest\n        from src.calc import divide\n    \n        with pytest.raises(ValueError):\n>           divide(1, 0)\n\ntests/test_calc.py:21: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\na = 1, b = 0\n\n    def divide(a, b):\n        if b is None:\n            raise ValueError(\"division by zero\")\n>       return a / b\n               ^^^^^\nE       ZeroDivisionError: division by zero\n\nsrc/calc.py:8: ZeroDivisionError\n=========================== short test summary info ============================\nFAILED tests/test_calc.py::test_divide_by_zero_raises - ZeroDivisionError: di...\n1 failed, 6 passed in 0.26s\n",
+      "stderr_tail": "",
+      "duration_s": 1.0460000000020955,
+      "timed_out": false
+    }
+  ],
+  "fix_strategy": null,
+  "outcome": "diagnosis_only",
+  "final_output": "<!-- cidra:report -->\n\ud83d\udd0e **CIDRA \u2014 diagnosis only** (no verified fix)\n\n**Failure class:** `unknown`\n\nCIDRA classified the failure but did **not** produce a fix it could verify green. No change is suggested. See the analysis below.\n\n> _Model-generated analysis (untrusted; shown for the reviewer):_\n>\n> ZeroDivisionError\n>\n> **Proposed action:**\n> needs human\n\n---\n_CIDRA never merges. A human approves every change._",
+  "comment_url": null,
+  "pr_url": null
+}

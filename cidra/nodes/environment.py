@@ -26,8 +26,35 @@ def close_session(run_id: str) -> None:
         session.__exit__(None, None, None)
 
 
+def checkout_commit(state: DebugState) -> dict:
+    """Isolated per-run checkout via the hardened git wrapper (Phase 9).
+
+    Runs BEFORE prepare_sandbox. Clones the source into
+    worktrees/cidra-patch-{run_id}, checks out the target commit, strips .git,
+    and points `source_dir` at that tree. All git runs hardened (SR-16), and the
+    tree has no .git (SR-17), so a poisoned repo can neither run a hook on the
+    host nor smuggle a .git into the container.
+    """
+    from cidra.nodes.checkout import prepare_checkout
+
+    run_id = state["run_id"]
+    raw_source = state.get("source_dir") or PRACTICE_REPO_DIR
+    try:
+        tree = prepare_checkout(run_id, raw_source, state.get("commit_sha"))
+    except Exception as e:
+        return {"env_ready": False, "analysis_error": f"checkout failed: {e}"[:500]}
+    return {"source_dir": str(tree)}
+
+
 def prepare_sandbox(state: DebugState) -> dict:
-    """Create the container. Nothing has network from here on except install."""
+    """Create the container from the run's isolated checkout (Phase 9).
+
+    Consumes `source_dir` (the .git-free per-run tree checkout_commit produced),
+    so concurrent runs never share a working tree. Nothing has network from here
+    on except install.
+    """
+    if state.get("env_ready") is False:
+        return {}  # a prior node (checkout) already failed; don't mask its error
     run_id = state["run_id"]
     close_session(run_id)  # idempotency: a retried run must not leak the old one
     source = pathlib.Path(state.get("source_dir") or PRACTICE_REPO_DIR)
@@ -38,15 +65,6 @@ def prepare_sandbox(state: DebugState) -> dict:
     except Exception as e:
         return {"env_ready": False, "analysis_error": f"sandbox unavailable: {e}"[:500]}
     return {"image_tag": None}
-
-
-def checkout_commit(state: DebugState) -> dict:
-    """No-op: prepare_sandbox already copied the working tree in.
-
-    Kept as a node because the live-webhook path (Phase 7) will clone the real
-    commit here, and the topology should not change when it does.
-    """
-    return {}
 
 
 def install_deps(state: DebugState) -> dict:

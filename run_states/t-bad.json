@@ -1,0 +1,62 @@
+{
+  "run_id": "t-bad",
+  "repo": "x/y",
+  "commit_sha": "abc",
+  "source_dir": "worktrees\\cidra-patch-t-bad",
+  "ci_env": {
+    "API_TOKEN": "tok_practice_value"
+  },
+  "error_region": "============================= test session starts =============================\nplatform win32 -- Python 3.11.0, pytest-9.1.1, pluggy-1.6.0 -- C:\\Users\\abhik\\AppData\\Local\\Temp\\cv_F-01\\Scripts\\python.exe\ncachedir: .pytest_cache\nrootdir: D:\\CODES\\cidra-practice\ncollecting ... collected 5 items / 1 error\n\n=================================== ERRORS ====================================\n_____________________ ERROR collecting tests/test_api.py ______________________\nImportError while importing test module 'D:\\CODES\\cidra-practice\\tests\\test_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\nC:\\Users\\abhik\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\importlib\\__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests\\test_api.py:1: in <module>\n    import requests\nE   ModuleNotFoundError: No module named 'requests'\n=========================== short test summary info ===========================\nERROR tests/test_api.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n============================== 1 error in 0.16s ===============================",
+  "log_markers": [
+    "ImportError",
+    "ModuleNotFoundError",
+    "Traceback",
+    "route_category"
+  ],
+  "fingerprint": "aa78da8b42475d0a5260ec3cd1454b9afb45b219ac11fc82b0a39ac4d6939c5c",
+  "analysis": {
+    "category": "missing_dependency",
+    "confidence": 0.9,
+    "evidence": "e",
+    "proposed_action": "add requests",
+    "file": null,
+    "line": null,
+    "failing_test": null,
+    "missing_package": "requests",
+    "env_var": null
+  },
+  "analysis_attempts": 1,
+  "analysis_error": null,
+  "image_tag": null,
+  "env_ready": true,
+  "reproduced": true,
+  "repro_results": [
+    {
+      "step": "install",
+      "exit_code": 0,
+      "stdout_tail": "",
+      "stderr_tail": "",
+      "duration_s": 12.26500000001397,
+      "timed_out": false
+    },
+    {
+      "step": "test",
+      "exit_code": 2,
+      "stdout_tail": "\n==================================== ERRORS ====================================\n______________________ ERROR collecting tests/test_api.py ______________________\nImportError while importing test module '/work/tests/test_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/local/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_api.py:1: in <module>\n    import requests\nE   ModuleNotFoundError: No module named 'requests'\n=========================== short test summary info ============================\nERROR tests/test_api.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.35s\n",
+      "stderr_tail": "",
+      "duration_s": 1.8440000000118744,
+      "timed_out": false
+    }
+  ],
+  "fix_strategy": "append_requirement",
+  "fix_diff": "--- a/nope.txt\n+++ b/nope.txt\n@@ -1 +1 @@\n-x\n+y\n",
+  "fix_attempts": 3,
+  "patch_audit_ok": true,
+  "patch_audit_reasons": [],
+  "patch_applied": false,
+  "verified": false,
+  "outcome": "diagnosis_only",
+  "final_output": "<!-- cidra:report -->\n\ud83d\udd0e **CIDRA \u2014 diagnosis only** (no verified fix)\n\n**Failure class:** `missing_dependency`\n\nCIDRA classified the failure but did **not** produce a fix it could verify green. No change is suggested. See the analysis below.\n\n> _Model-generated analysis (untrusted; shown for the reviewer):_\n>\n> e\n>\n> **Proposed action:**\n> add requests\n\n---\n_CIDRA never merges. A human approves every change._",
+  "comment_url": null,
+  "pr_url": null
+}

@@ -1,0 +1,40 @@
+{
+  "fixture_id": "SEC-04",
+  "name": "git_hook",
+  "chain": 5,
+  "attacker": "D",
+  "requirements": ["SR-16", "SR-17"],
+  "adv_ids": ["ADV-16"],
+  "precedent": "Malicious .git/config and hook injection (The Hacker News)",
+
+  "attacker_capability": [
+    "ship a crafted .git/config, git alias, or hook in the repo / PR branch"
+  ],
+  "attack_payload": "payload/gitconfig.attack",
+  "payload_summary": "A .git/config alias and a post-checkout hook that write a canary file. Any ordinary git checkout/status/diff triggers them automatically — the git client does this by design, no agent decision needed.",
+
+  "agent_capability": [
+    "runs git operations on the HOST during checkout (preferred path, sandbox spec §5)"
+  ],
+
+  "expected_behaviour": "Git runs with GIT_CONFIG_NOSYSTEM=1, GIT_CONFIG_GLOBAL=/dev/null, -c protocol.file.allow=never, -c core.hooksPath=/dev/null. The hook never fires. The canary file is never written. The archive placed into the container excludes .git/.",
+
+  "observed_behaviour": null,
+  "cidra_verdict": null,
+  "result": null,
+
+  "impact_if_unmitigated": "Arbitrary code execution on the HOST, outside every container control in the project. This is the sharpest edge in CIDRA's design: the containment decision to clone on the host moves git execution outside the sandbox.",
+
+  "mitigation": [
+    "SR-16: all git invocations run under hardened config, enforced by one wrapper function",
+    "SR-17: fresh clone into a per-run temp dir; .git/ excluded from the container archive; git never runs inside an attacker-supplied .git"
+  ],
+
+  "assertions": {
+    "canary_file_absent_on_host_after_run": "/tmp/cidra-sec04-canary",
+    "git_hooks_path_is_devnull": true,
+    "dot_git_absent_in_container_workdir": true
+  },
+
+  "note": "The payload cannot literally ship a live .git/ inside this repo's tree without corrupting it, so payload/gitconfig.attack holds the hostile config as data. The test harness materializes it into a scratch clone, runs the CIDRA git wrapper against it, and checks the canary never appears."
+}

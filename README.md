@@ -21,8 +21,9 @@ Work in progress, built in phases (see [docs/3_phases.md](docs/3_phases.md)).
 | 3 — LLM root-cause analysis | done — 7/7 category accuracy |
 | 4 — Docker sandbox | done — 7/7 fixtures reproduce red |
 | 5 — Fix + verify loop | done |
-| 6 — Output + safety | pending |
-| 7 — Live webhook | pending |
+| 6 — Output + safety | done |
+| 7 — Live webhook / GitHub Action | planned (Action integration) |
+| 8+ — Extensibility & Enterprise features | in progress |
 
 ## What works today
 
@@ -52,22 +53,57 @@ non-root, timeouts enforced, fork bombs bounded by `pids_limit`, containers alwa
 **LLM output is data, never code.** The model returns a unified diff, applied with
 `git apply`. Test commands are CIDRA-authored constants.
 
-## Running
+## Installation & Setup
+
+CIDRA is distributed as a standard Python package. You can run it locally as a CLI debugging assistant, or plug it into your GitHub Actions for autonomous CI repairs.
+
+### 1. Local CLI Dev Tool
+
+Diagnose and repair your code locally before pushing to CI.
 
 ```bash
-pip install -r requirements.txt
-cp .env.example .env          # add an API key (any OpenAI-compatible endpoint)
+# Install the package
+pip install cidra
+
+# Configure your LLM Provider key (e.g. Gemini, OpenAI, Anthropic)
+export CIDRA_API_KEY="your-api-key"
+
+# Ensure the local Docker daemon is running, then build the sandbox base image:
 docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
 
-python test_graph.py          # pure logic, no Docker, no API calls
-python eval/run_eval.py       # tier 1: log isolation vs ground truth
-python eval/run_eval.py --tier 2   # tier 2: + LLM classification (costs cents)
-python test_sandbox.py        # sandbox safety suite (needs Docker)
-python test_pipeline.py       # end-to-end graph runs (needs Docker; LLM mocked)
+# Run CIDRA against your local codebase
+cidra fix
 ```
 
-The fixture corpus replays saved logs, so tiers 1 and the pipeline tests are free,
-deterministic, and need no live CI.
+### 2. GitHub Actions Integration (Coming Soon)
+
+CIDRA can be plugged natively into your `.github/workflows/`. Because it runs inside your runner, you pay zero infrastructure costs. 
+
+```yaml
+jobs:
+  test-and-repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run CIDRA
+        uses: cidra-ai/cidra-action@v1
+        env:
+          CIDRA_API_KEY: ${{ secrets.CIDRA_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+*Note: To protect your API keys, CIDRA strictly isolates the untrusted checkout environment from the orchestration layer.*
+
+## Developing CIDRA
+
+To develop the agent itself:
+```bash
+pip install -e ".[dev]"
+cp .env.example .env
+
+# Run the test suite
+pytest tests/
+python eval/run_eval.py --tier 1
+```
 
 ## Docs
 

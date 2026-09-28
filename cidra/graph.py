@@ -7,7 +7,7 @@ so later phases only add bodies, never rewiring.
 from langgraph.graph import StateGraph, START, END
 
 from cidra import routers
-from cidra.nodes import environment, fix, ingest, publish, reproduce
+from cidra.nodes import audit, environment, fix, ingest, localize, publish, reproduce
 from cidra.nodes.analyze import analyze, validate_analysis
 from cidra.state import DebugState
 
@@ -35,8 +35,10 @@ def build_graph():
     g.add_node("reproduce_once", reproduce.reproduce_once)
     g.add_node("reproduce_n_times", reproduce.reproduce_n_times)
     g.add_node("classify_flakiness", reproduce.classify_flakiness)
+    g.add_node("localize", localize.localize)
     g.add_node("select_strategy", fix.select_strategy)
     g.add_node("generate_fix", fix.generate_fix)
+    g.add_node("audit_patch", audit.audit_patch)
     g.add_node("apply_patch", fix.apply_patch)
     g.add_node("verify_fix", fix.verify_fix)
     g.add_node("compose_report", publish.compose_report)
@@ -50,10 +52,10 @@ def build_graph():
     g.add_conditional_edges(
         "validate_analysis",
         routers.route_after_validate,
-        ["analyze", "prepare_sandbox", "compose_report"],
+        ["analyze", "checkout_commit", "compose_report"],
     )
-    g.add_edge("prepare_sandbox", "checkout_commit")
-    g.add_edge("checkout_commit", "install_deps")
+    g.add_edge("checkout_commit", "prepare_sandbox")
+    g.add_edge("prepare_sandbox", "install_deps")
     g.add_conditional_edges(
         "install_deps",
         routers.route_after_env,
@@ -73,14 +75,20 @@ def build_graph():
     g.add_conditional_edges(
         "reproduce_once",
         routers.route_after_reproduce,
-        ["select_strategy", "compose_report"],
+        ["localize", "compose_report"],
     )
+    g.add_edge("localize", "select_strategy")
     g.add_conditional_edges(
         "select_strategy",
         routers.route_after_strategy,
-        ["generate_fix", "compose_report"],
+        ["generate_fix", "audit_patch", "compose_report"],
     )
-    g.add_edge("generate_fix", "apply_patch")
+    g.add_edge("generate_fix", "audit_patch")
+    g.add_conditional_edges(
+        "audit_patch",
+        routers.route_after_audit,
+        ["apply_patch", "compose_report"],
+    )
     g.add_edge("apply_patch", "verify_fix")
     g.add_conditional_edges(
         "verify_fix",

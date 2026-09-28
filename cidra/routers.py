@@ -6,7 +6,7 @@ from cidra.state import DebugState
 
 def route_after_validate(state: DebugState) -> str:
     if state.get("analysis") is not None:
-        return "prepare_sandbox"
+        return "checkout_commit"  # Phase 9: isolated checkout runs before sandbox
     if state.get("analysis_attempts", 0) < MAX_ANALYSIS_ATTEMPTS:
         return "analyze"
     return "compose_report"
@@ -31,7 +31,8 @@ def route_after_flaky(state: DebugState) -> str:
 
 
 def route_after_reproduce(state: DebugState) -> str:
-    return "select_strategy" if state.get("reproduced") else "compose_report"
+    # Phase 8: localize (SBFL) runs on a confirmed-red repro, before the fix path.
+    return "localize" if state.get("reproduced") else "compose_report"
 
 
 def route_after_strategy(state: DebugState) -> str:
@@ -39,8 +40,25 @@ def route_after_strategy(state: DebugState) -> str:
 
     Without this, an out-of-scope failure still burns MAX_FIX_ATTEMPTS LLM calls
     before reaching the same diagnosis_only outcome.
+
+    Phase 11: a cache hit already set fix_diff, so skip generate_fix (the LLM) and
+    go straight to the audit gate — the diff is still audited and re-verified.
     """
-    return "generate_fix" if state.get("fix_strategy") else "compose_report"
+    if not state.get("fix_strategy"):
+        return "compose_report"
+    if state.get("cache_hit") and state.get("fix_diff"):
+        return "audit_patch"
+    return "generate_fix"
+
+
+def route_after_audit(state: DebugState) -> str:
+    """A patch that fails the AST policy checks never reaches the sandbox.
+
+    A rejected diff routes straight to the report (→ diagnosis_only): "no safe
+    fix found" is the honest outcome, not applying an unsafe patch. See Phase 10
+    and docs/threat/security_requirements.md SR-13/14/15.
+    """
+    return "apply_patch" if state.get("patch_audit_ok") else "compose_report"
 
 
 def route_after_verify(state: DebugState) -> str:

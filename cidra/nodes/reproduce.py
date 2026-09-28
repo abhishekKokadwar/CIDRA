@@ -4,9 +4,27 @@ Reproducing red is the precondition for claiming a fix: if the failure cannot be
 made to happen here, nothing that follows can be verified.
 """
 
-from cidra.config import FLAKY_RUNS, TEST_COMMAND
+from cidra.config import FLAKY_RUNS, FLAKY_SCORE_THRESHOLD, TEST_COMMAND
 from cidra.nodes.environment import session_for
 from cidra.state import DebugState
+
+
+def flakiness_score(passes: int, n: int) -> int:
+    """Deterministic Flakiness Score, 0-100 (Phase 8).
+
+    0   = unanimous (all pass or all fail) — deterministic, not flaky.
+    100 = a perfect split (as many passes as fails) — maximally non-deterministic.
+    Between: the closer the run outcomes are to 50/50, the higher the score.
+
+        score = round(100 * (1 - |passes - fails| / n))
+
+    This generalises the old binary "some passed and some failed" flip check into
+    a measured degree, so the eval can report flake classification as a number.
+    """
+    if n <= 0:
+        return 0
+    fails = n - passes
+    return round(100 * (1 - abs(passes - fails) / n))
 
 
 def _test_command(state: DebugState) -> str:
@@ -49,9 +67,15 @@ def classify_flakiness(state: DebugState) -> dict:
         return {"reproduced": False}
     passes = sum(r.passed for r in results)
     n = len(results)
-    if 0 < passes < n:
-        return {"flaky_pass_count": passes, "outcome": "flaky_detected"}
+    score = flakiness_score(passes, n)
+
+    if score >= FLAKY_SCORE_THRESHOLD and passes != n and passes != 0:
+        # Non-deterministic: some passed, some failed. Isolate — 0 repair attempts.
+        return {"flaky_pass_count": passes, "flaky_score": score,
+                "outcome": "flaky_detected"}
     if passes == n:
-        return {"flaky_pass_count": passes, "reproduced": False}
-    # All failed: LLM misclassified. Fall through to the normal fix path.
-    return {"flaky_pass_count": 0, "reproduced": True}
+        # Always green here: not the failure we were called for.
+        return {"flaky_pass_count": passes, "flaky_score": score, "reproduced": False}
+    # All failed (score 0): deterministic failure, LLM mislabeled it flaky.
+    # Fall through to the normal fix path.
+    return {"flaky_pass_count": 0, "flaky_score": score, "reproduced": True}
