@@ -28,6 +28,8 @@ def _run_graph(state: dict) -> dict:
         final_state = build_graph().invoke(state)
         outcome = final_state.get("outcome")
         log.info(f"Execution complete. Outcome: {outcome}")
+        if outcome == "failed" and final_state.get("analysis_error"):
+            log.error(f"Internal Error: {final_state.get('analysis_error')}")
         if final_state.get("comment_url"):
             log.info(f"Comment posted: {final_state.get('comment_url')}")
         if final_state.get("pr_url"):
@@ -71,6 +73,7 @@ def action_run():
         "repo": repo,
         "commit_sha": sha,
         "issue_number": issue_number,
+        "source_dir": os.getenv("GITHUB_WORKSPACE"),
     }
     
     _run_graph(state)
