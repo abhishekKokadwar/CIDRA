@@ -73,7 +73,7 @@ def structured(
     # 3. z-ai/glm-5.3
     # 4. OpenRouter model (the 'model' argument)
     models_to_try = [
-        ("llama3-70b-8192", groq_client),
+        ("openai/gpt-oss-120b", groq_client),
         ("moonshotai/kimi-k3", kimi_client),
         ("z-ai/glm-5.3-flash", glm_client),
         ("z-ai/glm-5.3", glm_client),
