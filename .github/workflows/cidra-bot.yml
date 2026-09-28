@@ -22,7 +22,7 @@ jobs:
     - name: Run CIDRA
       uses: ./
       with:
-        api_key: ${{ secrets.GEMINI_API_KEY || secrets.CIDRA_API_KEY || secrets.OPENROUTER_API_KEY }}
+        api_key: ${{ secrets.OPENROUTER_API_KEY }}
         base_url: 'https://openrouter.ai/api/v1'
         model_analyze: 'anthropic/claude-3.5-sonnet'
         model_fix: 'anthropic/claude-3.5-sonnet'
