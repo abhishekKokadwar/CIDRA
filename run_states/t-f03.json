@@ -34,15 +34,15 @@
       "exit_code": 0,
       "stdout_tail": "",
       "stderr_tail": "",
-      "duration_s": 15.48499999998603,
+      "duration_s": 9.812999999994645,
       "timed_out": false
     },
     {
       "step": "test",
       "exit_code": 0,
-      "stdout_tail": "......                                                                   [100%]\n6 passed in 0.46s\n",
+      "stdout_tail": "......                                                                   [100%]\n6 passed in 0.17s\n",
       "stderr_tail": "",
-      "duration_s": 4.702999999979511,
+      "duration_s": 0.9530000000086147,
       "timed_out": false
     }
   ],

@@ -1,0 +1,11 @@
+langgraph
+pydantic
+docker
+fastapi
+uvicorn
+openai
+python-dotenv
+
+[dev]
+pytest
+pytest-asyncio

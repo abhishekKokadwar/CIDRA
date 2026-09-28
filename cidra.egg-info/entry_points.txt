@@ -1,0 +1,2 @@
+[console_scripts]
+cidra = cidra.cli:main

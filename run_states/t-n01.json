@@ -35,15 +35,15 @@
       "exit_code": 0,
       "stdout_tail": "",
       "stderr_tail": "",
-      "duration_s": 9.469000000011874,
+      "duration_s": 7.078000000008615,
       "timed_out": false
     },
     {
       "step": "test",
       "exit_code": 1,
-      "stdout_tail": "....F..                                                                  [100%]\n=================================== FAILURES ===================================\n__________________________ test_divide_by_zero_raises __________________________\n\n    def test_divide_by_zero_raises():\n        import pytest\n        from src.calc import divide\n    \n        with pytest.raises(ValueError):\n>           divide(1, 0)\n\ntests/test_calc.py:21: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\na = 1, b = 0\n\n    def divide(a, b):\n        if b is None:\n            raise ValueError(\"division by zero\")\n>       return a / b\n               ^^^^^\nE       ZeroDivisionError: division by zero\n\nsrc/calc.py:8: ZeroDivisionError\n=========================== short test summary info ============================\nFAILED tests/test_calc.py::test_divide_by_zero_raises - ZeroDivisionError: di...\n1 failed, 6 passed in 0.26s\n",
+      "stdout_tail": "....F..                                                                  [100%]\n=================================== FAILURES ===================================\n__________________________ test_divide_by_zero_raises __________________________\n\n    def test_divide_by_zero_raises():\n        import pytest\n        from src.calc import divide\n    \n        with pytest.raises(ValueError):\n>           divide(1, 0)\n\ntests/test_calc.py:21: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\na = 1, b = 0\n\n    def divide(a, b):\n        if b is None:\n            raise ValueError(\"division by zero\")\n>       return a / b\n               ^^^^^\nE       ZeroDivisionError: division by zero\n\nsrc/calc.py:8: ZeroDivisionError\n=========================== short test summary info ============================\nFAILED tests/test_calc.py::test_divide_by_zero_raises - ZeroDivisionError: di...\n1 failed, 6 passed in 0.29s\n",
       "stderr_tail": "",
-      "duration_s": 1.0460000000020955,
+      "duration_s": 1.25,
       "timed_out": false
     }
   ],

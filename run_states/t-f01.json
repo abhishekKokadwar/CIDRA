@@ -36,15 +36,15 @@
       "exit_code": 0,
       "stdout_tail": "",
       "stderr_tail": "",
-      "duration_s": 15.780999999988126,
+      "duration_s": 27.703000000008615,
       "timed_out": false
     },
     {
       "step": "test",
       "exit_code": 2,
-      "stdout_tail": "\n==================================== ERRORS ====================================\n______________________ ERROR collecting tests/test_api.py ______________________\nImportError while importing test module '/work/tests/test_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/local/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_api.py:1: in <module>\n    import requests\nE   ModuleNotFoundError: No module named 'requests'\n=========================== short test summary info ============================\nERROR tests/test_api.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.53s\n",
+      "stdout_tail": "\n==================================== ERRORS ====================================\n______________________ ERROR collecting tests/test_api.py ______________________\nImportError while importing test module '/work/tests/test_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/usr/local/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/test_api.py:1: in <module>\n    import requests\nE   ModuleNotFoundError: No module named 'requests'\n=========================== short test summary info ============================\nERROR tests/test_api.py\n!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!\n1 error in 0.27s\n",
       "stderr_tail": "",
-      "duration_s": 2.625,
+      "duration_s": 1.937999999994645,
       "timed_out": false
     }
   ],
@@ -64,15 +64,15 @@
       "exit_code": 0,
       "stdout_tail": "",
       "stderr_tail": "",
-      "duration_s": 27.53200000000652,
+      "duration_s": 22.39100000000326,
       "timed_out": false
     },
     {
       "step": "verify",
       "exit_code": 0,
-      "stdout_tail": "......                                                                   [100%]\n6 passed in 0.79s\n",
+      "stdout_tail": "......                                                                   [100%]\n6 passed in 0.33s\n",
       "stderr_tail": "",
-      "duration_s": 2.1570000000065193,
+      "duration_s": 1.8280000000086147,
       "timed_out": false
     }
   ],

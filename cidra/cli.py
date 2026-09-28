@@ -84,12 +84,30 @@ def local_run(args):
     repo = args.repo or "local/dev"
     sha = args.sha or "HEAD"
 
+    # For a local run, we execute the tests locally to generate the log.
+    import subprocess
+    from cidra.config import TEST_COMMAND
+    log.info(f"Executing local tests: {TEST_COMMAND}")
+    try:
+        # Run tests and capture output
+        result = subprocess.run(TEST_COMMAND, shell=True, capture_output=True, text=True)
+        raw_log = result.stdout + "\n" + result.stderr
+        if result.returncode == 0:
+            log.info("Tests passed! Nothing to fix.")
+            sys.exit(0)
+        else:
+            log.info("Tests failed. CIDRA is stepping in to debug...")
+    except Exception as e:
+        log.error(f"Failed to run local tests: {e}")
+        sys.exit(1)
+
     state = {
         "run_id": run_id,
         "repo": repo,
         "commit_sha": sha,
         "source_dir": str(os.getcwd()), # Map current dir into sandbox
         "dry_run": True, # Don't try to post to GitHub
+        "raw_log": raw_log, # Inject the local log directly to bypass GitHub API
     }
 
     _run_graph(state)

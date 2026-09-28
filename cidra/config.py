@@ -25,6 +25,10 @@ NVIDIA_API_KEY_KIMI = os.environ.get("NVIDIA_API_KEY_KIMI", "")
 NVIDIA_API_KEY_GLM = os.environ.get("NVIDIA_API_KEY_GLM", "")
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
+# Groq Fallback
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+
 # Models — cheap for classification, stronger for code edits.
 # See docs/5_fixtures.md §6: record which model produced each eval row.
 MODEL_ANALYZE = os.environ.get("CIDRA_MODEL_ANALYZE", "anthropic/claude-haiku-4.5")

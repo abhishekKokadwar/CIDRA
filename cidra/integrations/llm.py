@@ -12,20 +12,21 @@ from typing import Type, TypeVar
 from openai import OpenAI
 from pydantic import BaseModel
 
-from cidra.config import API_KEY, BASE_URL, NVIDIA_API_KEY_KIMI, NVIDIA_API_KEY_GLM, NVIDIA_BASE_URL
+from cidra.config import API_KEY, BASE_URL, NVIDIA_API_KEY_KIMI, NVIDIA_API_KEY_GLM, NVIDIA_BASE_URL, GROQ_API_KEY, GROQ_BASE_URL
 
 T = TypeVar("T", bound=BaseModel)
 
 _client: OpenAI | None = None
 _kimi_client: OpenAI | None = None
 _glm_client: OpenAI | None = None
+_groq_client: OpenAI | None = None
 
 def client() -> OpenAI:
     global _client
     if _client is None:
         if not API_KEY:
             raise RuntimeError("CIDRA_API_KEY is not set — see .env.example")
-        _client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+        _client = OpenAI(api_key=API_KEY, base_url=BASE_URL, timeout=30.0)
     return _client
 
 def kimi_client() -> OpenAI:
@@ -33,7 +34,7 @@ def kimi_client() -> OpenAI:
     if _kimi_client is None:
         if not NVIDIA_API_KEY_KIMI:
             raise RuntimeError("NVIDIA_API_KEY_KIMI is not set for fallback")
-        _kimi_client = OpenAI(api_key=NVIDIA_API_KEY_KIMI, base_url=NVIDIA_BASE_URL)
+        _kimi_client = OpenAI(api_key=NVIDIA_API_KEY_KIMI, base_url=NVIDIA_BASE_URL, timeout=30.0)
     return _kimi_client
 
 def glm_client() -> OpenAI:
@@ -41,8 +42,16 @@ def glm_client() -> OpenAI:
     if _glm_client is None:
         if not NVIDIA_API_KEY_GLM:
             raise RuntimeError("NVIDIA_API_KEY_GLM is not set for fallback")
-        _glm_client = OpenAI(api_key=NVIDIA_API_KEY_GLM, base_url=NVIDIA_BASE_URL)
+        _glm_client = OpenAI(api_key=NVIDIA_API_KEY_GLM, base_url=NVIDIA_BASE_URL, timeout=30.0)
     return _glm_client
+
+def groq_client() -> OpenAI:
+    global _groq_client
+    if _groq_client is None:
+        if not GROQ_API_KEY:
+            raise RuntimeError("GROQ_API_KEY is not set for fallback")
+        _groq_client = OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL, timeout=30.0)
+    return _groq_client
 
 
 def structured(
@@ -64,6 +73,7 @@ def structured(
     # 3. z-ai/glm-5.3
     # 4. OpenRouter model (the 'model' argument)
     models_to_try = [
+        ("llama-3.1-70b-versatile", groq_client),
         ("moonshotai/kimi-k3", kimi_client),
         ("z-ai/glm-5.3-flash", glm_client),
         ("z-ai/glm-5.3", glm_client),
