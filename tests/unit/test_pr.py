@@ -110,6 +110,7 @@ def test_publish_opens_pr_on_verified_fix(monkeypatch):
     from cidra.nodes import publish
     import cidra.config as cfg
     monkeypatch.setattr(cfg, "GITHUB_TOKEN", "wtok", raising=False)
+    monkeypatch.setattr(cfg, "ENABLE_PR_CREATION", True, raising=False)
     monkeypatch.setattr(publish, "_open_pr", lambda state, body: "https://gh/pr/9")
 
     from cidra.state import Analysis

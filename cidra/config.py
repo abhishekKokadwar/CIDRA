@@ -21,7 +21,8 @@ API_KEY = os.environ.get("CIDRA_API_KEY", "")
 BASE_URL = os.environ.get("CIDRA_BASE_URL", "https://openrouter.ai/api/v1")
 
 # NVIDIA Fallback
-NVIDIA_API_KEY = os.environ.get("NVIDIA_API_KEY", "")
+NVIDIA_API_KEY_KIMI = os.environ.get("NVIDIA_API_KEY_KIMI", "")
+NVIDIA_API_KEY_GLM = os.environ.get("NVIDIA_API_KEY_GLM", "")
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 # Models — cheap for classification, stronger for code edits.
@@ -61,7 +62,7 @@ FIX_CACHE_PATH = os.environ.get("CIDRA_FIX_CACHE", "cidra_fix_cache.json")
 RUN_HISTORY_PATH = os.environ.get("CIDRA_RUN_HISTORY", "cidra_run_history.jsonl")
 
 # Test command. CIDRA-authored and fixed — never assembled from LLM output.
-TEST_COMMAND = "python -m pytest -q 2>&1"
+TEST_COMMAND = "pytest -q 2>&1"
 
 # Log isolation windows (lines around an error marker)
 LOG_LINES_BEFORE = 30
