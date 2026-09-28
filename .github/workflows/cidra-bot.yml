@@ -22,7 +22,7 @@ jobs:
     - name: Run CIDRA
       uses: ./
       with:
-        api_key: ${{ secrets.GEMINI_API_KEY }}
+        api_key: ${{ secrets.GEMINI_API_KEY || secrets.CIDRA_API_KEY || secrets.OPENROUTER_API_KEY }}
         base_url: 'https://generativelanguage.googleapis.com/v1beta/openai/'
         model_analyze: 'gemini-3.8-flash'
         model_fix: 'gemini-3.8-flash'
