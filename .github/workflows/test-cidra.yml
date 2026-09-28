@@ -30,13 +30,3 @@ jobs:
     - name: Run tests
       run: |
         pytest -q 2>&1
-
-    - name: Run CIDRA on failure
-      if: failure()
-      uses: ./
-      with:
-        api_key: ${{ secrets.OPENROUTER_API_KEY }}
-        nvidia_api_key_kimi: ${{ secrets.NVIDIA_API_KEY_KIMI }}
-        nvidia_api_key_glm: ${{ secrets.NVIDIA_API_KEY_GLM }}
-        enable_pr_creation: 'true'
-        github_token: ${{ secrets.GITHUB_TOKEN }}

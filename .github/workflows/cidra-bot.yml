@@ -1,0 +1,29 @@
+name: CIDRA Bot
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+
+jobs:
+  debug:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      actions: read
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Run CIDRA
+      uses: ./
+      with:
+        api_key: ${{ secrets.OPENROUTER_API_KEY }}
+        nvidia_api_key_kimi: ${{ secrets.NVIDIA_API_KEY_KIMI }}
+        nvidia_api_key_glm: ${{ secrets.NVIDIA_API_KEY_GLM }}
+        enable_pr_creation: 'true'
+        github_token: ${{ secrets.GITHUB_TOKEN }}
