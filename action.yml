@@ -47,7 +47,7 @@ runs:
       shell: bash
       env:
         CIDRA_API_KEY: ${{ inputs.api_key }}
-        GITHUB_TOKEN: ${{ inputs.github_token }}
+        CIDRA_GITHUB_TOKEN: ${{ inputs.github_token }}
         NVIDIA_API_KEY_KIMI: ${{ inputs.nvidia_api_key_kimi }}
         NVIDIA_API_KEY_GLM: ${{ inputs.nvidia_api_key_glm }}
         CIDRA_ENABLE_PR_CREATION: ${{ inputs.enable_pr_creation }}
