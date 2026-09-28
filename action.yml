@@ -62,6 +62,7 @@ runs:
         CIDRA_BASE_URL: ${{ inputs.base_url }}
         CIDRA_MODEL_ANALYZE: ${{ inputs.model_analyze }}
         CIDRA_MODEL_FIX: ${{ inputs.model_fix }}
+        CIDRA_ENABLE_RATE_LIMIT_BACKOFF: 'true'
         CIDRA_GITHUB_TOKEN: ${{ inputs.github_token }}
         NVIDIA_API_KEY_KIMI: ${{ inputs.nvidia_api_key_kimi }}
         NVIDIA_API_KEY_GLM: ${{ inputs.nvidia_api_key_glm }}

@@ -7,9 +7,12 @@ Provider-agnostic on purpose: CIDRA_BASE_URL points at OpenRouter today and
 can point at any OpenAI-compatible endpoint later. Only .env changes.
 """
 
+import os
+import time
 from typing import Type, TypeVar
 
 from openai import OpenAI
+from openai import RateLimitError
 from pydantic import BaseModel
 
 from cidra.config import API_KEY, BASE_URL, NVIDIA_API_KEY_KIMI, NVIDIA_API_KEY_GLM, NVIDIA_BASE_URL, GROQ_API_KEY, GROQ_BASE_URL
@@ -83,34 +86,44 @@ def structured(
     last_error = None
     
     for attempt_model, get_client in models_to_try:
-        try:
-            print(f"Attempting inference with {attempt_model}...")
-            resp = get_client().chat.completions.create(
-                model=attempt_model,
-                max_tokens=max_tokens,
-                messages=[
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                tools=[
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": "report",
-                            "description": f"Report the result as {schema.__name__}.",
-                            "parameters": schema.model_json_schema(),
-                        },
-                    }
-                ],
-                tool_choice={"type": "function", "function": {"name": "report"}},
-            )
-            calls = resp.choices[0].message.tool_calls
-            if not calls:
-                raise ValueError(f"{attempt_model} returned no tool call: {resp.choices[0].message.content!r}")
-            return schema.model_validate_json(calls[0].function.arguments)
-        except Exception as e:
-            print(f"Model {attempt_model} failed: {e}")
-            last_error = e
+        max_retries = 3
+        for retry in range(max_retries):
+            try:
+                print(f"Attempting inference with {attempt_model}... (try {retry + 1}/{max_retries})")
+                resp = get_client().chat.completions.create(
+                    model=attempt_model,
+                    max_tokens=max_tokens,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                    tools=[
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": "report",
+                                "description": f"Report the result as {schema.__name__}.",
+                                "parameters": schema.model_json_schema(),
+                            },
+                        }
+                    ],
+                    tool_choice={"type": "function", "function": {"name": "report"}},
+                )
+                calls = resp.choices[0].message.tool_calls
+                if not calls:
+                    raise ValueError(f"{attempt_model} returned no tool call: {resp.choices[0].message.content!r}")
+                return schema.model_validate_json(calls[0].function.arguments)
+            except Exception as e:
+                # Engineering solution: robust backoff specifically for our testing on free tiers.
+                is_rate_limit = isinstance(e, RateLimitError) or (hasattr(e, 'status_code') and e.status_code == 429) or (hasattr(e, 'message') and '429' in str(e.message)) or '429' in str(e)
+                if is_rate_limit and os.environ.get("CIDRA_ENABLE_RATE_LIMIT_BACKOFF") == "true":
+                    if retry < max_retries - 1:
+                        print(f"Model {attempt_model} hit rate limit (429). Backing off for 35s...")
+                        time.sleep(35)
+                        continue
+                print(f"Model {attempt_model} failed: {e}")
+                last_error = e
+                break # Move to next fallback model
 
     # If all fallbacks fail, raise the last error so the graph can gracefully abort
     raise last_error
