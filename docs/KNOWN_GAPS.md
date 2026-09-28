@@ -88,14 +88,6 @@ the repeat-failure token win without a new dependency.
 **Done when:** a near-miss failure (same root cause, different message) reuses a cached fix
 above a similarity threshold, measured on the fixture corpus.
 
-### G-14 · Web dashboard + live view + interactive HITL gate (Phase 13) — 🌐 🛠
-The run-history store and the read-only Fleet TUI are built. Deferred: the React web
-dashboard, the live container/token-spend view (needs a running run to observe), and the
-interactive HITL approve/reject → PR gate (needs live GitHub). This is where the SR-20
-decision trace becomes a clickable review surface (EU AI Act Art. 14).
-**Done when:** a reviewer can see a run's trace + diff in a UI and approve/reject it, and the
-live view shows in-flight container status.
-
 ### G-07 · tree-sitter for non-Python AST checks (Phase 10) — 🛠
 `cidra/nodes/audit.py` uses Python `ast`. Non-Python languages (Phase 12 multi-language) need
 tree-sitter parsing for the same SR-13/14/15 guards. Deferred until multi-language lands.
@@ -123,6 +115,12 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-14 · Web dashboard + live view + interactive HITL gate (Phase 13)** — Built React dashboard
+  (`dashboard/`) with Command Center, Run Explorer, Ephemeral Container Sandbox & Flakiness Lab (SR-08),
+  Pipeline Orchestrator (LangGraph topology), and 4-tab Settings view with live .env synchronization
+  and API latency probes. Interactive HITL gate implemented (`/api/runs/{run_id}/approve`) with
+  SR-20 raw JSON decision trace accordion (EU AI Act Art. 14). Verified: `tests/server/test_dashboard_api.py`
+  (6/6) and `npm run test:wiring` (5/5). (Phase 13)
 - **SR-16 was insufficient (fsmonitor bypass)** — `core.hooksPath=/dev/null` alone didn't stop
   a repo-local `core.fsmonitor=<cmd>` running on `git status`. Caught by the live SEC-04 test;
   fixed by also neutralizing `core.fsmonitor`/`sshCommand`/`diff.external`/pager/editor in

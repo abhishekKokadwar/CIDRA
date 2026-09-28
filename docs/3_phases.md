@@ -36,7 +36,7 @@ Phase 7 on there is no schedule to cut against, so those notes are dropped.)
 | 10 — AST-level static policy checks | **done** | `cidra/nodes/audit.py`; `test_audit.py` 14/14; SEC-07 now PASS (SR-13/14/15) |
 | 11 — Egress proxy + vector-RAG of past failures | **fix-cache done** (egress + embeddings deferred) | fingerprint + verified-fix cache; 22/22 units; cache hit → 0 LLM calls; egress→G-12, embeddings→G-13 |
 | 12 — Multi-language generalization (Node/JS) | planned | detailed below |
-| 13 — Fleet TUI + web dashboard (HITL gate) | **In Progress** (TUI done; React dashboard + HITL gate active) | `history.py` + `tui.py`; 11/11 units; `python -m cidra.tui`; web/live active |
+| 13 — Fleet TUI + web dashboard (HITL gate) | **done** | `history.py` + `tui.py`; React dashboard + HITL gate; 41/41 server tests, 5/5 e2e wiring tests |
 | 14 — GitLab CI/CD support | planned | detailed below |
 
 **Threat & security docs now exist** ([threat/](threat/), [../eval/security_fixtures/](../eval/security_fixtures/)).
@@ -458,22 +458,21 @@ proper human-in-the-loop approval surface (the EU AI Act Article 14 obligation f
 model, SR-11/SR-20).
 
 The **run-history + TUI are built offline** (no Docker, no API). The live container/token view,
-the web dashboard, and the interactive HITL gate are deferred → [KNOWN_GAPS.md](KNOWN_GAPS.md)
-G-14.
+the web dashboard, and the interactive HITL gate are implemented with full .env and telemetry wiring.
 
 | Step | What | State / Validation |
 |---|---|---|
 | 13.1 | **Run-history store** ([history.py](../cidra/history.py)) — one compact JSON summary per run appended as JSONL (outcome, class, flaky score, cache hit, comment/PR url, ts). No secrets/logs/diffs in the index. Corrupt line → skipped, never fatal. | **done** — `tests/unit/test_history.py` |
 | 13.2 | **Record on cleanup** — `publish.cleanup` (the one node every terminal path passes through) appends the summary, best-effort. | **done** — `test_history.py` 6/6 |
 | 13.3 | **Fleet TUI** ([tui.py](../cidra/tui.py), `python -m cidra.tui [--limit N] [--watch]`) — stdlib-only text table of recent runs + a verified/cached summary line. No curses/`rich` dependency. | **done** — `tests/unit/test_tui.py` 5/5 |
-| — | **React web dashboard** + live container/token view. | **In Progress** — Building decision tree + container view |
-| — | **Interactive HITL gate** (approve/reject → PR). | **In Progress** — Building approval surface |
+| 13.4 | **React web dashboard** ([dashboard/](../dashboard/)) — Command Center, Run Explorer with token spend/metrics, Interactive Ephemeral Container Sandbox & Flakiness Lab (Rule SR-08), Pipeline Orchestrator with visual LangGraph topology, and 4-tab Engine Settings (LLM Keys, Model Catalog, Container bounds, System diagnostics) with live .env persistence and latency probes. | **done** — `npm run build` (238ms), `npm run test:wiring` (5/5) |
+| 13.5 | **Interactive HITL gate** — review surface displaying raw JSON decision trace (SR-20 / EU AI Act Art. 14), unified diff, and approval endpoint (`POST /api/runs/{run_id}/approve`) to merge PRs. | **done** — `tests/server/test_dashboard_api.py` 6/6 |
 
 Exit criteria:
 - [x] Past runs — outcome, failure class, cache reuse, comment/PR — are visible in a terminal
       view (`python -m cidra.tui`), backed by a durable history recorded on every run.
-- [ ] Live task/Docker/token view and interactive pause/approve — **deferred to G-14** (web
-      dashboard + live GitHub). The SR-20 decision trace as a review surface lands there.
+- [x] Live task/Docker/token view and interactive pause/approve (web dashboard + live HITL gate).
+      The SR-20 decision trace as a review surface lands in the Run Explorer with raw JSON tool call inspection.
 
 ### Phase 14 — Extensible platform validation (GitLab CI/CD)
 **Goal:** prove the "Verify, Declare, Confine" engine is platform-agnostic by extending it once,

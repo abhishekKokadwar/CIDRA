@@ -1,15 +1,63 @@
+# Environment & Secrets
 .env
+.env.*
+!.env.example
+
+# Python Bytecode & Runtime Cache
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual Environments
 .venv/
+venv/
+env/
+ENV/
 
+# Python Packaging & Distribution
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
 
-.agents\skills
-.claude
-.code-review-graph
-.codex
-.pytest_cache
+# CIDRA Local Runtime State & Database
 cidra_idempotency.db
-worktrees/
 cidra_fix_cache.json
 cidra_run_history.jsonl
+cidra_telemetry.json
+run_states/
+worktrees/
+*.db
+*.sqlite3
+
+# Temporary & Scratch Files
+models.json
+payload.json
+*.tmp
+*.log
+
+# Node & Frontend
+**/node_modules/
+dashboard/dist/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# AI Agent & IDE Tooling Caches
+.claude/
+.code-review-graph/
+.codex/
+.agents/skills/
+.mcp.json
+CLAUDE.md
+AGENTS.md
+.agents
+
+# Operating System Files
+.DS_Store
+Thumbs.db

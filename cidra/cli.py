@@ -116,6 +116,22 @@ def local_run(args):
     _run_graph(state)
 
 
+def dashboard_run(args):
+    """Start the CIDRA web dashboard and FastAPI backend."""
+    import uvicorn
+    import webbrowser
+    port = getattr(args, "port", 8000)
+    host = getattr(args, "host", "127.0.0.1")
+    url = f"http://{host}:{port}"
+    log.info(f"Starting CIDRA Web Dashboard at {url}")
+    if not getattr(args, "no_open", False):
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+    uvicorn.run("cidra.server.app:app", host=host, port=port, log_level="info")
+
+
 def main():
     _setup_logging()
     
@@ -132,12 +148,20 @@ def main():
     # 'action' command for GitHub Actions
     subparsers.add_parser("action", help="Run CIDRA as a GitHub Action (relies on env vars)")
     
+    # 'dashboard' command for local web UI
+    dash_parser = subparsers.add_parser("dashboard", help="Start the web dashboard & API server")
+    dash_parser.add_argument("--port", type=int, default=8000, help="Port to serve on (default: 8000)")
+    dash_parser.add_argument("--host", type=str, default="127.0.0.1", help="Host interface (default: 127.0.0.1)")
+    dash_parser.add_argument("--no-open", action="store_true", help="Do not open browser automatically")
+    
     args = parser.parse_args()
     
     if os.getenv("GITHUB_ACTIONS") == "true" or args.command == "action":
         action_run()
     elif args.command == "fix":
         local_run(args)
+    elif args.command == "dashboard":
+        dashboard_run(args)
     else:
         parser.print_help()
         sys.exit(1)

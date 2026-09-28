@@ -37,3 +37,9 @@ cidra = "cidra.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["cidra", "cidra.*"]
+
+[tool.setuptools.package-data]
+cidra = [
+    "static/**",
+    "static/**/*"
+]

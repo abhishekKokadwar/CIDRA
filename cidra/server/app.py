@@ -60,9 +60,37 @@ app.add_middleware(
 _store = IdempotencyStore(config.IDEMPOTENCY_DB)
 
 
+from pathlib import Path
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+_STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+
+
 @app.get("/")
-def health() -> dict:
+def health(request: Request):
+    # Serve React dashboard to browsers, JSON health status to API clients / tests
+    if "text/html" in request.headers.get("accept", "") and (_STATIC_DIR / "index.html").exists():
+        return FileResponse(_STATIC_DIR / "index.html")
     return {"service": "cidra", "ok": True}
+
+
+if (_STATIC_DIR / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(_STATIC_DIR / "assets")), name="assets")
+
+
+@app.get("/telemetry.json")
+def get_telemetry():
+    if (_STATIC_DIR / "telemetry.json").exists():
+        return FileResponse(_STATIC_DIR / "telemetry.json")
+    return history.load()
+
+
+@app.get("/cidra_icon.png")
+def get_icon():
+    if (_STATIC_DIR / "cidra_icon.png").exists():
+        return FileResponse(_STATIC_DIR / "cidra_icon.png")
+    return Response(status_code=404)
 
 
 @app.post("/webhook")
@@ -124,3 +152,28 @@ def approve_run(run_id: str):
     # In a real implementation, this would trigger github_write.merge_pr
     log.info("HITL approval received for run_id=%s. (Mocked PR merge)", run_id)
     return {"status": "approved", "run_id": run_id, "message": "PR merged successfully"}
+
+
+@app.get("/api/settings")
+def get_settings():
+    """Fetch live settings and masked credentials from .env and config."""
+    from cidra.server import settings
+    return settings.get_current_settings()
+
+
+@app.post("/api/settings")
+async def update_settings(request: Request):
+    """Save updated settings directly to .env and reload in-memory config."""
+    from cidra.server import settings
+    payload = await request.json()
+    return settings.save_settings(payload)
+
+
+@app.post("/api/settings/test")
+async def test_provider_endpoint(request: Request):
+    """Test connectivity and measure latency to a provider."""
+    from cidra.server import settings
+    payload = await request.json()
+    provider_id = payload.get("provider_id", "")
+    return settings.test_provider(provider_id)
+

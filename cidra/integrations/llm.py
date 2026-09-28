@@ -24,6 +24,14 @@ _kimi_client: OpenAI | None = None
 _glm_client: OpenAI | None = None
 _groq_client: OpenAI | None = None
 
+_latest_telemetry: list[dict] = []
+
+def get_latest_telemetry() -> list[dict]:
+    return list(_latest_telemetry)
+
+def clear_latest_telemetry():
+    _latest_telemetry.clear()
+
 def client() -> OpenAI:
     global _client
     if _client is None:
@@ -90,6 +98,7 @@ def structured(
         for retry in range(max_retries):
             try:
                 print(f"Attempting inference with {attempt_model}... (try {retry + 1}/{max_retries})")
+                start_time = time.time()
                 resp = get_client().chat.completions.create(
                     model=attempt_model,
                     max_tokens=max_tokens,
@@ -109,9 +118,32 @@ def structured(
                     ],
                     tool_choice={"type": "function", "function": {"name": "report"}},
                 )
+                elapsed = time.time() - start_time
                 calls = resp.choices[0].message.tool_calls
                 if not calls:
                     raise ValueError(f"{attempt_model} returned no tool call: {resp.choices[0].message.content!r}")
+                
+                # Record real telemetry for dashboard transparency
+                usage = getattr(resp, "usage", None)
+                prompt_tokens = getattr(usage, "prompt_tokens", 0) if usage else 0
+                completion_tokens = getattr(usage, "completion_tokens", 0) if usage else 0
+                total_tokens = getattr(usage, "total_tokens", prompt_tokens + completion_tokens) if usage else 0
+                
+                _latest_telemetry.append({
+                    "model": attempt_model,
+                    "latency_s": round(elapsed, 2),
+                    "tokens": {
+                        "prompt": prompt_tokens,
+                        "completion": completion_tokens,
+                        "total": total_tokens,
+                    },
+                    "tool_name": "report",
+                    "tool_args": calls[0].function.arguments,
+                    "system_prompt": system,
+                    "user_prompt": user,
+                    "timestamp": round(time.time(), 2)
+                })
+
                 return schema.model_validate_json(calls[0].function.arguments)
             except Exception as e:
                 # Engineering solution: robust backoff specifically for our testing on free tiers.

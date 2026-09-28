@@ -1,0 +1,56 @@
+{
+  "stats": {
+    "total_interventions": 1,
+    "success_rate": "100.0%",
+    "avg_time_to_fix": "42s",
+    "system_status": "SYSTEM SECURE"
+  },
+  "runs": [
+    {
+      "id": "viaCleanup",
+      "repo": "o/r",
+      "commit_sha": "abcdef1234567890",
+      "status": "success",
+      "outcome": "verified_fix",
+      "category": "missing_dependency",
+      "fix": "Missing Dependency: package",
+      "time": "Sep 29, 01:10",
+      "timestamp": 1790624406,
+      "model": "openai/gpt-oss-120b",
+      "telemetry": {
+        "total_tokens": 1184,
+        "prompt_tokens": 828,
+        "completion_tokens": 355,
+        "cost_usd": 0.0024,
+        "latency_s": 0.89,
+        "confidence": 90.0,
+        "context_files": [
+          "tests/test_api.py",
+          "requirements.txt"
+        ]
+      },
+      "error_region": "",
+      "analysis": {
+        "category": "missing_dependency",
+        "confidence": 0.9,
+        "evidence": "e",
+        "proposed_action": "p",
+        "file": null,
+        "line": null,
+        "failing_test": null,
+        "missing_package": null,
+        "env_var": null
+      },
+      "raw_json_trace": "{\"category\":\"missing_dependency\",\"confidence\":1,\"env_var\":null,\"evidence\":\"ModuleNotFoundError: No module named 'requests'\",\"failing_test\":null,\"file\":null,\"line\":null,\"missing_package\":\"requests\",\"proposed_action\":\"Add the missing 'requests' package to the project's dependencies (e.g., in requirements.txt).\"}",
+      "fix_diff": null,
+      "fix_strategy": null,
+      "reproduced": false,
+      "verified": true,
+      "verify_results": [],
+      "flaky_score": null,
+      "final_output": "",
+      "pr_url": null,
+      "comment_url": null
+    }
+  ]
+}
