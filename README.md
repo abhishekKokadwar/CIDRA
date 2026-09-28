@@ -1,6 +1,8 @@
 <div align="center">
 
-# ⚡ CIDRA
+<p align="center">
+  <img src="cidra/static/cidra_logo.png" alt="CIDRA Logo" width="440" />
+</p>
 
 **Continuous Integration Debugging and Repair Agent**
 
@@ -25,6 +27,10 @@
   <a href="#9-repository-structure--development">Development</a>
 </p>
 
+<p align="center">
+  <img src="cidra/static/cidra-demo.svg" alt="CIDRA Terminal Execution Preview" width="820" />
+</p>
+
 ---
 
 </div>
@@ -35,19 +41,19 @@ Most "AI repair" tools blindly guess fixes, hallucinate green test outcomes, and
 
 **CIDRA is built on an adversarial foundation**: it assumes LLMs will hallucinate, dependencies may carry supply-chain attacks, and tests can be non-deterministic. Every action is gated by the **Triad of Trust**:
 
-```
-          ┌──────────────────────────────────────────────┐
-          │               THE TRIAD OF TRUST             │
-          └──────────────────────┬───────────────────────┘
-                                 │
-         ┌───────────────────────┼───────────────────────┐
-         │                       │                       │
-         ▼                       ▼                       ▼
- ┌───────────────┐       ┌───────────────┐       ┌───────────────┐
- │    VERIFY     │       │    DECLARE    │       │    CONFINE    │
- │ Red ➔ Patch ➔ │       │ Explicit test │       │ Zero-network  │
- │     Green     │       │  taxonomies   │       │   container   │
- └───────────────┘       └───────────────┘       └───────────────┘
+```mermaid
+flowchart TD
+    subgraph Triad["THE TRIAD OF TRUST"]
+        direction TB
+        V["<b>VERIFY</b><br/>Red ➔ Patch ➔ Green<br/><i>Zero False Claims</i>"]
+        D["<b>DECLARE</b><br/>Explicit Taxonomies<br/><i>0 Calls on Flaky Tests</i>"]
+        C["<b>CONFINE</b><br/>Zero-Network Container<br/><i>AST Gate & Hardened Sandbox</i>"]
+    end
+    
+    style Triad fill:#0d1117,stroke:#388bfd,stroke-width:2px,color:#58a6ff
+    style V fill:#161b22,stroke:#2ea043,stroke-width:2px,color:#e6edf3
+    style D fill:#161b22,stroke:#1f6feb,stroke-width:2px,color:#e6edf3
+    style C fill:#161b22,stroke:#da3633,stroke-width:2px,color:#e6edf3
 ```
 
 1. **Verify (Zero False Claims)**: CIDRA **never** claims a bug is fixed unless it reproduces the failure **red** inside an isolated Docker sandbox, applies the candidate patch, and re-executes the test suite to observe a clean **green** exit code. If a patch fails to apply or the tests remain red, the patch is discarded.
@@ -58,37 +64,46 @@ Most "AI repair" tools blindly guess fixes, hallucinate green test outcomes, and
 
 ## 2. LangGraph Architecture & Workflow
 
-CIDRA orchestrates an 18-node cyclic directed acyclic graph (DAG) built on **LangGraph**. The workflow decouples log analysis from code generation and isolates untrusted operations into discrete state transitions.
+CIDRA orchestrates an 18-node cyclic state graph built on **LangGraph**. The workflow decouples log analysis from code generation and isolates untrusted operations into discrete state transitions.
 
 ```mermaid
 flowchart TD
-    A([CI Failure Webhook / CLI]) --> B[ingest_log]
-    B --> C[fingerprint_error]
-    C --> D{Fix in Cache?}
+    A(["CI Failure Webhook / CLI"]) --> B["ingest_log"]
+    B --> C["fingerprint_error"]
+    C --> D{"Fix in Cache?"}
     
-    D -- Yes (Cache Hit) --> E[apply_cached_fix]
-    D -- No (Cache Miss) --> F[localize_fault_sbfl]
+    D -- "Yes (Cache Hit)" --> E["apply_cached_fix"]
+    D -- "No (Cache Miss)" --> F["localize_fault_sbfl"]
     
-    F --> G[reproduce_failure_red]
-    G --> H{Flakiness Check (SR-08)}
+    F --> G["reproduce_failure_red"]
+    G --> H{"Flakiness Check (SR-08)"}
     
-    H -- Flaky (Intermittent) --> I([Terminal: flaky_detected])
-    H -- Deterministic Red --> J[analyze_root_cause]
+    H -- "Flaky (Intermittent)" --> I(["Terminal: flaky_detected"])
+    H -- "Deterministic Red" --> J["analyze_root_cause"]
     
-    J --> K[synthesize_patch]
-    K --> L{AST Security Audit}
+    J --> K["synthesize_patch"]
+    K --> L{"AST Security Audit"}
     
-    L -- Violates Policy (ADV-07) --> M[retry_patch_or_fail]
-    L -- Clean AST --> N[verify_patch_green]
+    L -- "Violates Policy (ADV-07)" --> M["retry_patch_or_fail"]
+    L -- "Clean AST" --> N["verify_patch_green"]
     
-    N -- Still Red (Failed) --> O{Attempt < Max Retries?}
-    O -- Yes --> K
-    O -- No --> P([Terminal: repair_exhausted])
+    N -- "Still Red (Failed)" --> O{"Attempt below Max Retries?"}
+    O -- "Yes" --> K
+    O -- "No" --> P(["Terminal: repair_exhausted"])
     
-    N -- Green (Verified) --> Q[update_fix_cache]
-    Q --> R[publish_report]
-    R --> S[create_draft_pr / HITL]
-    S --> T([Terminal: verified_fix])
+    N -- "Green (Verified)" --> Q["update_fix_cache"]
+    Q --> R["publish_report"]
+    R --> S["create_draft_pr / HITL"]
+    S --> T(["Terminal: verified_fix"])
+    
+    style A fill:#161b22,stroke:#58a6ff,stroke-width:2px,color:#e6edf3
+    style D fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
+    style H fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
+    style L fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
+    style O fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
+    style I fill:#21262d,stroke:#f85149,stroke-width:2px,color:#f85149
+    style P fill:#21262d,stroke:#f85149,stroke-width:2px,color:#f85149
+    style T fill:#21262d,stroke:#2ea043,stroke-width:2px,color:#3fb950
 ```
 
 ### Key Engineering Innovations
@@ -238,25 +253,18 @@ jobs:
 
 Network blips, rate limits, and model outages should never bring down your CI repair engine. CIDRA implements an automatic, multi-tier fallback architecture:
 
-```
-  ┌─────────────────────────────────────────────────────────────┐
-  │                 INFERENCE PROVIDER FALLBACK                 │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │
-  Primary Gateway (Tier 0)       ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │ OpenRouter API (Claude 3.5 Sonnet / Claude 3.7 / GPT-4o)   │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │ Rate Limit / 5xx Error
-  Fast Fallback (Tier 1)         ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │ NVIDIA NIM API (Moonshot Kimi K1.5 / GLM-4 / DeepSeek R1)   │
-  └──────────────────────────────┬──────────────────────────────┘
-                                 │ Latency Spike / Timeout
-  Ultra-Fast LPU (Tier 2)        ▼
-  ┌─────────────────────────────────────────────────────────────┐
-  │ Groq Cloud API (Llama 3.3 70B Versatile @ 500+ tokens/sec)  │
-  └─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    P["<b>Primary Gateway (Tier 0)</b><br/>OpenRouter API (Claude 3.5 Sonnet / Claude 3.7 / GPT-4o)"]
+    F1["<b>Fast Fallback (Tier 1)</b><br/>NVIDIA NIM API (Moonshot Kimi K1.5 / GLM-4 / DeepSeek R1)"]
+    F2["<b>Ultra-Fast LPU (Tier 2)</b><br/>Groq Cloud API (Llama 3.3 70B Versatile @ 500+ tok/s)"]
+    
+    P -- "Rate Limit / 5xx Error" --> F1
+    F1 -- "Latency Spike / Outage" --> F2
+    
+    style P fill:#161b22,stroke:#58a6ff,stroke-width:2px,color:#c9d1d9
+    style F1 fill:#161b22,stroke:#bc8cff,stroke-width:2px,color:#c9d1d9
+    style F2 fill:#161b22,stroke:#f0883e,stroke-width:2px,color:#c9d1d9
 ```
 
 ### Configuration Environment Variables (`.env`)
@@ -286,20 +294,26 @@ Copy [.env.example](file:///d:/CODES/cidra/.env.example) to `.env` to configure 
 
 The Docker sandbox ([cidra/sandbox/runner.py](file:///d:/CODES/cidra/cidra/sandbox/runner.py)) is CIDRA's highest blast-radius component. Its isolation boundaries are hardcoded into the runner architecture and cannot be overridden by callers.
 
-```
-Host Operating System (Protected)
-  │
-  ├── ⛔ Docker Socket: NEVER mounted into container (ADV-01)
-  ├── ⛔ Host Secrets: Zero host environment variables passed (ADV-02)
-  │
-  └── Sandbox Container (Untrusted Test Code Execution)
-        ├── 🛡️ Network: mode="none" during reproduction & verification (ADV-03)
-        │              (Network enabled exclusively during package installation)
-        ├── 🛡️ User: Unprivileged non-root user (UID 1000) (ADV-04)
-        ├── 🛡️ Resource Limits: Memory capped at 1GB, CPU capped at 1.0 (ADV-05)
-        ├── 🛡️ Fork Bomb Protection: pids_limit=100 (ADV-06)
-        ├── 🛡️ AST Guard: Rejects malicious code constructs pre-execution (ADV-07)
-        └── 🛡️ Ephemeral: Containers force-removed immediately on exit (ADV-08)
+```mermaid
+flowchart TD
+    subgraph Host["Host Operating System (Protected Zone)"]
+        H1["Host Secrets & Environment<br/><i>Zero Leakage (ADV-02)</i>"]
+        H2["Host Docker Daemon<br/><i>Socket NEVER Mounted (ADV-01)</i>"]
+    end
+    
+    subgraph Sandbox["Hardened Docker Sandbox (Untrusted Execution)"]
+        direction TB
+        S1["<b>AST Policy Gate (ADV-07)</b><br/>Pre-execution syntax inspection"]
+        S2["<b>Network Isolation (ADV-03)</b><br/>network_mode='none' during test/verify"]
+        S3["<b>User & PID Caps (ADV-04 & ADV-06)</b><br/>UID 1000 (non-root) & pids_limit=100"]
+        S4["<b>Resource Limits (ADV-05 & ADV-08)</b><br/>1GB RAM, 1.0 CPU, auto-cleanup on exit"]
+        S1 --> S2 --> S3 --> S4
+    end
+    
+    Host -. "Strict Zero-Trust Boundary" .-x Sandbox
+    
+    style Host fill:#161b22,stroke:#da3633,stroke-width:2px,color:#c9d1d9
+    style Sandbox fill:#0d1117,stroke:#238636,stroke-width:2px,color:#c9d1d9
 ```
 
 Verified by comprehensive unit checks in [tests/unit/test_sandbox.py](file:///d:/CODES/cidra/tests/unit/test_sandbox.py) and [tests/unit/test_audit.py](file:///d:/CODES/cidra/tests/unit/test_audit.py).
