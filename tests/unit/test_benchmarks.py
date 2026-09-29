@@ -24,6 +24,7 @@ def test_empirical_validation_suite_conformance():
     assert scorecard["claim_4_airgap_certified"] is True
     assert scorecard["claim_5_cache_and_flaky_passed"] is True
     assert scorecard["claim_6_ablation_passed"] is True
+    assert scorecard["claim_7_generalization_passed"] is True
 
     # Stage A Hardening Verifications
     b3 = results["benchmarks"]["03_security_redteam"]
@@ -37,6 +38,12 @@ def test_empirical_validation_suite_conformance():
     b6 = results["benchmarks"]["06_multi_baseline_ablation"]
     assert b6["metrics_by_condition"]["F"]["false_verified_rate_percent"] == 0.0
     assert b6["metrics_by_condition"]["E"]["false_verified_rate_percent"] == 100.0
+
+    # Cross-Scenario Generalization Verifications
+    b7 = results["benchmarks"]["07_cross_scenario_generalization"]
+    assert b7["generalization_gaps"]["generalization_hypothesis_confirmed"] is True
+    assert b7["generalization_gaps"]["max_observed_gap_percent"] <= 5.0
+    assert b7["zero_hardcoding_audit"]["zero_hardcoding_verified"] is True
 
     # Check report generation
     root = Path(__file__).resolve().parents[2]

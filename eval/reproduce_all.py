@@ -115,6 +115,15 @@ def main() -> int:
     assert mf["security_escape_rate_percent"] == 0.0, "Full CIDRA security escape > 0%"
     print(f"  [PASS] Claim 6 (Multi-Baseline Ablation): FVR=0.0% (Full CIDRA) vs 100.0% (Sandbox-Only Condition E)")
 
+    # Claim 7: Cross-Scenario Generalization & Overfitting Defense
+    b7 = benchmarks["07_cross_scenario_generalization"]
+    gaps = b7["generalization_gaps"]
+    audit = b7["zero_hardcoding_audit"]
+    assert gaps["generalization_hypothesis_confirmed"] is True, "Generalization hypothesis failed"
+    assert gaps["max_observed_gap_percent"] <= 5.0, f"Generalization gap {gaps['max_observed_gap_percent']}% > 5.0%"
+    assert audit["zero_hardcoding_verified"] is True, "Hardcoded scenario pattern found in core engine"
+    print(f"  [PASS] Claim 7 (Generalization): max gap {gaps['max_observed_gap_percent']:.2f}% (<= 5.0%), 0 hardcoded hits across {audit['unseen_fixtures_audited']} unseen fixtures")
+
     # Cryptographic Receipt Verification
     receipts_file = ROOT / "reports" / "benchmark_receipts.json"
     assert receipts_file.exists(), "Receipt file does not exist"
@@ -124,7 +133,7 @@ def main() -> int:
 
     elapsed_s = time.perf_counter() - t0
     print("\n" + "=" * 80)
-    print(f"ALL 6 EMPIRICAL BENCHMARKS SUCCESSFULLY REPRODUCED IN {elapsed_s:.2f}s")
+    print(f"ALL 7 EMPIRICAL BENCHMARKS SUCCESSFULLY REPRODUCED IN {elapsed_s:.2f}s")
     print(f"Overall Conformance Score: 100.0% (All claims mathematically and empirically validated)")
     print("=" * 80)
     return 0
