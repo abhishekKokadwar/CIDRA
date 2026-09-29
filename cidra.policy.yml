@@ -1,0 +1,46 @@
+# CIDRA Enterprise Security Policy Contract
+# Learn more: docs/PRODUCT_PLAN.md
+
+version: "1.0"
+
+policy:
+  # Categories authorized for zero-touch autonomous remediation in isolated sandbox
+  auto_remediate:
+    - missing_dependency
+    - env_var_missing
+    - simple_assertion
+    - lint_style
+
+  # High-risk categories or code paths requiring human review before PR creation/merge
+  require_human_approval:
+    - core_business_logic
+    - path: "src/auth/**"
+    - path: "auth/**"
+    - path: "migrations/**"
+    - path: "db/migrations/**"
+    - path: "payments/**"
+    - path: "**/*.sql"
+
+  # Categories strictly forbidden from automated code modifications (fail-closed)
+  strict_refusal:
+    - flaky_tests
+    - timeout_failures
+    - security_violation
+
+  # Files and paths CIDRA is strictly forbidden from ever reading or modifying
+  forbidden_paths:
+    - ".github/workflows/**"
+    - ".cidra/**"
+    - "AGENTS.md"
+    - "CLAUDE.md"
+    - "**/*.pem"
+    - "**/*.key"
+    - "**/*.id_rsa"
+    - "**/.env*"
+
+  # Containment boundaries (blast-radius mitigation)
+  containment_limits:
+    max_changed_files: 5
+    max_changed_lines: 100
+    allow_file_deletion: false
+    allow_new_files: true

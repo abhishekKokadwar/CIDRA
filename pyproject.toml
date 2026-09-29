@@ -23,7 +23,8 @@ dependencies = [
     "fastapi",
     "uvicorn",
     "openai",
-    "python-dotenv"
+    "python-dotenv",
+    "pyyaml"
 ]
 
 [project.optional-dependencies]

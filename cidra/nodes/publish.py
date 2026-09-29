@@ -17,24 +17,40 @@ def compose_report(state: DebugState) -> dict:
         outcome = "failed"
     else:
         outcome = "diagnosis_only"
-    # Owns `outcome` only. `final_output` is written by publish (the rendered
-    # body); setting it here too would be dead work overwritten one node later.
-    return {"outcome": outcome}
+
+    # Enterprise Policy & Cryptographic Audit Manifest
+    from cidra.policy import PolicyEngine
+    from cidra.audit_manifest import generate_manifest
+
+    pe = PolicyEngine.find_and_load(state.get("source_dir"))
+    manifest = generate_manifest(state, pe)
+    manifest_dict = manifest.to_dict()
+
+    return {
+        "outcome": outcome,
+        "audit_manifest": manifest_dict,
+        "policy_decision": manifest.policy.decision,
+        "policy_reasons": manifest.policy.reasons,
+        "policy_sha256": manifest.policy.sha256,
+    }
 
 
 def publish(state: DebugState) -> dict:
-    """Render the report and post it as a comment. Phase 6, step 6.3.
-
-    Dry-run (render only, never post) whenever the run has no issue to comment
-    on or no write token — which is every fixture run. The live webhook (Phase 7)
-    supplies `issue_number`, and only then does a comment actually go out. This
-    keeps the offline eval loop from ever touching github.com.
-
-    Rendering always happens so `final_output` carries the real body even in a
-    dry run; that is what the eval harness and the future dashboard read.
-    """
+    """Render the report, persist audit manifest, and post as comment. Phase 6, step 6.3."""
+    import json
+    from pathlib import Path
     from cidra.config import GITHUB_TOKEN
     from cidra.nodes.report import render_comment
+
+    # Save cryptographic audit manifest to disk
+    manifest_dict = state.get("audit_manifest")
+    if manifest_dict:
+        try:
+            manifest_file = Path("cidra_audit_manifest.json")
+            with open(manifest_file, "w", encoding="utf-8") as f:
+                json.dump(manifest_dict, f, indent=2)
+        except Exception:
+            pass
 
     body = render_comment(state)
     issue = state.get("issue_number")
@@ -43,10 +59,7 @@ def publish(state: DebugState) -> dict:
 
     out: dict = {"final_output": body, "comment_url": None, "pr_url": None}
 
-    # Draft PR for a verified fix (Phase 9.6). Independent of a PR comment — a
-    # verified fix on a branch push (no issue_number) still gets a PR. Best
-    # effort: a PR failure must not lose the diagnosis comment.
-    # Disabled by default until safely reviewed (via ENABLE_PR_CREATION).
+    # Draft PR for a verified fix (Phase 9.6).
     from cidra.config import ENABLE_PR_CREATION
     if not dry and ENABLE_PR_CREATION and state.get("outcome") == "verified_fix" and state.get("fix_diff"):
         out["pr_url"] = _open_pr(state, body)

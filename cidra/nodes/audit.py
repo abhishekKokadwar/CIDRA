@@ -180,15 +180,38 @@ def audit_diff(diff: str) -> AuditVerdict:
 def audit_patch(state: DebugState) -> dict:
     """Graph node: gate the LLM's diff before it reaches the sandbox.
 
-    Writes `patch_audit_ok` (drives routing) and `patch_audit_reasons`. A
-    rejected patch never reaches apply_patch — the router sends it to the report,
+    Enforces both AST static rules (SR-13/14/15) and Declarative Policy (cidra.policy.yml).
+    A rejected patch never reaches apply_patch — the router sends it to the report,
     where it becomes diagnosis_only (an honest "no safe fix found").
     """
-    verdict = audit_diff(state.get("fix_diff") or "")
+    diff = state.get("fix_diff") or ""
+    verdict = audit_diff(diff)
+
+    from cidra.policy import PolicyEngine, PolicyDecision
+    source_dir = state.get("source_dir")
+    policy_engine = PolicyEngine.find_and_load(source_dir)
+    p_decision, p_reasons = policy_engine.evaluate_diff(diff)
+
+    final_reasons = list(verdict.reasons)
+    final_surfaced = list(verdict.surfaced)
+    requires_human = state.get("requires_human_approval", False)
+
+    if p_decision == PolicyDecision.STRICT_REFUSAL:
+        final_reasons.extend([r for r in p_reasons if r != "Diff is empty"])
+        patch_ok = False
+    elif p_decision == PolicyDecision.REQUIRE_HUMAN_APPROVAL:
+        requires_human = True
+        final_surfaced.extend([r for r in p_reasons if r != "Diff is empty"])
+        patch_ok = verdict.ok
+    else:
+        patch_ok = verdict.ok
+
     out: dict = {
-        "patch_audit_ok": verdict.ok,
-        "patch_audit_reasons": verdict.reasons,
+        "patch_audit_ok": patch_ok,
+        "patch_audit_reasons": list(dict.fromkeys(final_reasons)),
+        "requires_human_approval": requires_human,
+        "policy_decision": p_decision.value if p_decision != PolicyDecision.AUTO_REMEDIATE else state.get("policy_decision", "auto_remediate"),
     }
-    if verdict.surfaced:
-        out["patch_surfaced"] = verdict.surfaced
+    if final_surfaced:
+        out["patch_surfaced"] = list(dict.fromkeys(final_surfaced))
     return out

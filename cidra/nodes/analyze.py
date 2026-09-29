@@ -74,7 +74,7 @@ def analyze(state: DebugState) -> dict:
 
 
 def validate_analysis(state: DebugState) -> dict:
-    """Reject an analysis that is structurally valid but unusable."""
+    """Reject an analysis that is structurally valid but unusable, and enforce enterprise policy."""
     analysis = state.get("analysis")
     if analysis is None:
         return {}
@@ -82,4 +82,20 @@ def validate_analysis(state: DebugState) -> dict:
         return {"analysis": None, "analysis_error": "missing_dependency without missing_package"}
     if analysis.category == "env_config_error" and not analysis.env_var:
         return {"analysis": None, "analysis_error": "env_config_error without env_var"}
-    return {}
+
+    from cidra.policy import PolicyEngine, PolicyDecision
+    source_dir = state.get("source_dir")
+    policy_engine = PolicyEngine.find_and_load(source_dir)
+    decision, reason = policy_engine.evaluate_category(analysis.category)
+
+    updates: dict = {
+        "policy_decision": decision.value,
+        "policy_reasons": [reason],
+        "policy_sha256": policy_engine.policy_sha256,
+        "requires_human_approval": decision == PolicyDecision.REQUIRE_HUMAN_APPROVAL,
+    }
+
+    if decision == PolicyDecision.STRICT_REFUSAL:
+        updates["outcome"] = "diagnosis_only"
+
+    return updates

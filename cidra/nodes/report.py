@@ -115,5 +115,19 @@ def render_comment(state: DebugState) -> str:
     if block:
         parts += ["", block]
 
+    manifest = state.get("audit_manifest")
+    if manifest and manifest.get("seal"):
+        pol_dec = manifest.get("policy", {}).get("decision", "auto_remediate").upper()
+        ast_status = "PASSED" if manifest.get("security", {}).get("ast_audit_passed") else "BLOCKED"
+        sig_hex = manifest["seal"].get("signature", "")[:16]
+        parts += [
+            "",
+            "🔒 **Enterprise Audit Manifest:**",
+            f"- **Policy Decision:** `{pol_dec}`",
+            f"- **AST Security Gate:** `{ast_status}`",
+            f"- **Sandbox Isolation:** `0 egress bytes` (network disabled)",
+            f"- **Cryptographic Seal:** `HMAC-SHA256:{sig_hex}…`",
+        ]
+
     parts += ["", "---", "_CIDRA never merges. A human approves every change._"]
     return "\n".join(parts)

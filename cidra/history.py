@@ -214,6 +214,9 @@ def export_dashboard_telemetry():
             "verify_results": verify_results,
             "flaky_score": st.get("flaky_score"),
             "final_output": st.get("final_output", ""),
+            "policy_decision": st.get("policy_decision", "auto_remediate"),
+            "requires_human_approval": bool(st.get("requires_human_approval", False)),
+            "audit_manifest": st.get("audit_manifest"),
             "pr_url": st.get("pr_url"),
             "comment_url": st.get("comment_url")
         })
@@ -238,6 +241,7 @@ def export_dashboard_telemetry():
     
     out_paths = [
         Path("dashboard/public/telemetry.json"),
+        Path("cidra/static/telemetry.json"),
         Path("cidra_telemetry.json")
     ]
     for out_p in out_paths:

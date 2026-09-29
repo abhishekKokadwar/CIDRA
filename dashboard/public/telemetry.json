@@ -25,6 +25,7 @@
         "latency_s": 1.51,
         "confidence": 97.0,
         "context_files": [
+          "tests/test_api.py",
           "requirements.txt"
         ]
       },

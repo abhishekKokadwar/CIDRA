@@ -30,6 +30,7 @@ cidra_idempotency.db
 cidra_fix_cache.json
 cidra_run_history.jsonl
 cidra_telemetry.json
+cidra_audit_manifest.json
 run_states/
 worktrees/
 *.db

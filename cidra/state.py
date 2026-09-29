@@ -101,6 +101,13 @@ class DebugState(TypedDict, total=False):
     issue_number: Optional[int]  # PR/issue to comment on
     dry_run: bool  # render but do not post — default when identity/token missing
 
+    # Enterprise Security & Policy
+    policy_decision: Optional[str]  # auto_remediate, require_human_approval, strict_refusal
+    policy_reasons: Optional[list[str]]
+    policy_sha256: Optional[str]
+    requires_human_approval: bool
+    audit_manifest: Optional[dict]
+
     # Terminal
     outcome: Outcome
     final_output: str

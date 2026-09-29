@@ -5,6 +5,8 @@ from cidra.state import DebugState
 
 
 def route_after_validate(state: DebugState) -> str:
+    if state.get("policy_decision") == "strict_refusal":
+        return "compose_report"
     if state.get("analysis") is not None:
         return "checkout_commit"  # Phase 9: isolated checkout runs before sandbox
     if state.get("analysis_attempts", 0) < MAX_ANALYSIS_ATTEMPTS:
