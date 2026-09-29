@@ -24,8 +24,8 @@ jobs:
       with:
         api_key: ${{ secrets.GEMINI_API_KEY }}
         base_url: 'https://generativelanguage.googleapis.com/v1beta/openai/'
-        model_analyze: 'gemini-1.5-flash'
-        model_fix: 'gemini-1.5-flash'
+        model_analyze: 'gemini-flash-latest'
+        model_fix: 'gemini-flash-latest'
         nvidia_api_key_kimi: ${{ secrets.NVIDIA_API_KEY_KIMI }}
         nvidia_api_key_glm: ${{ secrets.NVIDIA_API_KEY_GLM }}
         groq_api_key: ${{ secrets.GROQ_API_KEY }}
