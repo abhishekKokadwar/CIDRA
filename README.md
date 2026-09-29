@@ -248,6 +248,13 @@ jobs:
           CIDRA_GITHUB_TOKEN_RO: ${{ secrets.CIDRA_GITHUB_TOKEN_RO }}
           CIDRA_ENABLE_PR_CREATION: "true"
         run: cidra action
+
+      - name: Trigger Live Dashboard Rebuild (Vercel)
+        if: always()
+        run: |
+          if [ -n "${{ secrets.VERCEL_DEPLOY_HOOK }}" ]; then
+            curl -s -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
+          fi
 ```
 
 ---
