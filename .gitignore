@@ -62,3 +62,8 @@ AGENTS.md
 # Operating System Files
 .DS_Store
 Thumbs.db
+.vercel
+.env
+.env.local
+.env.*.local
+!.env.example

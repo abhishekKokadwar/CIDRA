@@ -38,15 +38,12 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, onToggleCo
           title={collapsed ? 'Click to expand sidebar' : undefined}
         >
           <div style={{
-            background: '#ffffff',
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
+            background: 'transparent',
+            width: '36px',
+            height: '36px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '3px',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
             flexShrink: 0,
             margin: collapsed ? '0 auto' : '0'
           }}>
@@ -58,16 +55,28 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, onToggleCo
           </div>
           
           {!collapsed && (
-            <span style={{ 
-              fontSize: '1.25rem', 
-              fontWeight: 700, 
-              letterSpacing: '-0.02em', 
-              color: 'var(--text-main)',
-              lineHeight: '32px',
-              display: 'inline-block'
-            }}>
-              CIDRA
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: 800, 
+                letterSpacing: '-0.02em', 
+                color: 'var(--text-main)',
+                lineHeight: 1.1,
+                display: 'inline-block'
+              }}>
+                CIDRA
+              </span>
+              <span style={{
+                fontSize: '0.65rem',
+                fontFamily: 'var(--font-code)',
+                color: 'var(--color-accent)',
+                letterSpacing: '0.08em',
+                fontWeight: 600,
+                marginTop: '2px'
+              }}>
+                AUTONOMOUS CI
+              </span>
+            </div>
           )}
         </div>
 

@@ -294,10 +294,28 @@ function cidraSettingsPlugin() {
   };
 }
 
+function syncToPythonStatic() {
+  return {
+    name: 'sync-to-python-static',
+    closeBundle() {
+      try {
+        const distDir = path.resolve(__dirname, 'dist');
+        const staticDir = path.resolve(__dirname, '../cidra/static');
+        if (fs.existsSync(distDir)) {
+          fs.cpSync(distDir, staticDir, { recursive: true });
+          console.log('[CIDRA] Successfully mirrored dist -> cidra/static');
+        }
+      } catch (e) {
+        console.error('[CIDRA] Warning: could not mirror to cidra/static:', e.message);
+      }
+    }
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), cidraSettingsPlugin()],
+  plugins: [react(), cidraSettingsPlugin(), syncToPythonStatic()],
   build: {
-    outDir: process.env.VERCEL ? 'dist' : '../cidra/static',
+    outDir: 'dist',
     emptyOutDir: true,
   },
 });
