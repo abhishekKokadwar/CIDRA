@@ -297,7 +297,7 @@ function cidraSettingsPlugin() {
 export default defineConfig({
   plugins: [react(), cidraSettingsPlugin()],
   build: {
-    outDir: '../cidra/static',
+    outDir: process.env.VERCEL ? 'dist' : '../cidra/static',
     emptyOutDir: true,
   },
 });

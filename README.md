@@ -14,6 +14,7 @@
 [![Docker Security](https://img.shields.io/badge/sandbox-network--isolated-green.svg)](#7-hardened-sandbox--threat-model-adv-01adv-08)
 [![Tests](https://img.shields.io/badge/tests-178%20passed-success.svg)](#8-testing--verification-suite)
 [![Dashboard](https://img.shields.io/badge/dashboard-react%20%2B%20vite-61dafb.svg)](#3-interactive-web-dashboard--hitl-gate)
+[![Live Demo](https://img.shields.io/badge/live%20demo-cidra.vercel.app-2ea043.svg)](https://cidra.vercel.app)
 
 <p align="center">
   <a href="#1-core-philosophy--the-triad-of-trust">Philosophy</a> •
@@ -119,6 +120,8 @@ flowchart TD
 
 CIDRA includes a reactive web dashboard built with React, Vite, and custom CSS design tokens. It provides real-time visibility into the repair pipeline and a **Human-In-The-Loop (HITL)** approval gate.
 
+- **🌐 Live Cloud Dashboard (Mobile & Desktop)**: [https://cidra.vercel.app](https://cidra.vercel.app) *(accessible anywhere without installation)*
+- **💻 Local Dashboard (CLI)**:
 ```bash
 # Launch the dashboard locally (automatically opens in your browser)
 cidra dashboard
