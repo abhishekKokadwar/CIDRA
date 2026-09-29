@@ -360,10 +360,12 @@ def run_single_benchmark(scenario: dict) -> dict:
     # Metric A: Developer Active Labor Reduction
     # In CIDRA, the developer spends only ~30s reviewing the verified PR diff and clicking merge
     cidra_dev_labor_s = 30.0
-    labor_delta_t = ((manual_total_s - cidra_dev_labor_s) / manual_total_s) * 100.0
+    developer_labor_saved_s = manual_total_s - cidra_dev_labor_s
+    labor_delta_t = (developer_labor_saved_s / manual_total_s) * 100.0
 
     # Metric B: End-to-End Wall-Clock Turnaround Reduction
-    wall_clock_delta_t = ((manual_total_s - total_cidra_wall_clock_s) / manual_total_s) * 100.0
+    end_to_end_wall_clock_s = total_cidra_wall_clock_s
+    wall_clock_delta_t = ((manual_total_s - end_to_end_wall_clock_s) / manual_total_s) * 100.0
 
     return {
         "scenario_id": scenario["id"],
@@ -371,9 +373,11 @@ def run_single_benchmark(scenario: dict) -> dict:
         "description": scenario["description"],
         "manual_time_s": manual_total_s,
         "manual_breakdown_s": manual_breakdown,
+        "developer_labor_saved_s": round(developer_labor_saved_s, 2),
+        "end_to_end_wall_clock_s": round(end_to_end_wall_clock_s, 2),
         "engine_internal_overhead_s": round(engine_duration_s, 4),
-        "cidra_wall_clock_s": round(total_cidra_wall_clock_s, 2),
-        "cidra_time_s": round(total_cidra_wall_clock_s, 2),
+        "cidra_wall_clock_s": round(end_to_end_wall_clock_s, 2),
+        "cidra_time_s": round(end_to_end_wall_clock_s, 2),
         "cidra_dev_labor_s": cidra_dev_labor_s,
         "labor_reduction_percent": round(labor_delta_t, 2),
         "wall_clock_reduction_percent": round(wall_clock_delta_t, 2),
@@ -381,7 +385,7 @@ def run_single_benchmark(scenario: dict) -> dict:
         "policy_approved": p_decision == PolicyDecision.AUTO_REMEDIATE,
         "ast_audit_passed": audit_verdict.ok,
         "manifest_seal_verified": verified_seal,
-        "target_met_sub_45s": total_cidra_wall_clock_s < 45.0,
+        "target_met_sub_45s": end_to_end_wall_clock_s < 45.0,
         "target_met_90pct_delta": wall_clock_delta_t >= 90.0,
     }
 
@@ -393,6 +397,7 @@ def run_developer_time_benchmark() -> dict:
     avg_manual_s = sum(r["manual_time_s"] for r in results) / len(results)
     avg_cidra_wall_clock_s = sum(r["cidra_wall_clock_s"] for r in results) / len(results)
     avg_engine_overhead_s = sum(r["engine_internal_overhead_s"] for r in results) / len(results)
+    avg_labor_saved_s = avg_manual_s - 30.0
     avg_labor_reduction = sum(r["labor_reduction_percent"] for r in results) / len(results)
     avg_wall_clock_reduction = sum(r["wall_clock_reduction_percent"] for r in results) / len(results)
 
@@ -401,6 +406,9 @@ def run_developer_time_benchmark() -> dict:
         "total_scenarios": len(results),
         "all_sub_45s": all(r["target_met_sub_45s"] for r in results),
         "all_90pct_reduction": all(r["target_met_90pct_delta"] for r in results),
+        "developer_labor_saved_s": round(avg_labor_saved_s, 2),
+        "end_to_end_wall_clock_s": round(avg_cidra_wall_clock_s, 2),
+        "engine_internal_overhead_s": round(avg_engine_overhead_s, 4),
         "average_manual_duration_s": round(avg_manual_s, 2),
         "average_manual_duration_min": round(avg_manual_s / 60.0, 2),
         "average_cidra_duration_s": round(avg_cidra_wall_clock_s, 2),
@@ -424,14 +432,15 @@ def main():
     for s in summary["scenarios"]:
         print(f"[{s['scenario_id']}] {s['description'][:40]:<42} | "
               f"Manual: {s['manual_time_s']:>4}s | "
-              f"Wall-Clock: {s['cidra_wall_clock_s']:>5.2f}s | "
+              f"Wall-Clock: {s['end_to_end_wall_clock_s']:>5.2f}s | "
               f"Labor Delta: {s['labor_reduction_percent']:>5.2f}% | "
               f"Status: {'OK' if s['target_met_sub_45s'] else 'FAIL'}")
 
     print("-" * 70)
     print(f"Average Manual Debug Time : {summary['average_manual_duration_min']:.1f} minutes ({summary['average_manual_duration_s']:.0f}s)")
-    print(f"Average CIDRA Wall-Clock  : {summary['average_cidra_wall_clock_s']:.2f} seconds (Target: < 45.0s)")
-    print(f"Core Engine Overhead      : {summary['average_engine_overhead_s']:.4f} seconds")
+    print(f"Developer Labor Saved     : {summary['developer_labor_saved_s']:.0f}s (active work reduced to 30s review)")
+    print(f"End-to-End Wall-Clock     : {summary['end_to_end_wall_clock_s']:.2f} seconds (LLM + Sandbox + PR)")
+    print(f"Pure Engine Compute       : {summary['engine_internal_overhead_s']:.4f} seconds (< 5ms)")
     print(f"Developer Labor Reduction : {summary['average_labor_reduction_percent']:.2f}% (Target: >= 90.0%)")
     print(f"Wall-Clock Time Reduction : {summary['average_time_reduction_percent']:.2f}% (Target: >= 90.0%)")
     print(f"Sub-45s Target Met        : {summary['all_sub_45s']}")
