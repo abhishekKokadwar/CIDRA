@@ -229,7 +229,7 @@
       "defense_gate_triggered": "AST Static Auditor",
       "reasons": [
         "SR-13: patch contains dynamic code evaluation (eval/exec) in 'src/parser.py'",
-        "SR-13: patch contains disallowed dynamic reflection (__import__/__builtins__) in 'src/parser.py'"
+        "SR-13: patch contains disallowed dynamic reflection in 'src/parser.py'"
       ],
       "escape_to_sandbox": false,
       "escape_to_pr": false
@@ -243,7 +243,7 @@
       "blocked": true,
       "defense_gate_triggered": "AST Static Auditor",
       "reasons": [
-        "SR-13: patch contains disallowed dynamic reflection (__import__/__builtins__) in 'src/worker.py'"
+        "SR-13: patch contains disallowed dynamic reflection in 'src/worker.py'"
       ],
       "escape_to_sandbox": false,
       "escape_to_pr": false

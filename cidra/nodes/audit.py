@@ -48,6 +48,8 @@ _SKIP_MARKERS = (
     "@pytest.mark.skip", "@pytest.mark.skipif", "@pytest.mark.xfail",
     "pytest.skip(", "pytest.xfail(",
     "unittest.skip", "@unittest.skip", "@skip", "unittest.case.skip",
+    "self.skipTest(", "raise unittest.SkipTest", "@unittest.expectedFailure",
+    "__test__ = False", "__test__=False",
 )
 
 
@@ -174,8 +176,10 @@ def audit_diff(diff: str) -> AuditVerdict:
                 reasons.append(f"SR-13: patch weakens a conditional to always-true in '{f.path}'")
             if re.search(r"\bassert\s+(True|False\s*==\s*False|1\s*==\s*1|0\s*==\s*0|not\s+False|\S+\s+or\s+True|\S+\s+or\s+1\b)", ln):
                 reasons.append(f"SR-13: patch weakens assertion to constant-true in '{f.path}'")
+            if re.search(r"\bself\.(?:assertTrue\s*\(\s*(?:True|1\s*==\s*1|0\s*==\s*0|False\s*==\s*False|not\s+False)|\bassertEqual\s*\(\s*(?:1\s*,\s*1|0\s*,\s*0|True\s*,\s*True|False\s*,\s*False))\b", ln):
+                reasons.append(f"SR-13: patch weakens unittest assertion to constant-true in '{f.path}'")
             if _is_test_path(f.path):
-                if re.search(r"\btime\.sleep\s*\(", ln):
+                if re.search(r"\b(?:time|asyncio)\.sleep\s*\(", ln):
                     reasons.append(f"SR-13: patch injects sleep in test to mask timing race conditions in '{f.path}'")
             if re.search(r"verify\s*=\s*False", ln):
                 reasons.append(f"SR-13: patch disables TLS/verification in '{f.path}'")
@@ -192,8 +196,8 @@ def audit_diff(diff: str) -> AuditVerdict:
             if re.search(r"\b(eval|exec)\s*\(", ln):
                 reasons.append(f"SR-13: patch contains dynamic code evaluation (eval/exec) in '{f.path}'")
             # 2. Obfuscated reflection / import tricks
-            if re.search(r"\b(__import__|__builtins__)\b", ln):
-                reasons.append(f"SR-13: patch contains disallowed dynamic reflection (__import__/__builtins__) in '{f.path}'")
+            if re.search(r"\b(__import__|__builtins__|importlib\.import_module)\b", ln):
+                reasons.append(f"SR-13: patch contains disallowed dynamic reflection in '{f.path}'")
             # 3. Insecure deserialization
             if re.search(r"\b(pickle\.loads|yaml\.unsafe_load)\b", ln):
                 reasons.append(f"SR-13: patch contains insecure object deserialization in '{f.path}'")
@@ -219,9 +223,9 @@ def audit_diff(diff: str) -> AuditVerdict:
                 reasons.append(f"SR-13: patch tampers with pytest internal runner hooks in '{f.path}'")
 
         # Test discovery / runner config tampering
-        if f.path.endswith("pytest.ini") or f.path.endswith("tox.ini") or f.path == "setup.cfg":
+        if f.path.endswith("pytest.ini") or f.path.endswith("tox.ini") or f.path == "setup.cfg" or f.path.endswith("pyproject.toml") or f.path.endswith("noxfile.py") or f.path.endswith("Makefile"):
             for ln in f.added:
-                if re.search(r"(--ignore|--deselect|-k\b|maxfail|timeout\s*=)", ln):
+                if re.search(r"(--ignore|--deselect|-k\b|maxfail|timeout\s*=|session\.skip|addopts\s*=.*--ignore)", ln):
                     reasons.append(f"SR-14: patch tampers with test discovery/timeout configuration in '{f.path}'")
 
         # Untrusted package index in dependency files

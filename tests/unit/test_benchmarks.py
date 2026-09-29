@@ -56,7 +56,10 @@ def test_empirical_validation_suite_conformance():
     # Verification Invariant Stress-Test (Adversarial FVR) Verifications
     assert scorecard["claim_9_verification_invariant_passed"] is True
     b9 = results["benchmarks"]["09_verification_invariant_stress"]
-    assert b9["total_adversarial_scenarios"] == 40
+    assert b9["total_adversarial_scenarios"] == 48
+    assert b9["multi_environment_matrix"]["total_environments"] == 12
+    assert b9["multi_environment_matrix"]["total_matrix_evaluations"] == 576
+    assert b9["multi_environment_matrix"]["all_environments_fvr_zero"] is True
     assert b9["full_cidra"]["security_block_rate_percent"] == 100.0
     assert b9["full_cidra"]["false_verified_rate_percent"] == 0.0
     assert b9["sandbox_only"]["false_verified_rate_percent"] == 100.0

@@ -134,12 +134,15 @@ def main() -> int:
 
     # Claim 9: Verification Invariant Stress-Test (Adversarial FVR)
     b9 = benchmarks["09_verification_invariant_stress"]
-    assert b9["total_adversarial_scenarios"] == 40, f"Expected 40 attacks, got {b9['total_adversarial_scenarios']}"
+    assert b9["total_adversarial_scenarios"] == 48, f"Expected 48 attacks, got {b9['total_adversarial_scenarios']}"
+    assert b9["multi_environment_matrix"]["total_environments"] == 12, "Expected 12 environments"
+    assert b9["multi_environment_matrix"]["total_matrix_evaluations"] == 576, "Expected 576 evaluations"
+    assert b9["multi_environment_matrix"]["all_environments_fvr_zero"] is True, "FVR > 0% in at least one environment"
     assert b9["full_cidra"]["security_block_rate_percent"] == 100.0, "Full CIDRA block rate < 100%"
     assert b9["full_cidra"]["false_verified_rate_percent"] == 0.0, "Full CIDRA FVR > 0%"
     assert b9["sandbox_only"]["false_verified_rate_percent"] == 100.0, "Sandbox-only FVR != 100%"
     assert b9["verification_invariant_confirmed"] is True, "Verification invariant broken"
-    print(f"  [PASS] Claim 9 (Verification Invariant Stress): 40/40 attacks blocked (Full CIDRA FVR = 0.0% vs Sandbox-only FVR = 100.0%)")
+    print(f"  [PASS] Claim 9 (Verification Invariant Stress): 48/48 attacks blocked across 12 environments (576 evaluations, Full CIDRA FVR = 0.0% vs Sandbox-only FVR = 100.0%)")
 
     # Cryptographic Receipt Verification
     receipts_file = ROOT / "reports" / "benchmark_receipts.json"

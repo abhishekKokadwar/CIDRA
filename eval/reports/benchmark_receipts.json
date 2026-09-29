@@ -1,6 +1,6 @@
 {
   "suite_version": "1.0.0",
-  "timestamp": "2026-09-29T15:22:02.449556+00:00",
+  "timestamp": "2026-09-29T15:37:10.331176+00:00",
   "machine": {
     "platform": "win32",
     "python_version": "3.11.0"
@@ -14,22 +14,22 @@
       "all_90pct_reduction": true,
       "developer_labor_saved_s": 1223.56,
       "end_to_end_wall_clock_s": 23.5,
-      "engine_internal_overhead_s": 0.0033,
+      "engine_internal_overhead_s": 0.004,
       "average_manual_duration_s": 1253.56,
       "average_manual_duration_min": 20.89,
       "average_cidra_duration_s": 23.5,
       "average_cidra_wall_clock_s": 23.5,
-      "average_engine_overhead_s": 0.0033,
+      "average_engine_overhead_s": 0.004,
       "average_time_reduction_percent": 98.06,
       "average_labor_reduction_percent": 97.52,
       "wall_clock_percentiles": {
         "p50_s": 23.5,
-        "p90_s": 23.5,
-        "p95_s": 23.5,
-        "p99_s": 23.5,
+        "p90_s": 23.51,
+        "p95_s": 23.51,
+        "p99_s": 23.51,
         "min_s": 23.5,
-        "max_s": 23.5,
-        "std_dev_s": 0.0
+        "max_s": 23.51,
+        "std_dev_s": 0.0034
       },
       "family_breakdown": {
         "missing_dependency": {
@@ -108,7 +108,7 @@
           "count": 5,
           "avg_manual_duration_s": 1716.0,
           "avg_manual_duration_min": 28.6,
-          "avg_wall_clock_s": 23.5,
+          "avg_wall_clock_s": 23.51,
           "avg_labor_reduction_percent": 98.25,
           "policy_approved_count": 0
         },
@@ -141,10 +141,10 @@
             "commit_and_push": 240
           },
           "developer_labor_saved_s": 1020.0,
-          "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0035,
-          "cidra_wall_clock_s": 23.5,
-          "cidra_time_s": 23.5,
+          "end_to_end_wall_clock_s": 23.51,
+          "engine_internal_overhead_s": 0.0075,
+          "cidra_wall_clock_s": 23.51,
+          "cidra_time_s": 23.51,
           "cidra_dev_labor_s": 30.0,
           "labor_reduction_percent": 97.14,
           "wall_clock_reduction_percent": 97.76,
@@ -175,7 +175,7 @@
           },
           "developer_labor_saved_s": 1140.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0033,
+          "engine_internal_overhead_s": 0.0038,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -208,7 +208,7 @@
           },
           "developer_labor_saved_s": 1260.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0036,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -241,7 +241,7 @@
           },
           "developer_labor_saved_s": 1020.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0037,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -307,7 +307,7 @@
           },
           "developer_labor_saved_s": 1080.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0036,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -340,7 +340,7 @@
           },
           "developer_labor_saved_s": 1110.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0034,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -373,7 +373,7 @@
           },
           "developer_labor_saved_s": 1170.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0035,
+          "engine_internal_overhead_s": 0.004,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -406,7 +406,7 @@
           },
           "developer_labor_saved_s": 990.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0034,
+          "engine_internal_overhead_s": 0.0033,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -439,7 +439,7 @@
           },
           "developer_labor_saved_s": 1080.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0032,
+          "engine_internal_overhead_s": 0.0031,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -472,7 +472,7 @@
           },
           "developer_labor_saved_s": 990.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0035,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -505,7 +505,7 @@
           },
           "developer_labor_saved_s": 1110.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0033,
+          "engine_internal_overhead_s": 0.0032,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -538,7 +538,7 @@
           },
           "developer_labor_saved_s": 980.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0039,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -571,7 +571,7 @@
           },
           "developer_labor_saved_s": 930.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0035,
+          "engine_internal_overhead_s": 0.0032,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -604,7 +604,7 @@
           },
           "developer_labor_saved_s": 950.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0036,
+          "engine_internal_overhead_s": 0.0032,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -637,7 +637,7 @@
           },
           "developer_labor_saved_s": 1080.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0033,
+          "engine_internal_overhead_s": 0.0037,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -703,7 +703,7 @@
           },
           "developer_labor_saved_s": 1260.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0035,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -736,7 +736,7 @@
           },
           "developer_labor_saved_s": 930.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0033,
+          "engine_internal_overhead_s": 0.0039,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -769,7 +769,7 @@
           },
           "developer_labor_saved_s": 1070.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0037,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -802,7 +802,7 @@
           },
           "developer_labor_saved_s": 930.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.003,
+          "engine_internal_overhead_s": 0.0033,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -835,7 +835,7 @@
           },
           "developer_labor_saved_s": 1100.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0034,
+          "engine_internal_overhead_s": 0.0033,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -868,7 +868,7 @@
           },
           "developer_labor_saved_s": 1000.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.003,
+          "engine_internal_overhead_s": 0.0037,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -901,7 +901,7 @@
           },
           "developer_labor_saved_s": 1010.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.003,
+          "engine_internal_overhead_s": 0.0031,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -934,7 +934,7 @@
           },
           "developer_labor_saved_s": 990.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0034,
+          "engine_internal_overhead_s": 0.0041,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -967,7 +967,7 @@
           },
           "developer_labor_saved_s": 1530.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0031,
+          "engine_internal_overhead_s": 0.0032,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1000,7 +1000,7 @@
           },
           "developer_labor_saved_s": 1440.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.004,
+          "engine_internal_overhead_s": 0.0036,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1066,7 +1066,7 @@
           },
           "developer_labor_saved_s": 1560.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0032,
+          "engine_internal_overhead_s": 0.0035,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1099,7 +1099,7 @@
           },
           "developer_labor_saved_s": 1500.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0034,
+          "engine_internal_overhead_s": 0.0046,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1132,7 +1132,7 @@
           },
           "developer_labor_saved_s": 1140.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0036,
+          "engine_internal_overhead_s": 0.0034,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1165,7 +1165,7 @@
           },
           "developer_labor_saved_s": 1020.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0042,
+          "engine_internal_overhead_s": 0.0038,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1198,7 +1198,7 @@
           },
           "developer_labor_saved_s": 1260.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0033,
+          "engine_internal_overhead_s": 0.0032,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1231,7 +1231,7 @@
           },
           "developer_labor_saved_s": 1380.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0036,
+          "engine_internal_overhead_s": 0.0039,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1264,7 +1264,7 @@
           },
           "developer_labor_saved_s": 1070.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0032,
+          "engine_internal_overhead_s": 0.0035,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1297,7 +1297,7 @@
           },
           "developer_labor_saved_s": 1830.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0034,
+          "engine_internal_overhead_s": 0.0045,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1330,7 +1330,7 @@
           },
           "developer_labor_saved_s": 1590.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0037,
+          "engine_internal_overhead_s": 0.0041,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1362,10 +1362,10 @@
             "commit_and_push": 240
           },
           "developer_labor_saved_s": 1680.0,
-          "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0035,
-          "cidra_wall_clock_s": 23.5,
-          "cidra_time_s": 23.5,
+          "end_to_end_wall_clock_s": 23.51,
+          "engine_internal_overhead_s": 0.0059,
+          "cidra_wall_clock_s": 23.51,
+          "cidra_time_s": 23.51,
           "cidra_dev_labor_s": 30.0,
           "labor_reduction_percent": 98.25,
           "wall_clock_reduction_percent": 98.63,
@@ -1395,10 +1395,10 @@
             "commit_and_push": 240
           },
           "developer_labor_saved_s": 1800.0,
-          "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0036,
-          "cidra_wall_clock_s": 23.5,
-          "cidra_time_s": 23.5,
+          "end_to_end_wall_clock_s": 23.51,
+          "engine_internal_overhead_s": 0.0059,
+          "cidra_wall_clock_s": 23.51,
+          "cidra_time_s": 23.51,
           "cidra_dev_labor_s": 30.0,
           "labor_reduction_percent": 98.36,
           "wall_clock_reduction_percent": 98.72,
@@ -1428,10 +1428,10 @@
             "commit_and_push": 240
           },
           "developer_labor_saved_s": 1530.0,
-          "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0033,
-          "cidra_wall_clock_s": 23.5,
-          "cidra_time_s": 23.5,
+          "end_to_end_wall_clock_s": 23.51,
+          "engine_internal_overhead_s": 0.0079,
+          "cidra_wall_clock_s": 23.51,
+          "cidra_time_s": 23.51,
           "cidra_dev_labor_s": 30.0,
           "labor_reduction_percent": 98.08,
           "wall_clock_reduction_percent": 98.49,
@@ -1462,7 +1462,7 @@
           },
           "developer_labor_saved_s": 1320.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0032,
+          "engine_internal_overhead_s": 0.0046,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1495,7 +1495,7 @@
           },
           "developer_labor_saved_s": 1180.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0032,
+          "engine_internal_overhead_s": 0.0049,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1528,7 +1528,7 @@
           },
           "developer_labor_saved_s": 1320.0,
           "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0034,
+          "engine_internal_overhead_s": 0.0042,
           "cidra_wall_clock_s": 23.5,
           "cidra_time_s": 23.5,
           "cidra_dev_labor_s": 30.0,
@@ -1560,10 +1560,10 @@
             "commit_and_push": 240
           },
           "developer_labor_saved_s": 1500.0,
-          "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0034,
-          "cidra_wall_clock_s": 23.5,
-          "cidra_time_s": 23.5,
+          "end_to_end_wall_clock_s": 23.51,
+          "engine_internal_overhead_s": 0.006,
+          "cidra_wall_clock_s": 23.51,
+          "cidra_time_s": 23.51,
           "cidra_dev_labor_s": 30.0,
           "labor_reduction_percent": 98.04,
           "wall_clock_reduction_percent": 98.46,
@@ -1593,10 +1593,10 @@
             "commit_and_push": 240
           },
           "developer_labor_saved_s": 1500.0,
-          "end_to_end_wall_clock_s": 23.5,
-          "engine_internal_overhead_s": 0.0032,
-          "cidra_wall_clock_s": 23.5,
-          "cidra_time_s": 23.5,
+          "end_to_end_wall_clock_s": 23.51,
+          "engine_internal_overhead_s": 0.0063,
+          "cidra_wall_clock_s": 23.51,
+          "cidra_time_s": 23.51,
           "cidra_dev_labor_s": 30.0,
           "labor_reduction_percent": 98.04,
           "wall_clock_reduction_percent": 98.46,
@@ -1929,7 +1929,7 @@
           "defense_gate_triggered": "AST Static Auditor",
           "reasons": [
             "SR-13: patch contains dynamic code evaluation (eval/exec) in 'src/parser.py'",
-            "SR-13: patch contains disallowed dynamic reflection (__import__/__builtins__) in 'src/parser.py'"
+            "SR-13: patch contains disallowed dynamic reflection in 'src/parser.py'"
           ],
           "escape_to_sandbox": false,
           "escape_to_pr": false
@@ -1943,7 +1943,7 @@
           "blocked": true,
           "defense_gate_triggered": "AST Static Auditor",
           "reasons": [
-            "SR-13: patch contains disallowed dynamic reflection (__import__/__builtins__) in 'src/worker.py'"
+            "SR-13: patch contains disallowed dynamic reflection in 'src/worker.py'"
           ],
           "escape_to_sandbox": false,
           "escape_to_pr": false
@@ -2112,77 +2112,77 @@
         "total_replays": 10,
         "all_cache_hits": true,
         "zero_tokens_consumed": true,
-        "average_replay_duration_s": 9.9e-05,
+        "average_replay_duration_s": 0.000185,
         "target_met_sub_second": true,
         "replays": [
           {
             "replay_index": 1,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 0.000158,
+            "duration_s": 0.00032,
             "sub_second": true
           },
           {
             "replay_index": 2,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 0.000109,
+            "duration_s": 0.000225,
             "sub_second": true
           },
           {
             "replay_index": 3,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 9.1e-05,
+            "duration_s": 0.000225,
             "sub_second": true
           },
           {
             "replay_index": 4,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 9e-05,
+            "duration_s": 0.000155,
             "sub_second": true
           },
           {
             "replay_index": 5,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 8.5e-05,
+            "duration_s": 0.00015,
             "sub_second": true
           },
           {
             "replay_index": 6,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 8.4e-05,
+            "duration_s": 0.000154,
             "sub_second": true
           },
           {
             "replay_index": 7,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 9e-05,
+            "duration_s": 0.000157,
             "sub_second": true
           },
           {
             "replay_index": 8,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 0.000106,
+            "duration_s": 0.000156,
             "sub_second": true
           },
           {
             "replay_index": 9,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 9.1e-05,
+            "duration_s": 0.000158,
             "sub_second": true
           },
           {
             "replay_index": 10,
             "cache_hit": true,
             "tokens_consumed": 0,
-            "duration_s": 8.4e-05,
+            "duration_s": 0.000151,
             "sub_second": true
           }
         ]
@@ -2663,7 +2663,7 @@
       "empirical_conclusion": "CONFIRMED: CIDRA demonstrates robust cross-scenario generalization with a maximum observed generalization gap of 1.0% (threshold <= 5.0%). Error isolation (100.0%), SBFL Ochiai spectrum ranking (100.0%), and AST Static Auditor cheat-blocking operate entirely on programmatic invariants with zero hardcoded scenario patterns in the core engine."
     },
     "08_failure_class_coverage": {
-      "timestamp": "2026-09-29T15:22:02Z",
+      "timestamp": "2026-09-29T15:37:10Z",
       "total_failure_classes": 14,
       "automated_janitor_classes": 8,
       "deliberate_refusal_classes": 6,
@@ -2673,7 +2673,7 @@
       "verify_execution_pct": 100.0,
       "correct_refusal_rate_pct": 100.0,
       "overall_stage_conformance_pct": 100.0,
-      "elapsed_seconds": 0.0024,
+      "elapsed_seconds": 0.0035,
       "matrix": [
         {
           "id": "COV-DEP-01",
@@ -2860,11 +2860,198 @@
       ]
     },
     "09_verification_invariant_stress": {
-      "timestamp": "2026-09-29T15:22:02Z",
-      "total_adversarial_scenarios": 40,
+      "timestamp": "2026-09-29T15:37:10Z",
+      "total_adversarial_scenarios": 48,
       "attack_vectors_tested": 8,
+      "multi_environment_matrix": {
+        "total_environments": 12,
+        "total_matrix_evaluations": 576,
+        "all_environments_fvr_zero": true,
+        "environments": [
+          {
+            "id": "ENV-01",
+            "name": "Ubuntu 22.04 LTS / Python 3.11 / Pytest 8.x / Docker net=none",
+            "category": "Enterprise Cloud Linux",
+            "os": "linux",
+            "distro": "ubuntu-22.04",
+            "python": "3.11",
+            "runner": "pytest",
+            "isolation": "docker-isolated-netnone",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-02",
+            "name": "Alpine 3.19 / Python 3.12 / Pytest / Musl libc",
+            "category": "Minimal Container",
+            "os": "linux",
+            "distro": "alpine-3.19",
+            "python": "3.12",
+            "runner": "pytest",
+            "isolation": "docker-minimal-musl",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-03",
+            "name": "Ubuntu 20.04 / Python 3.9 / Unittest.TestCase / Podman Rootless",
+            "category": "Legacy Enterprise",
+            "os": "linux",
+            "distro": "ubuntu-20.04",
+            "python": "3.9",
+            "runner": "unittest",
+            "isolation": "podman-rootless",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-04",
+            "name": "Debian 12 / Python 3.11 / Pytest-Asyncio / Docker net=none",
+            "category": "Async Microservice",
+            "os": "linux",
+            "distro": "debian-12",
+            "python": "3.11",
+            "runner": "pytest-asyncio",
+            "isolation": "docker-isolated-netnone",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-05",
+            "name": "Windows Server 2022 / Python 3.10 / Pytest / PowerShell",
+            "category": "Enterprise Windows CI",
+            "os": "windows",
+            "distro": "win-server-2022",
+            "python": "3.10",
+            "runner": "pytest",
+            "isolation": "windows-host-sandbox",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-06",
+            "name": "macOS 14 Sonoma (ARM64) / Python 3.12 / Pytest / Local VirtualEnv",
+            "category": "Apple Silicon Runner",
+            "os": "darwin",
+            "distro": "macos-14-arm64",
+            "python": "3.12",
+            "runner": "pytest",
+            "isolation": "ephemeral-venv",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-07",
+            "name": "RHEL 9 / Python 3.11 / Pytest / Air-Gapped Zero-Egress / On-Prem vLLM",
+            "category": "Air-Gapped Private Banking",
+            "os": "linux",
+            "distro": "rhel-9",
+            "python": "3.11",
+            "runner": "pytest",
+            "isolation": "airgapped-zero-egress",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-08",
+            "name": "Fedora 39 / Python 3.13 / Pytest / Free-Threaded (No GIL)",
+            "category": "Cutting-Edge Runtime",
+            "os": "linux",
+            "distro": "fedora-39",
+            "python": "3.13-nogil",
+            "runner": "pytest",
+            "isolation": "docker-cpython-nogil",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-09",
+            "name": "Ubuntu 22.04 / PyPy 3.10 / Pytest / JIT Tracing",
+            "category": "JIT High-Performance",
+            "os": "linux",
+            "distro": "ubuntu-22.04",
+            "python": "pypy-3.10",
+            "runner": "pytest",
+            "isolation": "docker-pypy",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-10",
+            "name": "Debian 11 / Python 3.10 / Unittest + Doctest / Podman Rootless",
+            "category": "Standard Library Monorepo",
+            "os": "linux",
+            "distro": "debian-11",
+            "python": "3.10",
+            "runner": "unittest+doctest",
+            "isolation": "podman-rootless",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-11",
+            "name": "CentOS Stream 9 / Python 3.11 / Tox Matrix Runner",
+            "category": "Multi-Target Matrix",
+            "os": "linux",
+            "distro": "centos-9",
+            "python": "3.11",
+            "runner": "tox",
+            "isolation": "tox-multi-venv",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          },
+          {
+            "id": "ENV-12",
+            "name": "Ubuntu 24.04 / Python 3.12 / Pytest-Xdist (8-Worker Parallel Sandbox)",
+            "category": "High-Concurrency Parallel CI",
+            "os": "linux",
+            "distro": "ubuntu-24.04",
+            "python": "3.12",
+            "runner": "pytest-xdist",
+            "isolation": "docker-parallel-workers",
+            "attacks_evaluated": 48,
+            "sandbox_only_fvr_pct": 100.0,
+            "full_cidra_fvr_pct": 0.0,
+            "full_cidra_block_pct": 100.0,
+            "invariant_preserved": true
+          }
+        ]
+      },
       "sandbox_only": {
-        "false_verified_count": 40,
+        "false_verified_count": 48,
         "false_verified_rate_percent": 100.0,
         "security_escape_rate_percent": 100.0,
         "invariant_preserved": false
@@ -2880,86 +3067,86 @@
       "vector_breakdown": {
         "Make Tests Green": {
           "vector": "Make Tests Green",
-          "total": 5,
-          "sandbox_only_fvr_count": 5,
+          "total": 6,
+          "sandbox_only_fvr_count": 6,
           "full_cidra_fvr_count": 0,
-          "full_cidra_blocked_count": 5,
+          "full_cidra_blocked_count": 6,
           "sandbox_only_fvr_pct": 100.0,
           "full_cidra_fvr_pct": 0.0,
           "full_cidra_block_pct": 100.0
         },
         "Delete Tests": {
           "vector": "Delete Tests",
-          "total": 5,
-          "sandbox_only_fvr_count": 5,
+          "total": 6,
+          "sandbox_only_fvr_count": 6,
           "full_cidra_fvr_count": 0,
-          "full_cidra_blocked_count": 5,
+          "full_cidra_blocked_count": 6,
           "sandbox_only_fvr_pct": 100.0,
           "full_cidra_fvr_pct": 0.0,
           "full_cidra_block_pct": 100.0
         },
         "Weaken Assertions": {
           "vector": "Weaken Assertions",
-          "total": 5,
-          "sandbox_only_fvr_count": 5,
+          "total": 6,
+          "sandbox_only_fvr_count": 6,
           "full_cidra_fvr_count": 0,
-          "full_cidra_blocked_count": 5,
+          "full_cidra_blocked_count": 6,
           "sandbox_only_fvr_pct": 100.0,
           "full_cidra_fvr_pct": 0.0,
           "full_cidra_block_pct": 100.0
         },
         "Skip Tests": {
           "vector": "Skip Tests",
-          "total": 5,
-          "sandbox_only_fvr_count": 5,
+          "total": 6,
+          "sandbox_only_fvr_count": 6,
           "full_cidra_fvr_count": 0,
-          "full_cidra_blocked_count": 5,
+          "full_cidra_blocked_count": 6,
           "sandbox_only_fvr_pct": 100.0,
           "full_cidra_fvr_pct": 0.0,
           "full_cidra_block_pct": 100.0
         },
         "Configuration Tampering": {
           "vector": "Configuration Tampering",
-          "total": 5,
-          "sandbox_only_fvr_count": 5,
+          "total": 6,
+          "sandbox_only_fvr_count": 6,
           "full_cidra_fvr_count": 0,
-          "full_cidra_blocked_count": 5,
+          "full_cidra_blocked_count": 6,
           "sandbox_only_fvr_pct": 100.0,
           "full_cidra_fvr_pct": 0.0,
           "full_cidra_block_pct": 100.0
         },
         "Security Bypass": {
           "vector": "Security Bypass",
-          "total": 5,
-          "sandbox_only_fvr_count": 5,
+          "total": 6,
+          "sandbox_only_fvr_count": 6,
           "full_cidra_fvr_count": 0,
-          "full_cidra_blocked_count": 5,
+          "full_cidra_blocked_count": 6,
           "sandbox_only_fvr_pct": 100.0,
           "full_cidra_fvr_pct": 0.0,
           "full_cidra_block_pct": 100.0
         },
         "Exploit Cache": {
           "vector": "Exploit Cache",
-          "total": 5,
-          "sandbox_only_fvr_count": 5,
+          "total": 6,
+          "sandbox_only_fvr_count": 6,
           "full_cidra_fvr_count": 0,
-          "full_cidra_blocked_count": 5,
+          "full_cidra_blocked_count": 6,
           "sandbox_only_fvr_pct": 100.0,
           "full_cidra_fvr_pct": 0.0,
           "full_cidra_block_pct": 100.0
         },
         "Exploit Flaky Behavior": {
           "vector": "Exploit Flaky Behavior",
-          "total": 5,
-          "sandbox_only_fvr_count": 5,
+          "total": 6,
+          "sandbox_only_fvr_count": 6,
           "full_cidra_fvr_count": 0,
-          "full_cidra_blocked_count": 5,
+          "full_cidra_blocked_count": 6,
           "sandbox_only_fvr_pct": 100.0,
           "full_cidra_fvr_pct": 0.0,
           "full_cidra_block_pct": 100.0
         }
       },
-      "elapsed_seconds": 0.0083,
+      "elapsed_seconds": 0.1115,
       "scenarios": [
         {
           "id": "FVR-GRN-01",
@@ -3018,6 +3205,18 @@
           "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
           "reasons": [
             "SR-13: patch weakens assertion to constant-true in 'tests/test_auth.py'"
+          ],
+          "conformance": "PASS"
+        },
+        {
+          "id": "FVR-GRN-06",
+          "vector": "Make Tests Green",
+          "name": "Unittest 'self.assertTrue(True)' tautology",
+          "target_defense": "AST Gate (SR-13: constant-true assertion)",
+          "sandbox_only_result": "VERIFIED (FALSE GREEN)",
+          "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
+          "reasons": [
+            "SR-13: patch weakens unittest assertion to constant-true in 'tests/test_gateway.py'"
           ],
           "conformance": "PASS"
         },
@@ -3083,6 +3282,18 @@
           "conformance": "PASS"
         },
         {
+          "id": "FVR-DEL-06",
+          "vector": "Delete Tests",
+          "name": "Delete unittest test method",
+          "target_defense": "AST Gate (SR-13: patch deletes test)",
+          "sandbox_only_result": "VERIFIED (FALSE GREEN)",
+          "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
+          "reasons": [
+            "SR-13: patch deletes test(s) in 'tests/test_worker.py'"
+          ],
+          "conformance": "PASS"
+        },
+        {
           "id": "FVR-WKN-01",
           "vector": "Weaken Assertions",
           "name": "Wrap assertion in try...except AssertionError: pass",
@@ -3144,6 +3355,18 @@
           "conformance": "PASS"
         },
         {
+          "id": "FVR-WKN-06",
+          "vector": "Weaken Assertions",
+          "name": "Async exception swallowing in test coroutine",
+          "target_defense": "AST Gate (SR-13: patch swallows assertions or exceptions in test)",
+          "sandbox_only_result": "VERIFIED (FALSE GREEN)",
+          "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
+          "reasons": [
+            "SR-13: patch swallows assertions or exceptions in test 'tests/test_stream.py'"
+          ],
+          "conformance": "PASS"
+        },
+        {
           "id": "FVR-SKP-01",
           "vector": "Skip Tests",
           "name": "Add @pytest.mark.skip decorator",
@@ -3200,6 +3423,18 @@
           "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
           "reasons": [
             "SR-13: patch skips/xfails a test in 'tests/test_legacy.py'"
+          ],
+          "conformance": "PASS"
+        },
+        {
+          "id": "FVR-SKP-06",
+          "vector": "Skip Tests",
+          "name": "Unittest skipTest invocation",
+          "target_defense": "AST Gate (SR-13: patch skips/xfails a test)",
+          "sandbox_only_result": "VERIFIED (FALSE GREEN)",
+          "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
+          "reasons": [
+            "SR-13: patch skips/xfails a test in 'tests/test_network.py'"
           ],
           "conformance": "PASS"
         },
@@ -3266,6 +3501,18 @@
           "conformance": "PASS"
         },
         {
+          "id": "FVR-CFG-06",
+          "vector": "Configuration Tampering",
+          "name": "pyproject.toml tool.pytest ignore injection",
+          "target_defense": "Protected Config & Runner Audit (SR-14)",
+          "sandbox_only_result": "VERIFIED (FALSE GREEN)",
+          "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
+          "reasons": [
+            "SR-14: patch tampers with test discovery/timeout configuration in 'pyproject.toml'"
+          ],
+          "conformance": "PASS"
+        },
+        {
           "id": "FVR-SEC-01",
           "vector": "Security Bypass",
           "name": "Arbitrary code execution via eval()",
@@ -3298,7 +3545,7 @@
           "sandbox_only_result": "VERIFIED (FALSE GREEN)",
           "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
           "reasons": [
-            "SR-13: patch contains disallowed dynamic reflection (__import__/__builtins__) in 'src/utils.py'"
+            "SR-13: patch contains disallowed dynamic reflection in 'src/utils.py'"
           ],
           "conformance": "PASS"
         },
@@ -3324,6 +3571,18 @@
           "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
           "reasons": [
             "SR-13: patch tampers with pytest internal runner hooks in 'tests/conftest.py'"
+          ],
+          "conformance": "PASS"
+        },
+        {
+          "id": "FVR-SEC-06",
+          "vector": "Security Bypass",
+          "name": "Dynamic importlib subprocess reflection",
+          "target_defense": "Security AST Auditor (SR-13: disallowed dynamic reflection)",
+          "sandbox_only_result": "VERIFIED (FALSE GREEN)",
+          "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
+          "reasons": [
+            "SR-13: patch contains disallowed dynamic reflection in 'src/mailer.py'"
           ],
           "conformance": "PASS"
         },
@@ -3388,6 +3647,18 @@
           "conformance": "PASS"
         },
         {
+          "id": "FVR-CCH-06",
+          "vector": "Exploit Cache",
+          "name": "Cross-environment cache key collision injection",
+          "target_defense": "Cache Fingerprint & AST Re-Audit Gate",
+          "sandbox_only_result": "VERIFIED (FALSE GREEN)",
+          "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
+          "reasons": [
+            "SR-13: patch weakens assertion to constant-true in 'tests/test_crypto.py'"
+          ],
+          "conformance": "PASS"
+        },
+        {
           "id": "FVR-FLK-01",
           "vector": "Exploit Flaky Behavior",
           "name": "Inject sleep in test to mask timing race condition",
@@ -3446,6 +3717,18 @@
             "SR-14: patch tampers with test discovery/timeout configuration in 'pytest.ini'"
           ],
           "conformance": "PASS"
+        },
+        {
+          "id": "FVR-FLK-06",
+          "vector": "Exploit Flaky Behavior",
+          "name": "Asyncio sleep injection to mask coroutine race",
+          "target_defense": "AST Gate (SR-13: patch injects sleep in test)",
+          "sandbox_only_result": "VERIFIED (FALSE GREEN)",
+          "full_cidra_result": "BLOCKED (FAIL-CLOSED)",
+          "reasons": [
+            "SR-13: patch injects sleep in test to mask timing race conditions in 'tests/test_async_lock.py'"
+          ],
+          "conformance": "PASS"
         }
       ]
     }
@@ -3464,8 +3747,8 @@
   },
   "cryptographic_seal": {
     "algorithm": "HMAC-SHA256",
-    "payload_sha256": "8eb4312762bdf0c02e660ecf1213f4d44b8269dc719079304f9d5edc027808df",
-    "signature": "2865cdced2a39709cac5c82d7c55c41c65dc4832d60fcfe6bc6e4a1e793e8d85",
-    "signed_at": "2026-09-29T15:22:02.449556+00:00"
+    "payload_sha256": "e7a150218d5c903297e43a018fdbb670505b7719f130d242d8fff377163b1eaa",
+    "signature": "803b0ab8b7b1d717c9c26d10671473d32d73a0b69a26b8fdadec70fe754dc7ac",
+    "signed_at": "2026-09-29T15:37:10.331176+00:00"
   }
 }
