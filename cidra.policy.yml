@@ -10,6 +10,10 @@ policy:
     - env_var_missing
     - simple_assertion
     - lint_style
+    - api_deprecation
+    - type_interface_error
+    - multi_file_fault
+    - build_package_error
 
   # High-risk categories or code paths requiring human review before PR creation/merge
   require_human_approval:

@@ -188,7 +188,7 @@ def audit_diff(diff: str) -> AuditVerdict:
             if re.search(r"\b(urllib\.request|socket\.gethostbyname|socket\.getaddrinfo|socket\.create_connection)\b", ln):
                 reasons.append(f"SR-13: patch contains unauthorized network communication in '{f.path}'")
             # 5. Sensitive environment variable scraping
-            if re.search(r"\bos\.environ(\.get|\.items|\.values|\[['\"](AWS_|GITHUB_|SECRET|TOKEN|KEY))", ln):
+            if re.search(r"\bos\.environ(?:\.items|\.values|(?:\[|\.get\()\s*['\"](?:AWS_|GITHUB_|SECRET|TOKEN|KEY|PRIVATE_KEY))", ln):
                 reasons.append(f"SR-13: patch attempts to harvest sensitive environment variables in '{f.path}'")
             # 6. File permission escalation
             if re.search(r"\bos\.chmod\([^,]+,\s*0o?[0-7]{3}\)", ln) and ("777" in ln or "666" in ln):

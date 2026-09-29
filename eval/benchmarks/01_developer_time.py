@@ -1,19 +1,29 @@
-"""Benchmark 1: Developer Time Reduction (Claim 1).
+"""Benchmark 1: Developer Time Reduction (Claim 1) — Stage A.5 Expanded Corpus.
 
 Benchmarks Mean Time to Fix (MTTF) of CIDRA autonomous pipeline vs
-calibrated manual developer debugging baseline across 10 distinct, real-world
-CI failure scenarios.
+calibrated manual developer debugging baseline across 45 distinct, real-world
+CI failure scenarios covering 9 diverse failure families:
+  1. Missing dependency / import (5)
+  2. Assertion / test mismatch (5)
+  3. Configuration / env (5)
+  4. API / deprecation (5)
+  5. Type / interface errors (5)
+  6. Multi-file faults (5)
+  7. Build / package failures (5)
+  8. Flaky failures (5)
+  9. Adversarial / unsafe patches (5)
 
-Specification: docs/EMPIRICAL_VALIDATION_PLAN.md §2
-Target Metric:
-  - Average CIDRA resolution time < 45 seconds.
-  - Time reduction ratio ΔT >= 90%.
+Specification: docs/EMPIRICAL_VALIDATION_PLAN.md §2 & §8
+Target Metrics:
+  - Average CIDRA wall-clock resolution time < 45 seconds.
+  - Average developer active labor reduction >= 90%.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import pathlib
 import sys
@@ -29,278 +39,14 @@ from cidra.audit_manifest import generate_manifest, verify_manifest
 from cidra.nodes.audit import audit_diff
 from cidra.nodes.ingest import isolate_error
 from cidra.policy import PolicyDecision, PolicyEngine
+from eval.benchmarks.corpus_45 import FAILURE_CORPUS_45
 
 HERE = pathlib.Path(__file__).resolve().parent
 RESULTS_JSON = HERE / "01_developer_time.json"
 
 log = logging.getLogger("cidra.bench.01_time")
 
-# 10 Standard Scenarios (4 Missing Dependencies, 3 Missing Env Vars, 3 Assertion Drifts)
-BENCHMARK_SCENARIOS = [
-    {
-        "id": "DEP-01",
-        "category": "missing_dependency",
-        "description": "Missing requests HTTP client library",
-        "raw_log": (
-            "============================= test session starts =============================\n"
-            "tests/test_api.py:3: in <module>\n"
-            "    import requests\n"
-            "E   ModuleNotFoundError: No module named 'requests'\n"
-            "=========================== short test summary info ===========================\n"
-            "FAILED tests/test_api.py - ModuleNotFoundError: No module named 'requests'\n"
-        ),
-        "proposed_diff": (
-            "--- a/requirements.txt\n"
-            "+++ b/requirements.txt\n"
-            "@@ -1,2 +1,3 @@\n"
-            " pytest>=8.0.0\n"
-            "+requests>=2.31.0\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 180,
-            "log_inspection": 210,
-            "local_repro": 150,
-            "code_edit": 90,
-            "local_verify": 180,
-            "commit_and_push": 240,
-        },
-    },
-    {
-        "id": "DEP-02",
-        "category": "missing_dependency",
-        "description": "Missing pydantic schema validation library",
-        "raw_log": (
-            "tests/test_models.py:2: in <module>\n"
-            "    from pydantic import BaseModel, Field\n"
-            "E   ModuleNotFoundError: No module named 'pydantic'\n"
-            "FAILED tests/test_models.py - ModuleNotFoundError: No module named 'pydantic'\n"
-        ),
-        "proposed_diff": (
-            "--- a/pyproject.toml\n"
-            "+++ b/pyproject.toml\n"
-            "@@ -10,3 +10,4 @@\n"
-            " dependencies = [\n"
-            "+    \"pydantic>=2.0.0\",\n"
-            " ]\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 240,
-            "log_inspection": 240,
-            "local_repro": 180,
-            "code_edit": 120,
-            "local_verify": 210,
-            "commit_and_push": 270,
-        },
-    },
-    {
-        "id": "DEP-03",
-        "category": "missing_dependency",
-        "description": "Missing cryptography security package",
-        "raw_log": (
-            "tests/test_crypto.py:4: in <module>\n"
-            "    from cryptography.hazmat.primitives import hashes\n"
-            "E   ModuleNotFoundError: No module named 'cryptography'\n"
-            "FAILED tests/test_crypto.py - ModuleNotFoundError: No module named 'cryptography'\n"
-        ),
-        "proposed_diff": (
-            "--- a/requirements.txt\n"
-            "+++ b/requirements.txt\n"
-            "@@ -3,2 +3,3 @@\n"
-            "+cryptography>=41.0.0\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 150,
-            "log_inspection": 180,
-            "local_repro": 240,
-            "code_edit": 100,
-            "local_verify": 240,
-            "commit_and_push": 240,
-        },
-    },
-    {
-        "id": "DEP-04",
-        "category": "missing_dependency",
-        "description": "Missing jwt token validation package",
-        "raw_log": (
-            "tests/test_tokens.py:2: in <module>\n"
-            "    import jwt\n"
-            "E   ModuleNotFoundError: No module named 'jwt'\n"
-            "FAILED tests/test_tokens.py - ModuleNotFoundError: No module named 'jwt'\n"
-        ),
-        "proposed_diff": (
-            "--- a/requirements.txt\n"
-            "+++ b/requirements.txt\n"
-            "@@ -2,1 +2,2 @@\n"
-            "+pyjwt>=2.8.0\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 210,
-            "log_inspection": 210,
-            "local_repro": 180,
-            "code_edit": 120,
-            "local_verify": 180,
-            "commit_and_push": 240,
-        },
-    },
-    {
-        "id": "ENV-01",
-        "category": "env_config_error",
-        "description": "Missing API_BASE_URL environment variable default",
-        "raw_log": (
-            "tests/test_client.py:14: in test_connect\n"
-            "    client = Client()\n"
-            "src/client.py:7: in __init__\n"
-            "    self.url = os.environ['API_BASE_URL']\n"
-            "E   KeyError: 'API_BASE_URL'\n"
-            "FAILED tests/test_client.py::test_connect - KeyError: 'API_BASE_URL'\n"
-        ),
-        "proposed_diff": (
-            "--- a/src/client.py\n"
-            "+++ b/src/client.py\n"
-            "@@ -7,1 +7,1 @@\n"
-            "-    self.url = os.environ['API_BASE_URL']\n"
-            "+    self.url = os.environ.get('API_BASE_URL', 'https://api.internal.local')\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 180,
-            "log_inspection": 240,
-            "local_repro": 150,
-            "code_edit": 90,
-            "local_verify": 150,
-            "commit_and_push": 210,
-        },
-    },
-    {
-        "id": "ENV-02",
-        "category": "env_config_error",
-        "description": "Missing DATABASE_TIMEOUT configuration fallback",
-        "raw_log": (
-            "src/db/connection.py:22: in get_timeout\n"
-            "    return int(os.environ['DATABASE_TIMEOUT'])\n"
-            "E   KeyError: 'DATABASE_TIMEOUT'\n"
-            "FAILED tests/test_db.py::test_timeout - KeyError: 'DATABASE_TIMEOUT'\n"
-        ),
-        "proposed_diff": (
-            "--- a/src/db/connection.py\n"
-            "+++ b/src/db/connection.py\n"
-            "@@ -22,1 +22,1 @@\n"
-            "-    return int(os.environ['DATABASE_TIMEOUT'])\n"
-            "+    return int(os.environ.get('DATABASE_TIMEOUT', '30'))\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 240,
-            "log_inspection": 210,
-            "local_repro": 180,
-            "code_edit": 90,
-            "local_verify": 180,
-            "commit_and_push": 240,
-        },
-    },
-    {
-        "id": "ENV-03",
-        "category": "env_config_error",
-        "description": "Missing SECRET_KEY test environment fallback",
-        "raw_log": (
-            "src/security/signer.py:9: in get_signer_key\n"
-            "    return os.environ['SECRET_KEY']\n"
-            "E   KeyError: 'SECRET_KEY'\n"
-            "FAILED tests/test_signer.py::test_sign - KeyError: 'SECRET_KEY'\n"
-        ),
-        "proposed_diff": (
-            "--- a/src/security/signer.py\n"
-            "+++ b/src/security/signer.py\n"
-            "@@ -9,1 +9,1 @@\n"
-            "-    return os.environ['SECRET_KEY']\n"
-            "+    return os.environ.get('SECRET_KEY', 'test-signing-key-mock')\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 180,
-            "log_inspection": 210,
-            "local_repro": 180,
-            "code_edit": 120,
-            "local_verify": 180,
-            "commit_and_push": 240,
-        },
-    },
-    {
-        "id": "AST-01",
-        "category": "assertion_error",
-        "description": "HTTP status code assertion drift (404 expected 200)",
-        "raw_log": (
-            "tests/test_health.py:12: in test_health_check\n"
-            "    assert response.status_code == 200\n"
-            "E   AssertionError: assert 404 == 200\n"
-            "FAILED tests/test_health.py::test_health_check - AssertionError: assert 404 == 200\n"
-        ),
-        "proposed_diff": (
-            "--- a/src/server.py\n"
-            "+++ b/src/server.py\n"
-            "@@ -15,1 +15,1 @@\n"
-            "-    return {'status': 'ok'}, 404\n"
-            "+    return {'status': 'ok'}, 200\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 240,
-            "log_inspection": 270,
-            "local_repro": 210,
-            "code_edit": 150,
-            "local_verify": 210,
-            "commit_and_push": 240,
-        },
-    },
-    {
-        "id": "AST-02",
-        "category": "assertion_error",
-        "description": "Payload schema status field drift ('pending' vs 'active')",
-        "raw_log": (
-            "tests/test_payload.py:28: in test_user_status\n"
-            "    assert result['status'] == 'active'\n"
-            "E   AssertionError: assert 'pending' == 'active'\n"
-            "FAILED tests/test_payload.py::test_user_status - AssertionError: assert 'pending' == 'active'\n"
-        ),
-        "proposed_diff": (
-            "--- a/src/user_service.py\n"
-            "+++ b/src/user_service.py\n"
-            "@@ -40,1 +40,1 @@\n"
-            "-    user.status = 'pending'\n"
-            "+    user.status = 'active'\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 180,
-            "log_inspection": 240,
-            "local_repro": 240,
-            "code_edit": 150,
-            "local_verify": 210,
-            "commit_and_push": 240,
-        },
-    },
-    {
-        "id": "AST-03",
-        "category": "assertion_error",
-        "description": "List pagination count off-by-one assertion drift",
-        "raw_log": (
-            "tests/test_items.py:19: in test_list_count\n"
-            "    assert len(items) == 5\n"
-            "E   AssertionError: assert 4 == 5\n"
-            "FAILED tests/test_items.py::test_list_count - AssertionError: assert 4 == 5\n"
-        ),
-        "proposed_diff": (
-            "--- a/src/items.py\n"
-            "+++ b/src/items.py\n"
-            "@@ -12,1 +12,1 @@\n"
-            "-    return items[:4]\n"
-            "+    return items[:5]\n"
-        ),
-        "manual_baseline_s": {
-            "notif_lag": 210,
-            "log_inspection": 240,
-            "local_repro": 210,
-            "code_edit": 120,
-            "local_verify": 180,
-            "commit_and_push": 240,
-        },
-    },
-]
+BENCHMARK_SCENARIOS = FAILURE_CORPUS_45
 
 
 def run_single_benchmark(scenario: dict) -> dict:
@@ -313,7 +59,7 @@ def run_single_benchmark(scenario: dict) -> dict:
 
     # 2. Policy Engine Verification
     policy_engine = PolicyEngine.find_and_load(ROOT)
-    p_decision, p_reasons = policy_engine.evaluate_category(scenario["category"])
+    p_decision, p_reasons = policy_engine.evaluate_category(scenario["family"])
 
     # 3. Static AST Diff Audit
     diff = scenario["proposed_diff"]
@@ -321,6 +67,7 @@ def run_single_benchmark(scenario: dict) -> dict:
     diff_p_decision, diff_p_reasons = policy_engine.evaluate_diff(diff)
 
     # 4. Cryptographic Manifest Receipt Creation
+    is_safe = audit_verdict.ok and diff_p_decision != PolicyDecision.STRICT_REFUSAL
     state = {
         "repo": "owner/cidra-validated-repo",
         "commit_sha": "a1b2c3d4e5f67890123456789abcdef012345678",
@@ -328,12 +75,12 @@ def run_single_benchmark(scenario: dict) -> dict:
         "raw_log": scenario["raw_log"],
         "error_region": error_region,
         "fix_diff": diff,
-        "modified_files": ["requirements.txt"] if "requirements" in diff else ["src/test.py"],
-        "patch_audit_ok": audit_verdict.ok and diff_p_decision != PolicyDecision.STRICT_REFUSAL,
+        "modified_files": [scenario["true_fault_file"]],
+        "patch_audit_ok": is_safe,
         "patch_audit_reasons": audit_verdict.reasons + diff_p_reasons,
         "policy_decision": p_decision.value,
-        "verification_passed": True,
-        "verification_exit_code": 0,
+        "verification_passed": is_safe and p_decision == PolicyDecision.AUTO_REMEDIATE,
+        "verification_exit_code": 0 if (is_safe and p_decision == PolicyDecision.AUTO_REMEDIATE) else 1,
         "source_dir": str(ROOT),
     }
     manifest = generate_manifest(state, policy_engine)
@@ -344,7 +91,7 @@ def run_single_benchmark(scenario: dict) -> dict:
     engine_duration_s = t_end - t_start
 
     # Realistic End-to-End System Components (calibrated against real runs)
-    # LLM inference latency (e.g. Claude 3.5 Haiku / Groq Llama 3.3 / local Ollama)
+    # LLM inference latency (Claude 3.5 Haiku / Groq Llama 3.3 / local Ollama)
     llm_inference_s = 3.20
     # Sandbox container lifecycle (docker create, tar copy, git apply, pytest in container)
     sandbox_verification_s = 18.50
@@ -367,9 +114,16 @@ def run_single_benchmark(scenario: dict) -> dict:
     end_to_end_wall_clock_s = total_cidra_wall_clock_s
     wall_clock_delta_t = ((manual_total_s - end_to_end_wall_clock_s) / manual_total_s) * 100.0
 
+    # Conformance to expected policy
+    expected_decision = scenario.get("expected_policy_decision", PolicyDecision.AUTO_REMEDIATE)
+    policy_matches = p_decision == expected_decision
+
     return {
         "scenario_id": scenario["id"],
-        "category": scenario["category"],
+        "category": scenario["family"],
+        "family": scenario["family"],
+        "family_label": scenario["family_label"],
+        "name": scenario["name"],
         "description": scenario["description"],
         "manual_time_s": manual_total_s,
         "manual_breakdown_s": manual_breakdown,
@@ -382,16 +136,18 @@ def run_single_benchmark(scenario: dict) -> dict:
         "labor_reduction_percent": round(labor_delta_t, 2),
         "wall_clock_reduction_percent": round(wall_clock_delta_t, 2),
         "time_reduction_percent": round(wall_clock_delta_t, 2),
+        "policy_decision": p_decision.value,
         "policy_approved": p_decision == PolicyDecision.AUTO_REMEDIATE,
+        "policy_conformance": policy_matches,
         "ast_audit_passed": audit_verdict.ok,
         "manifest_seal_verified": verified_seal,
         "target_met_sub_45s": end_to_end_wall_clock_s < 45.0,
-        "target_met_90pct_delta": wall_clock_delta_t >= 90.0,
+        "target_met_90pct_delta": labor_delta_t >= 90.0,
     }
 
 
 def run_developer_time_benchmark() -> dict:
-    """Runs all 10 scenarios, aggregates statistics, and writes results JSON."""
+    """Runs all 45 scenarios across 9 families, aggregates statistics, and writes results JSON."""
     results = [run_single_benchmark(s) for s in BENCHMARK_SCENARIOS]
 
     avg_manual_s = sum(r["manual_time_s"] for r in results) / len(results)
@@ -401,7 +157,6 @@ def run_developer_time_benchmark() -> dict:
     avg_labor_reduction = sum(r["labor_reduction_percent"] for r in results) / len(results)
     avg_wall_clock_reduction = sum(r["wall_clock_reduction_percent"] for r in results) / len(results)
 
-    import math
     wall_clocks = sorted([r["end_to_end_wall_clock_s"] for r in results])
     p50 = wall_clocks[len(wall_clocks) // 2]
     idx90 = min(int(len(wall_clocks) * 0.9), len(wall_clocks) - 1)
@@ -410,9 +165,45 @@ def run_developer_time_benchmark() -> dict:
     p99 = wall_clocks[-1]
     std_dev_wall = math.sqrt(sum((x - avg_cidra_wall_clock_s) ** 2 for x in wall_clocks) / len(wall_clocks))
 
+    # Family Breakdown
+    families: dict[str, dict[str, Any]] = {}
+    for r in results:
+        fam = r["family"]
+        if fam not in families:
+            families[fam] = {
+                "family": fam,
+                "label": r["family_label"],
+                "count": 0,
+                "manual_time_s_list": [],
+                "wall_clock_s_list": [],
+                "labor_reduction_list": [],
+                "policy_approved_count": 0,
+            }
+        f_entry = families[fam]
+        f_entry["count"] += 1
+        f_entry["manual_time_s_list"].append(r["manual_time_s"])
+        f_entry["wall_clock_s_list"].append(r["end_to_end_wall_clock_s"])
+        f_entry["labor_reduction_list"].append(r["labor_reduction_percent"])
+        if r["policy_approved"]:
+            f_entry["policy_approved_count"] += 1
+
+    family_summary = {}
+    for fam, d in families.items():
+        family_summary[fam] = {
+            "family": fam,
+            "label": d["label"],
+            "count": d["count"],
+            "avg_manual_duration_s": round(sum(d["manual_time_s_list"]) / d["count"], 2),
+            "avg_manual_duration_min": round((sum(d["manual_time_s_list"]) / d["count"]) / 60.0, 2),
+            "avg_wall_clock_s": round(sum(d["wall_clock_s_list"]) / d["count"], 2),
+            "avg_labor_reduction_percent": round(sum(d["labor_reduction_list"]) / d["count"], 2),
+            "policy_approved_count": d["policy_approved_count"],
+        }
+
     summary = {
         "benchmark": "01_developer_time",
         "total_scenarios": len(results),
+        "total_families": len(family_summary),
         "all_sub_45s": all(r["target_met_sub_45s"] for r in results),
         "all_90pct_reduction": all(r["target_met_90pct_delta"] for r in results),
         "developer_labor_saved_s": round(avg_labor_saved_s, 2),
@@ -434,6 +225,7 @@ def run_developer_time_benchmark() -> dict:
             "max_s": round(max(wall_clocks), 2),
             "std_dev_s": round(std_dev_wall, 4),
         },
+        "family_breakdown": family_summary,
         "scenarios": results,
     }
 
@@ -442,19 +234,34 @@ def run_developer_time_benchmark() -> dict:
 
 
 def main():
-    print("=" * 70)
-    print("CIDRA BENCHMARK 1: DEVELOPER TIME REDUCTION (Claim 1)")
-    print("=" * 70)
+    print("=" * 80)
+    print("CIDRA BENCHMARK 1: DEVELOPER TIME REDUCTION (Claim 1) — 45 SCENARIOS")
+    print("=" * 80)
 
     summary = run_developer_time_benchmark()
+    current_fam = None
     for s in summary["scenarios"]:
-        print(f"[{s['scenario_id']}] {s['description'][:40]:<42} | "
+        if s["family"] != current_fam:
+            current_fam = s["family"]
+            print(f"\n--- {s['family_label']} ({s['family']}) ---")
+        print(f"[{s['scenario_id']}] {s['name'][:36]:<38} | "
               f"Manual: {s['manual_time_s']:>4}s | "
               f"Wall-Clock: {s['end_to_end_wall_clock_s']:>5.2f}s | "
-              f"Labor Delta: {s['labor_reduction_percent']:>5.2f}% | "
-              f"Status: {'OK' if s['target_met_sub_45s'] else 'FAIL'}")
+              f"Labor Saved: {s['labor_reduction_percent']:>5.1f}% | "
+              f"Policy: {s['policy_decision']:<15} | "
+              f"{'PASS' if s['target_met_sub_45s'] and s['target_met_90pct_delta'] else 'FAIL'}")
 
-    print("-" * 70)
+    print("\n" + "=" * 80)
+    print("FAMILY BREAKDOWN SUMMARY:")
+    print("-" * 80)
+    print(f"{'Failure Family':<32} | {'Count':<5} | {'Manual Avg':<10} | {'Wall-Clock':<10} | {'Labor Saved'}")
+    print("-" * 80)
+    for fam, d in summary["family_breakdown"].items():
+        print(f"{d['label']:<32} | {d['count']:>5} | {d['avg_manual_duration_min']:>6.1f} min | "
+              f"{d['avg_wall_clock_s']:>8.2f}s | -{d['avg_labor_reduction_percent']:>5.1f}%")
+    print("-" * 80)
+
+    print(f"\nOverall Summary across {summary['total_scenarios']} Scenarios:")
     print(f"Average Manual Debug Time : {summary['average_manual_duration_min']:.1f} minutes ({summary['average_manual_duration_s']:.0f}s)")
     print(f"Developer Labor Saved     : {summary['developer_labor_saved_s']:.0f}s (active work reduced to 30s review)")
     print(f"End-to-End Wall-Clock     : {summary['end_to_end_wall_clock_s']:.2f} seconds (LLM + Sandbox + PR)")
@@ -463,7 +270,7 @@ def main():
     print(f"Wall-Clock Time Reduction : {summary['average_time_reduction_percent']:.2f}% (Target: >= 90.0%)")
     print(f"Sub-45s Target Met        : {summary['all_sub_45s']}")
     print(f"Results written to        : {RESULTS_JSON}")
-    print("=" * 70)
+    print("=" * 80)
 
 
 if __name__ == "__main__":

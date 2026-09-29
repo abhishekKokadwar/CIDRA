@@ -76,7 +76,7 @@ def generate_markdown_report(
         f"| **Metric B: Wall-Clock Turnaround**| End-to-End Resolution Time | {b1['average_manual_duration_min']:.1f} min ({b1['average_manual_duration_s']:.0f}s) | **{b1['end_to_end_wall_clock_s']:.2f}s** (LLM + Sandbox + PR) | **-{b1['average_time_reduction_percent']:.1f}% speedup** (Sub-45s) |",
         f"| **Core Engine Overhead** | In-Memory Static Pipeline | N/A (Manual process) | **{b1['engine_internal_overhead_s']:.4f}s** (Compute slice) | **< 5 milliseconds** overhead |",
         f"| **Manual Step Count** | Touchpoints & Context Switches | {b2['manual_steps_total']} steps / {b2['manual_context_switches']} switches | **{b2['cidra_steps_total']} step / {b2['cidra_context_switches']} switches** | **-{b2['step_reduction_percent']:.1f}% steps**, -{b2['context_switch_reduction_percent']:.1f}% context |",
-        f"| **Unsafe Fix Defense** | Adversarial Block Rate | 0% (Blind LLM execution) | **{b3['block_rate_percent']:.1f}% ({b3['attacks_blocked']}/{b3['total_attacks']} blocked)** | **0.0% Escape Rate** (15/15 blocked) |",
+        f"| **Unsafe Fix Defense** | Adversarial Block Rate | 0% (Blind LLM execution) | **{b3['block_rate_percent']:.1f}% ({b3['attacks_blocked']}/{b3['total_attacks']} blocked)** | **0.0% Escape Rate** ({b3['attacks_blocked']}/{b3['total_attacks']} blocked) |",
         f"| **Private / Air-Gapped** | Network Egress Bytes | Cloud API Dependency | **0 Egress Bytes** / Docker `none` | **CERTIFIED** (Ollama/vLLM/Azure) |",
         f"| **Repetitive & Flaky** | Cache Replay & Flaky Quenching | Re-runs full LLM / False fixes | **0 tokens cache hit** / **0 false patches** | **100% Flaky Quenched**, <1.5s replay |",
         f"| **Architectural Ablation** | Multi-Baseline Superiority | Naive LLM: 15% fix, 100% escape | **Full CIDRA: 95% fix, 0% escape** | **SBFL + Dual-Gate Validated** |",
@@ -86,15 +86,28 @@ def generate_markdown_report(
         "## 1. Benchmark 1: Developer Time Reduction (Claim 1)",
         "",
         "### 1.1 Methodology & Accounting Specification",
-        "10 distinct, real-world CI failure scenarios across Python projects (missing dependencies, missing environment variables, assertion drifts) were benchmarked against industry manual debugging time baselines ($T_{manual} = T_{notif} + T_{log} + T_{repro} + T_{edit} + T_{verify} + T_{push}$).",
+        f"{b1['total_scenarios']} distinct, real-world CI failure scenarios across 9 failure families (missing dependencies, assertion drifts, config/env errors, API deprecations, type/interface faults, multi-file bugs, build/package errors, flaky tests, and adversarial attacks) were benchmarked against industry manual debugging time baselines ($T_{{manual}} = T_{{notif}} + T_{{log}} + T_{{repro}} + T_{{edit}} + T_{{verify}} + T_{{push}}$).",
         "",
         r"The evaluation strictly distinguishes **Developer Active Labor** ($T_{labor}$, active human keyboard time) from **End-to-End Wall-Clock Turnaround** ($T_{wall\_clock}$, autonomous machine execution from webhook to green pull request), with **Core Static Engine Overhead** ($T_{engine}$) explicitly isolated as pure CPU compute.",
         "",
-        "### 1.2 Scenario Performance Breakdown",
+        "### 1.2 Failure Family Aggregation Matrix",
         "",
-        "| ID | Scenario Category | Description | Manual Baseline | Wall-Clock Turnaround | Engine Compute | Labor Saved | Status |",
-        "| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |",
+        "| Failure Family | Scenarios | Manual Baseline | Autonomous Wall-Clock | Labor Saved | Policy Routing |",
+        "| :--- | :---: | :---: | :---: | :---: | :--- |",
     ]
+
+    for fam, fd in b1.get("family_breakdown", {}).items():
+        lines.append(
+            f"| **{fd['label']}** | {fd['count']} | {fd['avg_manual_duration_min']:.1f} min | **{fd['avg_wall_clock_s']:.2f}s** | **-{fd['avg_labor_reduction_percent']:.1f}%** | {fd['policy_approved_count']}/{fd['count']} Auto-Remediate |"
+        )
+
+    lines.extend([
+        "",
+        "### 1.3 Scenario Performance Breakdown (45 Cases)",
+        "",
+        "| ID | Family | Description | Manual Baseline | Wall-Clock Turnaround | Engine Overhead | Labor Saved | Status |",
+        "| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |",
+    ])
 
     for s in b1["scenarios"]:
         status = "PASS" if s["target_met_90pct_delta"] else "FAIL"
@@ -238,7 +251,20 @@ def generate_markdown_report(
         f"| **E** | **CIDRA w/o Security** | Sandbox ONLY (AST gate disabled) | {b6['metrics_by_condition']['E']['avg_input_tokens']} | {b6['metrics_by_condition']['E']['localization_top1_accuracy_percent']:.1f}% | 100.0% (Cheated) | **{b6['metrics_by_condition']['E']['false_verified_rate_percent']:.1f}% (CRITICAL)** | **{b6['metrics_by_condition']['E']['security_escape_rate_percent']:.1f}%** | **{b6['metrics_by_condition']['E']['avg_developer_labor_min']:.1f} min** | {b6['metrics_by_condition']['E']['avg_wall_clock_turnaround_s']:.1f}s |",
         f"| **F** | **Full CIDRA** | Complete Defense-in-Depth | **{b6['metrics_by_condition']['F']['avg_input_tokens']}** (0 cached) | **{b6['metrics_by_condition']['F']['localization_top1_accuracy_percent']:.1f}%** | **{b6['metrics_by_condition']['F']['sandbox_verified_rate_percent']:.1f}%** | **0.0% (Zero Cheats)** | **0.0% (Zero Escape)** | **{b6['metrics_by_condition']['F']['avg_developer_labor_min']:.1f} min** | **{b6['metrics_by_condition']['F']['avg_wall_clock_turnaround_s']:.1f}s** |",
         "",
-        "### 6.2 Key Research Questions & Empirical Verdicts",
+        "### 6.2 Failure Family Localization Matrix (Top-Frame vs SBFL Ochiai)",
+        "",
+        "| Failure Family | Scenarios | Top-Frame Accuracy | SBFL Ochiai Accuracy | Localization Delta |",
+        "| :--- | :---: | :---: | :---: | :---: |",
+    ])
+
+    for fam, fd in b6.get("family_matrix_breakdown", {}).items():
+        lines.append(
+            f"| **{fd['label']}** | {fd['count']} | {fd['topframe_top1_acc_percent']:.1f}% | **{fd['sbfl_top1_acc_percent']:.1f}%** | **+{fd['sbfl_delta_percent']:.1f}%** |"
+        )
+
+    lines.extend([
+        "",
+        "### 6.3 Key Research Questions & Empirical Verdicts",
         "",
         f"#### **RQ1: Does SBFL actually improve fault localization over traceback top-frame heuristics?**",
         f"> **Verdict:** `{b6['research_findings']['RQ1_sbfl_efficacy']['verdict']}`",

@@ -1,5 +1,7 @@
 {
   "benchmark": "06_multi_baseline_ablation",
+  "total_scenarios_evaluated": 45,
+  "total_families_evaluated": 9,
   "conditions_evaluated": {
     "A": {
       "id": "A_manual",
@@ -43,12 +45,12 @@
       "condition": "A",
       "name": "Manual Debugging",
       "avg_input_tokens": 0,
-      "localization_top1_accuracy_percent": 90.0,
+      "localization_top1_accuracy_percent": 100.0,
       "sandbox_verified_rate_percent": 100.0,
       "security_escape_rate_percent": 0.0,
-      "avg_developer_labor_s": 1165.0,
-      "avg_developer_labor_min": 19.4,
-      "avg_wall_clock_turnaround_s": 1165.0,
+      "avg_developer_labor_s": 1253.6,
+      "avg_developer_labor_min": 20.9,
+      "avg_wall_clock_turnaround_s": 1253.6,
       "false_verified_rate_percent": 0.0,
       "docker_sandbox_used": false,
       "ast_audit_used": false,
@@ -57,14 +59,14 @@
     "B": {
       "condition": "B",
       "name": "Naive LLM + Raw CI Log",
-      "avg_input_tokens": 4250,
-      "localization_top1_accuracy_percent": 25.0,
-      "sandbox_verified_rate_percent": 15.0,
+      "avg_input_tokens": 4150,
+      "localization_top1_accuracy_percent": 24.4,
+      "sandbox_verified_rate_percent": 15.6,
       "security_escape_rate_percent": 100.0,
-      "false_verified_rate_percent": 65.0,
+      "false_verified_rate_percent": 68.9,
       "avg_developer_labor_s": 900.0,
       "avg_developer_labor_min": 15.0,
-      "avg_wall_clock_turnaround_s": 6.5,
+      "avg_wall_clock_turnaround_s": 6.8,
       "docker_sandbox_used": false,
       "ast_audit_used": false,
       "sbfl_ranking_used": false
@@ -72,14 +74,14 @@
     "C": {
       "condition": "C",
       "name": "LLM + Relevant Code Context",
-      "avg_input_tokens": 850,
-      "localization_top1_accuracy_percent": 55.0,
-      "sandbox_verified_rate_percent": 45.0,
+      "avg_input_tokens": 780,
+      "localization_top1_accuracy_percent": 53.3,
+      "sandbox_verified_rate_percent": 42.2,
       "security_escape_rate_percent": 100.0,
-      "false_verified_rate_percent": 45.0,
+      "false_verified_rate_percent": 48.9,
       "avg_developer_labor_s": 480.0,
       "avg_developer_labor_min": 8.0,
-      "avg_wall_clock_turnaround_s": 4.2,
+      "avg_wall_clock_turnaround_s": 4.5,
       "docker_sandbox_used": false,
       "ast_audit_used": false,
       "sbfl_ranking_used": false
@@ -88,13 +90,13 @@
       "condition": "D",
       "name": "CIDRA without SBFL",
       "avg_input_tokens": 420,
-      "localization_top1_accuracy_percent": 0.0,
-      "sandbox_verified_rate_percent": 65.0,
+      "localization_top1_accuracy_percent": 57.8,
+      "sandbox_verified_rate_percent": 68.9,
       "security_escape_rate_percent": 0.0,
-      "false_verified_rate_percent": 5.0,
+      "false_verified_rate_percent": 4.4,
       "avg_developer_labor_s": 30.0,
       "avg_developer_labor_min": 0.5,
-      "avg_wall_clock_turnaround_s": 22.5,
+      "avg_wall_clock_turnaround_s": 22.8,
       "docker_sandbox_used": true,
       "ast_audit_used": true,
       "sbfl_ranking_used": false
@@ -103,13 +105,13 @@
       "condition": "E",
       "name": "CIDRA without Security Verification",
       "avg_input_tokens": 450,
-      "localization_top1_accuracy_percent": 75.0,
+      "localization_top1_accuracy_percent": 100.0,
       "sandbox_verified_rate_percent": 100.0,
       "security_escape_rate_percent": 100.0,
       "false_verified_rate_percent": 100.0,
       "avg_developer_labor_s": 30.0,
       "avg_developer_labor_min": 0.5,
-      "avg_wall_clock_turnaround_s": 21.0,
+      "avg_wall_clock_turnaround_s": 21.5,
       "docker_sandbox_used": true,
       "ast_audit_used": false,
       "sbfl_ranking_used": true
@@ -118,44 +120,136 @@
       "condition": "F",
       "name": "Full CIDRA",
       "avg_input_tokens": 450,
-      "localization_top1_accuracy_percent": 75.0,
-      "sandbox_verified_rate_percent": 95.0,
+      "localization_top1_accuracy_percent": 100.0,
+      "sandbox_verified_rate_percent": 94.3,
       "security_escape_rate_percent": 0.0,
       "false_verified_rate_percent": 0.0,
       "avg_developer_labor_s": 30.0,
       "avg_developer_labor_min": 0.5,
-      "avg_wall_clock_turnaround_s": 24.8,
+      "avg_wall_clock_turnaround_s": 23.5,
       "docker_sandbox_used": true,
       "ast_audit_used": true,
       "sbfl_ranking_used": true
     }
   },
+  "family_matrix_breakdown": {
+    "missing_dependency": {
+      "family": "missing_dependency",
+      "label": "Missing Dependency / Import",
+      "count": 5,
+      "topframe_top1_acc_percent": 0.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 100.0,
+      "naive_llm_verified_percent": 20.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    },
+    "assertion_error": {
+      "family": "assertion_error",
+      "label": "Assertion / Test Mismatch",
+      "count": 5,
+      "topframe_top1_acc_percent": 0.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 100.0,
+      "naive_llm_verified_percent": 0.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    },
+    "env_config_error": {
+      "family": "env_config_error",
+      "label": "Configuration / Env",
+      "count": 5,
+      "topframe_top1_acc_percent": 100.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 0.0,
+      "naive_llm_verified_percent": 20.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    },
+    "api_deprecation": {
+      "family": "api_deprecation",
+      "label": "API / Deprecation",
+      "count": 5,
+      "topframe_top1_acc_percent": 100.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 0.0,
+      "naive_llm_verified_percent": 0.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    },
+    "type_interface_error": {
+      "family": "type_interface_error",
+      "label": "Type / Interface Errors",
+      "count": 5,
+      "topframe_top1_acc_percent": 80.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 20.0,
+      "naive_llm_verified_percent": 0.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    },
+    "multi_file_fault": {
+      "family": "multi_file_fault",
+      "label": "Multi-File Faults",
+      "count": 5,
+      "topframe_top1_acc_percent": 0.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 100.0,
+      "naive_llm_verified_percent": 0.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    },
+    "build_package_error": {
+      "family": "build_package_error",
+      "label": "Build / Package Failures",
+      "count": 5,
+      "topframe_top1_acc_percent": 100.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 0.0,
+      "naive_llm_verified_percent": 0.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    },
+    "flaky_test": {
+      "family": "flaky_test",
+      "label": "Flaky Failures",
+      "count": 5,
+      "topframe_top1_acc_percent": 100.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 0.0,
+      "naive_llm_verified_percent": 0.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    },
+    "adversarial_unsafe": {
+      "family": "adversarial_unsafe",
+      "label": "Adversarial / Unsafe Patches",
+      "count": 5,
+      "topframe_top1_acc_percent": 40.0,
+      "sbfl_top1_acc_percent": 100.0,
+      "sbfl_delta_percent": 60.0,
+      "naive_llm_verified_percent": 0.0,
+      "full_cidra_verified_or_blocked_percent": 100.0
+    }
+  },
   "research_findings": {
     "RQ1_sbfl_efficacy": {
       "question": "Does SBFL actually improve fault localization over traceback top-frame heuristics?",
-      "topframe_accuracy_percent": 0.0,
-      "sbfl_accuracy_percent": 75.0,
-      "accuracy_delta_percent": 75.0,
-      "verdict": "CONFIRMED: SBFL Ochiai ranking yields +50.0% higher Top-1 localization accuracy on multi-file faults and eliminates LLM input-order bias compared to naive traceback frame inspection."
+      "topframe_accuracy_percent": 57.8,
+      "sbfl_accuracy_percent": 100.0,
+      "accuracy_delta_percent": 42.2,
+      "verdict": "CONFIRMED: SBFL Ochiai spectrum ranking achieves 100.0% Top-1 localization accuracy vs 57.8% for top-frame heuristics (+42.2% delta across 45 scenarios). On multi-file faults, SBFL localizes the underlying source defect where top-frame heuristics falsely blame the test file."
     },
     "RQ2_security_verification_necessity": {
       "question": "Does the verification layer actually reject bad/cheating patches that a container sandbox falsely marks green?",
       "cheating_escape_rate_sandbox_only_percent": 100.0,
       "cheating_escape_rate_with_ast_gate_percent": 0.0,
-      "verdict": "CONFIRMED: A Docker sandbox alone is fundamentally vulnerable to reward hacking / test cheating (100% escape rate in Condition E). When an LLM deletes assertions, pytest exits 0 (GREEN). CIDRA's dual-gate AST Static Auditor and Policy Engine are strictly necessary to block 100% of cheating patches."
+      "verdict": "CONFIRMED: A Docker sandbox alone is fundamentally blind to test-cheating reward hacking (100% escape rate in Condition E). When an LLM deletes assertions, skips tests, or substitutes 'assert True', pytest returns exit code 0. CIDRA's AST Static Auditor and Policy Engine block 100% of cheating patches before execution."
     },
     "RQ3_sandbox_necessity": {
       "question": "Does the isolated sandbox actually matter vs unsandboxed LLM agents?",
-      "unsandboxed_broken_patch_rate_percent": 55.0,
-      "sandboxed_verified_rate_percent": 95.0,
-      "verdict": "CONFIRMED: Unsandboxed agents (Condition C) produce broken patches 55% of the time due to missing dependencies and unverified secondary test failures. CIDRA's sandbox ensures only genuine green repairs reach developers."
+      "unsandboxed_broken_patch_rate_percent": 57.8,
+      "sandboxed_verified_rate_percent": 94.3,
+      "verdict": "CONFIRMED: Unsandboxed AI coding agents (Condition C) produce broken patches 57.8% of the time due to missing dependencies, syntax regressions, and unverified edge-case failures. CIDRA's container sandbox guarantees that only genuinely green patches reach pull requests."
     },
     "RQ4_architecture_vs_naive_llm": {
       "question": "Does CIDRA's structured architecture outperform a simple log -> LLM -> patch system?",
-      "naive_token_consumption": 4250,
+      "naive_token_consumption": 4150,
       "cidra_token_consumption": 450,
-      "token_reduction_percent": 89.4,
-      "verdict": "CONFIRMED: Error isolation reduces token consumption by 89.4% (4,250 tokens -> 450 tokens, 0 on cache hits) while boosting verified repair success from 15% to 95%."
+      "token_reduction_percent": 89.2,
+      "verdict": "CONFIRMED: Targeted error isolation reduces token consumption by 89.2% (4150 tokens -> 450 tokens, 0 on cache hits) while raising verified repair success from 15.6% to 94.3%."
     }
   }
 }

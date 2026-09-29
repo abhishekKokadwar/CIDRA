@@ -62,6 +62,18 @@ _CATEGORY_ALIASES: dict[str, str] = {
     "lint_style": "lint_error",
     "lint_error": "lint_error",
     "formatting": "lint_error",
+    # Stage A.5 Expanded Failure Families
+    "api_deprecation": "api_deprecation",
+    "deprecation": "api_deprecation",
+    "type_interface_error": "type_interface_error",
+    "type_error": "type_interface_error",
+    "interface_error": "type_interface_error",
+    "multi_file_fault": "multi_file_fault",
+    "multi_file": "multi_file_fault",
+    "build_package_error": "build_package_error",
+    "build_failure": "build_package_error",
+    "package_build_error": "build_package_error",
+    "adversarial_unsafe": "security_violation",
 }
 
 
@@ -84,6 +96,11 @@ class PolicyRule:
         "missing_dependency",
         "env_config_error",
         "assertion_error",
+        "lint_error",
+        "api_deprecation",
+        "type_interface_error",
+        "multi_file_fault",
+        "build_package_error",
     ])
     require_human_approval_categories: list[str] = field(default_factory=lambda: [
         "unknown",
