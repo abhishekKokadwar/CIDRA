@@ -98,6 +98,42 @@ const DEFAULT_CATALOG_MODELS = [
   }
 ];
 
+const FALLBACK_SETTINGS = {
+  isCloudViewer: true,
+  keys: [
+    { id: 'cidra_api_key', provider: 'OpenRouter', label: 'Primary LLM Inference Gateway', envVar: 'CIDRA_API_KEY', masked: 'sk-or-v••••••••c4a2', configured: true, canTest: false, baseUrl: 'https://openrouter.ai/api/v1' },
+    { id: 'nvidia_kimi', provider: 'NVIDIA NIM (Kimi)', label: 'Fast Fallback Tier 1', envVar: 'NVIDIA_API_KEY_KIMI', masked: 'nvapi-••••••••9a1e', configured: true, canTest: false, baseUrl: 'https://integrate.api.nvidia.com/v1' },
+    { id: 'nvidia_glm', provider: 'NVIDIA NIM (GLM)', label: 'Fast Fallback Tier 2', envVar: 'NVIDIA_API_KEY_GLM', masked: 'nvapi-••••••••3b8c', configured: true, canTest: false, baseUrl: 'https://integrate.api.nvidia.com/v1' },
+    { id: 'groq_api_key', provider: 'Groq Cloud', label: 'Ultra-Fast LPU Inference', envVar: 'GROQ_API_KEY', masked: 'gsk_••••••••8819', configured: true, canTest: false, baseUrl: 'https://api.groq.com/openai/v1' },
+    { id: 'github_token', provider: 'GitHub PAT (Read/Write)', label: 'Automated Pull Requests & Branches', envVar: 'CIDRA_GITHUB_TOKEN', masked: 'github_pat_••••••••3301', configured: true, canTest: false, baseUrl: 'https://api.github.com' },
+    { id: 'github_token_ro', provider: 'GitHub PAT (Read-Only)', label: 'Safe CI Log & Metadata Fetching', envVar: 'CIDRA_GITHUB_TOKEN_RO', masked: 'github_pat_••••••••5519', configured: true, canTest: false, baseUrl: 'https://api.github.com' },
+    { id: 'webhook_secret', provider: 'Webhook HMAC Secret', label: 'GitHub Webhook Delivery Verification', envVar: 'CIDRA_WEBHOOK_SECRET', masked: 'whsec_••••••••4120', configured: true, canTest: false, baseUrl: '' }
+  ],
+  models: {
+    model_analyze: 'anthropic/claude-3.5-sonnet',
+    model_fix: 'anthropic/claude-3.5-sonnet',
+    base_url: 'https://openrouter.ai/api/v1'
+  },
+  flakiness: {
+    flaky_runs: 5,
+    flaky_score_threshold: 1,
+    max_fix_attempts: 3,
+    container_timeout: 60,
+    enable_pr_creation: true,
+    practice_repo: 'helpmecode69/cidra-practice'
+  },
+  system: {
+    python_version: '3.11.0',
+    framework: 'LangGraph Core',
+    idempotency_db: 'cidra_idempotency.db',
+    worktree_root: 'worktrees',
+    fix_cache_path: 'cidra_fix_cache.json',
+    run_history_path: 'cidra_run_history.jsonl',
+    status: 'operational',
+    env_file: '.env'
+  }
+};
+
 export default function SettingsView() {
   const [activeSubTab, setActiveSubTab] = useState('keys'); // 'keys' | 'models' | 'container' | 'runtime'
   const [settings, setSettings] = useState(null);
@@ -150,9 +186,13 @@ export default function SettingsView() {
           setEnablePR(Boolean(data.flakiness.enable_pr_creation));
           setPracticeRepo(data.flakiness.practice_repo || 'helpmecode69/cidra-practice');
         }
+      } else {
+        // Fallback for cloud deployment (Vercel)
+        setSettings(FALLBACK_SETTINGS);
       }
     } catch (err) {
-      console.error('Failed to load settings:', err);
+      console.warn('API unreachable, using cloud settings snapshot:', err);
+      setSettings(FALLBACK_SETTINGS);
     } finally {
       setLoading(false);
     }
@@ -289,11 +329,13 @@ export default function SettingsView() {
               </h1>
               <span style={{ 
                 fontFamily: 'var(--font-code)', fontSize: '0.75rem', 
-                background: 'rgba(23, 201, 100, 0.1)', color: 'var(--color-success)', 
-                border: '1px solid rgba(23, 201, 100, 0.25)', borderRadius: '4px',
+                background: settings?.isCloudViewer ? 'rgba(56, 139, 253, 0.1)' : 'rgba(23, 201, 100, 0.1)', 
+                color: settings?.isCloudViewer ? 'var(--color-accent)' : 'var(--color-success)', 
+                border: settings?.isCloudViewer ? '1px solid rgba(56, 139, 253, 0.25)' : '1px solid rgba(23, 201, 100, 0.25)', 
+                borderRadius: '4px',
                 padding: '0.2rem 0.5rem', fontWeight: 600
               }}>
-                Live .env Wired
+                {settings?.isCloudViewer ? 'Cloud Viewer Mode' : 'Live .env Wired'}
               </span>
             </div>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: '720px', lineHeight: 1.5 }}>
