@@ -124,6 +124,14 @@ def main() -> int:
     assert audit["zero_hardcoding_verified"] is True, "Hardcoded scenario pattern found in core engine"
     print(f"  [PASS] Claim 7 (Generalization): max gap {gaps['max_observed_gap_percent']:.2f}% (<= 5.0%), 0 hardcoded hits across {audit['unseen_fixtures_audited']} unseen fixtures")
 
+    # Claim 8: Failure-Class Coverage & Operational Boundaries
+    b8 = benchmarks["08_failure_class_coverage"]
+    assert b8["overall_stage_conformance_pct"] == 100.0, "Failure class coverage stage conformance != 100%"
+    assert b8["correct_refusal_rate_pct"] == 100.0, "Correct refusal rate != 100%"
+    assert b8["automated_janitor_classes"] == 8, f"Expected 8 automated classes, got {b8['automated_janitor_classes']}"
+    assert b8["deliberate_refusal_classes"] == 6, f"Expected 6 refusal classes, got {b8['deliberate_refusal_classes']}"
+    print(f"  [PASS] Claim 8 (Operational Boundaries): 14/14 classes (8 auto-remediated, 6 correctly refused, 100.0% stage conformance)")
+
     # Cryptographic Receipt Verification
     receipts_file = ROOT / "reports" / "benchmark_receipts.json"
     assert receipts_file.exists(), "Receipt file does not exist"
@@ -133,7 +141,7 @@ def main() -> int:
 
     elapsed_s = time.perf_counter() - t0
     print("\n" + "=" * 80)
-    print(f"ALL 7 EMPIRICAL BENCHMARKS SUCCESSFULLY REPRODUCED IN {elapsed_s:.2f}s")
+    print(f"ALL 8 EMPIRICAL BENCHMARKS SUCCESSFULLY REPRODUCED IN {elapsed_s:.2f}s")
     print(f"Overall Conformance Score: 100.0% (All claims mathematically and empirically validated)")
     print("=" * 80)
     return 0

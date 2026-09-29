@@ -74,6 +74,16 @@ _CATEGORY_ALIASES: dict[str, str] = {
     "build_failure": "build_package_error",
     "package_build_error": "build_package_error",
     "adversarial_unsafe": "security_violation",
+    # Operational Boundary & Deliberate Refusal Families
+    "complex_migration": "complex_migration",
+    "database_migration": "complex_migration",
+    "schema_migration": "complex_migration",
+    "migration": "complex_migration",
+    "migrations": "complex_migration",
+    "core_auth": "core_auth",
+    "auth_failure": "core_auth",
+    "blast_radius_breach": "blast_radius_breach",
+    "containment_breach": "blast_radius_breach",
 }
 
 
@@ -104,6 +114,8 @@ class PolicyRule:
     ])
     require_human_approval_categories: list[str] = field(default_factory=lambda: [
         "unknown",
+        "complex_migration",
+        "core_auth",
     ])
     require_human_approval_paths: list[str] = field(default_factory=lambda: [
         "src/auth/**",
@@ -117,6 +129,7 @@ class PolicyRule:
         "flaky_test",
         "timeout",
         "security_violation",
+        "blast_radius_breach",
     ])
     forbidden_paths: list[str] = field(default_factory=lambda: [
         ".github/**",

@@ -88,7 +88,14 @@ CIDRA does **not** try to be a Senior Software Architect. CIDRA is the **tireles
 
 ---
 
-## 4. Operational Boundaries: The Scope Matrix
+## 4. Product Operational Boundaries & Failure-Class Coverage Matrix
+
+### 4.1 The Operational Boundary Principle: Where CIDRA Automates vs Where CIDRA Stops
+A critical design requirement for enterprise CI remediation is knowing **where to automate vs where to deliberately stop**. Generic coding bots attempt to fix every failure, resulting in corrupted production code, hidden race conditions, and catastrophic database loss.
+
+CIDRA establishes a defensible, mathematically validated boundary:
+- **Automated Janitor Scope**: Routine, deterministic, mechanical failures with single-point or bounded root causes are fully remediated in `< 45 seconds`.
+- **Deliberate Refusal Scope**: Ambiguous, non-deterministic, high-blast-radius, or irreversible failure classes are **strictly refused (fail-closed)**. CIDRA emits structured Root Cause Analysis (RCA) receipts and routes to Human-in-the-Loop gates without modifying production code.
 
 ```
                                   CI Failure Detected
@@ -97,11 +104,12 @@ CIDRA does **not** try to be a Senior Software Architect. CIDRA is the **tireles
             ▼                                                             ▼
    Within Safe Janitor Scope                                 Outside Safe Janitor Scope
 ┌───────────────────────────────┐                             ┌───────────────────────────────┐
-│ • Missing package/dependency  │                             │ • Complex multi-file logic    │
-│ • Missing env var default     │                             │ • Flaky test (SR-08 binomial) │
-│ • Simple assertion mismatch   │                             │ • File matches forbidden path │
-│ • Upstream method deprecation │                             │ • Modifies database schemas   │
-│ • Formatting / lint failure   │                             │ • AST rule violation detected │
+│ • Missing package/dependency  │                             │ • Flaky test (binomial flag)  │
+│ • Unit test assertion drift   │                             │ • Database schema migrations  │
+│ • Missing env var default     │                             │ • Core auth / security paths  │
+│ • Upstream method deprecation │                             │ • CI runner timeouts/deadlock │
+│ • Type / interface mismatch   │                             │ • Adversarial test tampering  │
+│ • Formatting / lint failure   │                             │ • Blast-radius breach (>5 f.) │
 └───────────────┬───────────────┘                             └───────────────┬───────────────┘
                 │                                                             │
                 ▼                                                             ▼
@@ -110,8 +118,34 @@ CIDRA does **not** try to be a Senior Software Architect. CIDRA is the **tireles
    2. Zero-network sandbox patch                                 2. Emit structured RCA log
    3. Pre-execution AST audit gate                               3. Request Human-in-the-Loop review
    4. Re-run verification test suite                             4. No dirty branches or broken PRs
-   5. Open auto-mergeable PR
+   5. Open auto-mergeable PR                                     5. Zero tokens burned on flakes
 ```
+
+### 4.2 Comprehensive Failure-Class Coverage Matrix (14 Classes)
+
+| Failure Class | Diagnose | Localize | Repair | Verify | Correct Refusal | Operational Boundary Action & Enterprise Rationale |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| **Dependency** | ✓ | ✓ | ✓ | ✓ | — | **Auto-Remediate**: Adds missing package to manifest (`requirements.txt`, `pyproject.toml`) with pinned version constraint. |
+| **Assertion** | ✓ | ✓ | ✓ | ✓ | — | **Auto-Remediate**: SBFL Ochiai isolates logic fault line. Fixes implementation without weakening test assertions. |
+| **Config / Env** | ✓ | ✓ | ✓ | ✓ | — | **Auto-Remediate**: Adds safe default fallback to configuration loader or `.env.example`. |
+| **API Deprecation** | ✓ | ✓ | ✓ | ✓ | — | **Auto-Remediate**: Migrates deprecated upstream call site (e.g. Pydantic v1 `dict()` $\rightarrow$ Pydantic v2 `model_dump()`). |
+| **Type / Interface** | ✓ | ✓ | ✓ | ✓ | — | **Auto-Remediate**: Adds null-safety guard (`Optional[T]`) or aligns function signature parameters. |
+| **Multi-File Fault** | ✓ | ✓ | ✓ | ✓ | — | **Auto-Remediate**: Coordinated patch across caller/callee components within 5-file containment limits. |
+| **Build / Packaging** | ✓ | ✓ | ✓ | ✓ | — | **Auto-Remediate**: Corrects PEP 517 build backend specification in `pyproject.toml` (e.g. `flit_core`, `setuptools`). |
+| **Lint / Formatting** | ✓ | ✓ | ✓ | ✓ | — | **Auto-Remediate**: Applies deterministic code formatting or unused import cleanup (`ruff`, `flake8`). |
+| **Flaky Test** | ✓ | — | `REFUSE` | ✓ | ✓ | **Strict Refusal**: Statistical binomial test detects non-determinism. Modifying code risks masking race conditions. Emits quarantine receipt with 0 tokens. |
+| **Complex Migration** | ✓ | ? | `REFUSE` | ✓ | ✓ | **Strict Refusal / Gate**: Changes touching `migrations/**` or `**/*.sql` are blocked. Autonomous DDL alterations risk catastrophic, irreversible data loss. |
+| **Core Auth / Sensitive** | ✓ | ✓ | `REFUSE` | ✓ | ✓ | **Human Approval Gate**: Changes touching `src/auth/**` or `payments/**` mandate explicit human signoff to prevent unauthorized privilege escalation. |
+| **Timeout / Deadlock** | ✓ | ? | `REFUSE` | ✓ | ✓ | **Strict Refusal**: Asynchronous watchdog termination. Artificially bumping timeout values masks deadlocks without repairing root cause. |
+| **Adversarial Cheating** | ✓ | ✓ | `REFUSE` | ✓ | ✓ | **Security Rejection**: Pre-execution AST gate intercepts test neutering (`assert True`, deleted tests, mock hijacking). 100% block rate. |
+| **Blast-Radius Breach** | ✓ | ? | `REFUSE` | ✓ | ✓ | **Strict Refusal**: Diff exceeds containment limits (>5 files or >100 lines). Halts execution to prevent uncontrolled large-scale code rewrite. |
+
+### 4.3 Why Deliberate Refusal Is a Core Enterprise Selling Feature
+1. **Zero-Token Flaky Quenching**: Rather than repeatedly re-prompting an LLM on non-deterministic tests, CIDRA identifies intermittent failures using binomial probability ($k/5$ flips), freezes repair attempts, and opens an isolated quarantine issue.
+2. **Data Loss Prevention in Migrations**: Enterprise databases cannot tolerate automated DDL scripts. CIDRA enforces a hard security boundary on `migrations/**` and `*.sql` files.
+3. **Privilege Boundary Integrity**: Code within auth perimeters (`src/auth/**`, `payments/**`) cannot be modified without human cryptographic signoff.
+4. **Guaranteed Zero False-Verified Rate**: Because AST gating intercepts test tampering *before* execution, CIDRA never marks a patch green by cheating.
+
 
 ---
 

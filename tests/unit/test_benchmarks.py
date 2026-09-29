@@ -45,6 +45,14 @@ def test_empirical_validation_suite_conformance():
     assert b7["generalization_gaps"]["max_observed_gap_percent"] <= 5.0
     assert b7["zero_hardcoding_audit"]["zero_hardcoding_verified"] is True
 
+    # Failure-Class Coverage & Operational Boundaries Verifications
+    assert scorecard["claim_8_failure_class_coverage_passed"] is True
+    b8 = results["benchmarks"]["08_failure_class_coverage"]
+    assert b8["overall_stage_conformance_pct"] == 100.0
+    assert b8["correct_refusal_rate_pct"] == 100.0
+    assert b8["automated_janitor_classes"] == 8
+    assert b8["deliberate_refusal_classes"] == 6
+
     # Check report generation
     root = Path(__file__).resolve().parents[2]
     report_file = root / "reports" / "CIDRA_BENCHMARK_REPORT.md"

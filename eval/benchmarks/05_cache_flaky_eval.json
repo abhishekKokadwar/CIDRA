@@ -12,70 +12,70 @@
         "replay_index": 1,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 0.000183,
+        "duration_s": 0.00023,
         "sub_second": true
       },
       {
         "replay_index": 2,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 0.000103,
+        "duration_s": 0.000141,
         "sub_second": true
       },
       {
         "replay_index": 3,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 9.3e-05,
+        "duration_s": 8.7e-05,
         "sub_second": true
       },
       {
         "replay_index": 4,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 7.8e-05,
+        "duration_s": 6.9e-05,
         "sub_second": true
       },
       {
         "replay_index": 5,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 9e-05,
+        "duration_s": 6.9e-05,
         "sub_second": true
       },
       {
         "replay_index": 6,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 7.1e-05,
+        "duration_s": 6.6e-05,
         "sub_second": true
       },
       {
         "replay_index": 7,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 9.8e-05,
+        "duration_s": 6.7e-05,
         "sub_second": true
       },
       {
         "replay_index": 8,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 8.3e-05,
+        "duration_s": 7.4e-05,
         "sub_second": true
       },
       {
         "replay_index": 9,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 8.2e-05,
+        "duration_s": 7.6e-05,
         "sub_second": true
       },
       {
         "replay_index": 10,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 8.2e-05,
+        "duration_s": 8.1e-05,
         "sub_second": true
       }
     ]
