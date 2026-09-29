@@ -1,57 +1,109 @@
 {
   "stats": {
     "total_interventions": 1,
-    "success_rate": "100.0%",
-    "avg_time_to_fix": "42s",
+    "success_rate": "0.0%",
+    "avg_time_to_fix": "14s",
     "system_status": "SYSTEM SECURE"
   },
   "runs": [
     {
-      "id": "viaCleanup",
-      "repo": "o/r",
-      "commit_sha": "abcdef1234567890",
-      "status": "success",
-      "outcome": "verified_fix",
+      "id": "36543344547",
+      "repo": "abhishekKokadwar/CIDRA",
+      "commit_sha": "df41c274d50383b4171c9de34da49392e14c699c",
+      "status": "pending",
+      "outcome": "diagnosis_only",
       "category": "missing_dependency",
-      "fix": "Missing Dependency: package",
-      "time": "Sep 29, 13:59",
-      "timestamp": 1790670566,
+      "fix": "Missing Dependency: langgraph",
+      "time": "Sep 29, 08:34",
+      "timestamp": 1790670882,
       "model": "openai/gpt-oss-120b",
       "telemetry": {
-        "total_tokens": 1171,
-        "prompt_tokens": 819,
-        "completion_tokens": 351,
-        "cost_usd": 0.0023,
-        "latency_s": 0.92,
-        "confidence": 90.0,
+        "total_tokens": 21196,
+        "prompt_tokens": 14837,
+        "completion_tokens": 6358,
+        "cost_usd": 0.0424,
+        "latency_s": 3.52,
+        "confidence": 99.0,
         "context_files": [
-          "tests/test_api.py",
           "requirements.txt"
         ]
       },
-      "error_region": "",
+      "error_region": "##[cidra-file]test/5_Run tests.txt\nRun pytest -q 2>&1\npytest -q 2>&1\nshell: /usr/bin/bash -e {0}\nenv:\n  pythonLocation: /opt/hostedtoolcache/Python/3.11.16/x64\n  PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib/pkgconfig\n  Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64\n  Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64\n  Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.11.16/x64\n  LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.11.16/x64/lib\n\n\n==================================== ERRORS ====================================\n_____________ ERROR collecting tests/integration/test_pipeline.py ______________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/integration/test_pipeline.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/integration/test_pipeline.py:11: in <module>\n    from cidra.graph import build_graph\ncidra/graph.py:7: in <module>\n    from langgraph.graph import StateGraph, START, END\nE   ModuleNotFoundError: No module named 'langgraph'\n_____________ ERROR collecting tests/server/test_dashboard_api.py ______________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/server/test_dashboard_api.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/server/test_dashboard_api.py:16: in <module>\n    from fastapi.testclient import TestClient\nE   ModuleNotFoundError: No module named 'fastapi'\n_________________ ERROR collecting tests/server/test_replay.py _________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/server/test_replay.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/server/test_replay.py:12: in <module>\n    from fastapi.testclient import TestClient\nE   ModuleNotFoundError: No module named 'fastapi'\n______________ ERROR collecting tests/server/test_webhook_app.py _______________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/server/test_webhook_app.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/server/test_webhook_app.py:6: in <module>\n    from fastapi.testclient import TestClient\nE   ModuleNotFoundError: No module named 'fastapi'\n______________ ERROR collecting tests/unit/test_audit_manifest.py ______________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_audit_manifest.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_audit_manifest.py:7: in <module>\n    from cidra.policy import PolicyEngine, PolicyDecision\ncidra/policy.py:20: in <module>\n    import yaml\nE   ModuleNotFoundError: No module named 'yaml'\n_________________ ERROR collecting tests/unit/test_checkout.py _________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_checkout.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_checkout.py:7: in <module>\n    from cidra import config\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n______________ ERROR collecting tests/unit/test_checkout_node.py _______________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_checkout_node.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_checkout_node.py:7: in <module>\n    from cidra import config\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n________________ ERROR collecting tests/unit/test_fix_cache.py _________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_fix_cache.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_fix_cache.py:3: in <module>\n    from cidra.nodes import fix_cache\ncidra/nodes/fix_cache.py:23: in <module>\n    from cidra import config\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n_____________ ERROR collecting tests/unit/test_fix_cache_wiring.py _____________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_fix_cache_wiring.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_fix_cache_wiring.py:3: in <module>\n    from cidra.nodes import fix, fix_cache\ncidra/nodes/fix.py:14: in <module>\n    from cidra.config import MODEL_FIX, TEST_COMMAND\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n________________ ERROR collecting tests/unit/test_flakiness.py _________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_flakiness.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_flakiness.py:3: in <module>\n    from cidra.nodes.reproduce import flakiness_score, classify_flakiness\ncidra/nodes/reproduce.py:7: in <module>\n    from cidra.config import FLAKY_RUNS, FLAKY_SCORE_THRESHOLD, TEST_COMMAND\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n__________________ ERROR collecting tests/unit/test_github.py __________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_github.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_github.py:6: in <module>\n    from cidra.integrations.github import _pick\ncidra/integrations/github.py:18: in <module>\n    from cidra.config import GITHUB_API, GITHUB_TOKEN_RO\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n_______________ ERROR collecting tests/unit/test_github_write.py _______________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_github_write.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_github_write.py:6: in <module>\n    from cidra.integrations import github_write\ncidra/integrations/github_write.py:17: in <module>\n    from cidra.config import GITHUB_API, GITHUB_TOKEN\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n__________________ ERROR collecting tests/unit/test_graph.py ___________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_graph.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_graph.py:3: in <module>\n    from cidra import routers\ncidra/routers.py:3: in <module>\n    from cidra.config import MAX_ANALYSIS_ATTEMPTS, MAX_FIX_ATTEMPTS\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n_________________ ERROR collecting tests/unit/test_history.py __________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_history.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_history.py:3: in <module>\n    from cidra import history\ncidra/history.py:22: in <module>\n    from cidra import config\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n_________________ ERROR collecting tests/unit/test_localize.py _________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_localize.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_localize.py:3: in <module>\n    from cidra.nodes import localize\ncidra/nodes/localize.py:19: in <module>\n    from cidra.nodes.environment import session_for\ncidra/nodes/environment.py:10: in <module>\n    from cidra.config import PRACTICE_REPO_DIR\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n____________ ERROR collecting tests/unit/test_parallel_checkout.py _____________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_parallel_checkout.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_parallel_checkout.py:13: in <module>\n    from cidra import config\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n__________________ ERROR collecting tests/unit/test_policy.py __________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_policy.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_policy.py:5: in <module>\n    from cidra.policy import PolicyEngine, PolicyDecision, PolicyRule, ContainmentLimits\ncidra/policy.py:20: in <module>\n    import yaml\nE   ModuleNotFoundError: No module named 'yaml'\n____________________ ERROR collecting tests/unit/test_pr.py ____________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_pr.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_pr.py:8: in <module>\n    from cidra import config\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n__________________ ERROR collecting tests/unit/test_sec04.py ___________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_sec04.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_sec04.py:11: in <module>\n    from cidra import config\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n___________________ ERROR collecting tests/unit/test_tui.py ____________________\nImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/unit/test_tui.py'.\nHint: make sure your test modules/packages have valid Python names.\nTraceback:\n/opt/hostedtoolcache/Python/3.11.16/x64/lib/python3.11/importlib/__init__.py:126: in import_module\n    return _bootstrap._gcd_import(name[level:], package, level)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntests/unit/test_tui.py:3: in <module>\n    from cidra import tui\ncidra/tui.py:19: in <module>\n    from cidra import history\ncidra/history.py:22: in <module>\n    from cidra import config\ncidra/config.py:5: in <module>\n    from dotenv import load_dotenv\nE   ModuleNotFoundError: No module named 'dotenv'\n=========================== short test summary info ============================\nERROR tests/integration/test_pipeline.py\nERROR tests/server/test_dashboard_api.py\nERROR tests/server/test_replay.py\nERROR tests/server/test_webhook_app.py\nERROR tests/unit/test_audit_manifest.py\nERROR tests/unit/test_checkout.py\nERROR tests/unit/test_checkout_node.py\nERROR tests/unit/test_fix_cache.py\nERROR tests/unit/test_fix_cache_wiring.py\nERROR tests/unit/test_flakiness.py\nERROR tests/unit/test_github.py\nERROR tests/unit/test_github_write.py\nERROR tests/unit/test_graph.py\nERROR tests/unit/test_history.py\nERROR tests/unit/test_localize.py\nERROR tests/unit/test_parallel_checkout.py\nERROR tests/unit/test_policy.py\nERROR tests/unit/test_pr.py\nERROR tests/unit/test_sec04.py\nERROR tests/unit/test_tui.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 20 errors during collection !!!!!!!!!!!!!!!!!!!\n20 errors in 0.91s\n##[error]Process completed with exit code 2.",
       "analysis": {
         "category": "missing_dependency",
-        "confidence": 0.9,
-        "evidence": "e",
-        "proposed_action": "p",
+        "confidence": 0.99,
+        "evidence": "ImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/integration/test_pipeline.py'.\\nModuleNotFoundError: No module named 'langgraph'\\n...\\nMultiple other ModuleNotFoundError errors for 'fastapi', 'yaml', 'dotenv'.",
+        "proposed_action": "Add the missing dependencies to the project's requirements (e.g., langgraph, fastapi, pyyaml, python-dotenv) and ensure they are installed in the CI environment.",
         "file": null,
         "line": null,
         "failing_test": null,
-        "missing_package": null,
+        "missing_package": "langgraph",
         "env_var": null
       },
-      "raw_json_trace": "{\"category\":\"missing_dependency\",\"confidence\":0.99,\"env_var\":null,\"evidence\":\"ModuleNotFoundError: No module named 'requests'\",\"failing_test\":null,\"file\":null,\"line\":null,\"missing_package\":\"requests\",\"proposed_action\":\"Add the 'requests' package to the project's dependencies (e.g., requirements.txt) so it is installed in the CI environment.\"}",
+      "raw_json_trace": "{\"category\":\"missing_dependency\",\"confidence\":0.99,\"env_var\":null,\"evidence\":\"ImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/integration/test_pipeline.py'.\\\\nModuleNotFoundError: No module named 'langgraph'\\\\n...\\\\nMultiple other ModuleNotFoundError errors for 'fastapi', 'yaml', 'dotenv'.\",\"failing_test\":null,\"file\":null,\"line\":null,\"missing_package\":\"langgraph\",\"proposed_action\":\"Add the missing dependencies to the project's requirements (e.g., langgraph, fastapi, pyyaml, python-dotenv) and ensure they are installed in the CI environment.\"}",
       "fix_diff": null,
-      "fix_strategy": null,
-      "reproduced": false,
-      "verified": true,
+      "fix_strategy": "append_requirement",
+      "reproduced": true,
+      "verified": false,
       "verify_results": [],
       "flaky_score": null,
-      "final_output": "",
+      "final_output": "<!-- cidra:report -->\n\ud83d\udd0e **CIDRA \u2014 diagnosis only** (no verified fix)\n\n**Failure class:** `missing_dependency`\n\nCIDRA classified the failure but did **not** produce a fix it could verify green. No change is suggested. See the analysis below.\n\n> _Model-generated analysis (untrusted; shown for the reviewer):_\n>\n> ImportError while importing test module '/home/runner/work/CIDRA/CIDRA/tests/integration/test_pipeline.py'.\\nModuleNotFoundError: No module named 'langgraph'\\n...\\nMultiple other ModuleNotFoundError errors for 'fastapi', 'yaml', 'dotenv'.\n>\n> **Proposed action:**\n> Add the missing dependencies to the project's requirements (e.g., langgraph, fastapi, pyyaml, python-dotenv) and ensure they are installed in the CI environment.\n\n\ud83d\udd12 **Enterprise Audit Manifest:**\n- **Policy Decision:** `AUTO_REMEDIATE`\n- **AST Security Gate:** `PASSED`\n- **Sandbox Isolation:** `0 egress bytes` (network disabled)\n- **Cryptographic Seal:** `HMAC-SHA256:bc9e9b64bd8f9ea3\u2026`\n\n---\n_CIDRA never merges. A human approves every change._",
       "policy_decision": "auto_remediate",
       "requires_human_approval": false,
-      "audit_manifest": null,
+      "audit_manifest": {
+        "manifest_id": "man_1f6c47216f204de0",
+        "schema_version": "1.0.0",
+        "timestamp": "2026-09-29T08:34:41.406556+00:00",
+        "target": {
+          "repo": "abhishekKokadwar/CIDRA",
+          "commit_sha": "df41c274d50383b4171c9de34da49392e14c699c",
+          "run_id": "36543344547",
+          "engine_version": "1.0.0"
+        },
+        "policy": {
+          "source": "worktrees/cidra-patch-36543344547/cidra.policy.yml",
+          "sha256": "d2c8186862b30b076e7f9daa62149c0f98a71af20bb6318be361f0bafc2eeafc",
+          "decision": "auto_remediate",
+          "reasons": [
+            "Category 'missing_dependency' is approved for autonomous repair"
+          ]
+        },
+        "evidence": {
+          "raw_log_sha256": "91dcbd1fc5cb46792cecfe121ae331ad3d43bda7dcf04a2a092d67c38eeefc50",
+          "error_region_sha256": "021959c99ed7bc946c1f1bd2c84984d5ea8385422431e0d576debe57d1db986f",
+          "patch_diff_sha256": null,
+          "files_modified": []
+        },
+        "security": {
+          "ast_audit_passed": true,
+          "ast_violations": [],
+          "forbidden_paths_enforced": [
+            ".github/workflows/**",
+            ".cidra/**",
+            "AGENTS.md",
+            "CLAUDE.md",
+            "**/*.pem",
+            "**/*.key",
+            "**/*.id_rsa",
+            "**/.env*"
+          ]
+        },
+        "sandbox": {
+          "network_egress_bytes": 0,
+          "network_disabled": true,
+          "non_root_execution": true,
+          "host_docker_socket_mounted": false,
+          "verification_exit_code": null,
+          "verification_passed": false,
+          "container_execution_duration_s": 0.0
+        },
+        "seal": {
+          "algorithm": "HMAC-SHA256",
+          "payload_sha256": "7116b71491dbf76fbaa99a6532b4ab88b4679d2498553d242204bc88d9799b2e",
+          "signature": "bc9e9b64bd8f9ea36f89f6e2fb0eb340f8b2686f741944abf3a6476564214920",
+          "signed_at": "2026-09-29T08:34:41.406556+00:00"
+        }
+      },
       "pr_url": null,
       "comment_url": null
     }
