@@ -39,13 +39,14 @@ def _authenticated_remote(repo: str, token: str, api: str) -> str:
 def build_fix_branch(run_id: str, source: str | Path, diff: str,
                      repo: str, token: str, api: str,
                      base_sha: Optional[str] = None,
-                     push: bool = True) -> str:
+                     push: bool = True,
+                     branch_name: Optional[str] = None) -> str:
     """Create the fix branch from `diff` and (optionally) push it. Returns branch.
 
     A dedicated clone WITH .git — separate from the sandbox tree — so we can
     commit and push. Never handed to the container.
     """
-    branch = fix_branch_name(run_id)
+    branch = branch_name or fix_branch_name(run_id)
     pr_run = f"{run_id}-pr"
     # Always drop the PR clone, even if apply/commit/push raises — it holds an
     # authenticated remote and must never linger.

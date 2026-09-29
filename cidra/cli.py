@@ -65,14 +65,21 @@ def action_run():
     
     # We might have an issue number if it's a pull_request
     issue_number = None
+    pr_branch = None
     if "pull_request" in event_data:
         issue_number = event_data["pull_request"]["number"]
+        pr_branch = event_data["pull_request"]["head"]["ref"]
+    elif "workflow_run" in event_data and event_data["workflow_run"].get("pull_requests"):
+        pr_data = event_data["workflow_run"]["pull_requests"][0]
+        issue_number = pr_data["number"]
+        pr_branch = pr_data["head"]["ref"]
 
     state = {
         "run_id": target_run_id,
         "repo": repo,
         "commit_sha": sha,
         "issue_number": issue_number,
+        "pr_branch": pr_branch,
         "source_dir": os.getenv("GITHUB_WORKSPACE"),
     }
     

@@ -50,6 +50,7 @@ _SKIP_MARKERS = (
     "unittest.skip", "@unittest.skip", "@skip", "unittest.case.skip",
     "self.skipTest(", "raise unittest.SkipTest", "@unittest.expectedFailure",
     "__test__ = False", "__test__=False",
+    "test.skip(", "describe.skip(", "it.skip(", "test.todo("
 )
 
 
@@ -109,7 +110,7 @@ def _strip_prefix(path: str) -> str:
 
 def _is_test_path(path: str) -> bool:
     base = path.rsplit("/", 1)[-1]
-    return base.startswith("test_") or base.endswith("_test.py") or "/tests/" in f"/{path}"
+    return base.startswith("test_") or base.endswith("_test.py") or base.endswith(".test.ts") or base.endswith(".spec.ts") or base.endswith(".test.js") or base.endswith(".spec.js") or "/tests/" in f"/{path}"
 
 
 def _removed_assertions(removed: list[str]) -> int:
@@ -123,7 +124,7 @@ def _removed_assertions(removed: list[str]) -> int:
         tree = ast.parse(src)
         return sum(isinstance(n, ast.Assert) for n in ast.walk(tree))
     except SyntaxError:
-        return sum(1 for ln in removed if re.match(r"\s*assert\b", ln))
+        return sum(1 for ln in removed if re.match(r"\s*(assert|expect)\b", ln))
 
 
 def audit_diff(diff: str) -> AuditVerdict:
@@ -150,8 +151,8 @@ def audit_diff(diff: str) -> AuditVerdict:
 
         # SR-13 — deleting or gutting a test.
         if _is_test_path(f.path):
-            removes_test_def = any(re.match(r"\s*def test", ln) for ln in f.removed)
-            adds_test_def = any(re.match(r"\s*def test", ln) for ln in f.added)
+            removes_test_def = any(re.match(r"\s*(def test|it\(|test\()", ln) for ln in f.removed)
+            adds_test_def = any(re.match(r"\s*(def test|it\(|test\()", ln) for ln in f.added)
             if f.is_deletion or (removes_test_def and not adds_test_def):
                 reasons.append(f"SR-13: patch deletes test(s) in '{f.path}'")
             else:

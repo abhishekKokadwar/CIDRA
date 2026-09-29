@@ -62,12 +62,17 @@ def publish(state: DebugState) -> dict:
     # Draft PR for a verified fix (Phase 9.6).
     from cidra.config import ENABLE_PR_CREATION
     if not dry and ENABLE_PR_CREATION and state.get("outcome") == "verified_fix" and state.get("fix_diff"):
-        out["pr_url"] = _open_pr(state, body)
-
-    # PR comment, when we have somewhere to post it.
-    if not dry and issue is not None:
-        from cidra.integrations.github_write import post_or_update_comment
-        out["comment_url"] = post_or_update_comment(state["repo"], issue, body)
+        if state.get("issue_number") and state.get("pr_branch"):
+            # Where did failure originate? -> Existing PR -> Update/fix THAT PR
+            out["pr_url"] = _apply_to_existing_pr(state, body)
+        else:
+            # Where did failure originate? -> main push -> Open new PR
+            out["pr_url"] = _open_pr(state, body)
+    else:
+        # Refused or Failed (or dry run) -> Comment on existing PR
+        if not dry and issue is not None:
+            from cidra.integrations.github_write import post_or_update_comment
+            out["comment_url"] = post_or_update_comment(state["repo"], issue, body)
 
     return out
 
@@ -94,6 +99,30 @@ def _open_pr(state: DebugState, body: str) -> Optional[str]:
     except Exception:  # noqa: BLE001 - a PR failure must not sink the comment
         import logging
         logging.getLogger("cidra.publish").exception("draft PR failed run_id=%s", run_id)
+        return None
+
+
+def _apply_to_existing_pr(state: DebugState, body: str) -> Optional[str]:
+    """Build and push the fix branch to the existing PR, and post a comment."""
+    from cidra.config import GITHUB_API, GITHUB_TOKEN, PRACTICE_REPO_DIR
+    from cidra.nodes.pr import build_fix_branch
+    from cidra.integrations.github_write import post_or_update_comment
+
+    run_id = state["run_id"]
+    repo = state["repo"]
+    try:
+        source = state.get("source_dir") or PRACTICE_REPO_DIR
+        # Push to the existing PR branch
+        build_fix_branch(
+            run_id, source, state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
+            base_sha=state.get("commit_sha"),
+            branch_name=state["pr_branch"]
+        )
+        # Add a comment to the PR notifying them of the fix
+        return post_or_update_comment(repo, state["issue_number"], body)
+    except Exception:  # noqa: BLE001
+        import logging
+        logging.getLogger("cidra.publish").exception("apply to existing PR failed run_id=%s", run_id)
         return None
 
 

@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-09-29T15:56:33Z",
+  "total_environments": 5,
+  "total_evaluations": 15,
+  "invariants_held_percent": 100.0,
+  "elapsed_seconds": 0.0061,
+  "environments": [
+    {
+      "env_id": "VAR-01",
+      "description": "Baseline (Py3.11, Warm Cache, Claude 3.5 Sonnet, 2 CPU, 4GB RAM)",
+      "evaluations": 3,
+      "invariant_breaches": 0,
+      "status": "PASS"
+    },
+    {
+      "env_id": "VAR-02",
+      "description": "Resource Constrained (Py3.9, Cold Cache, Local Ollama, 0.5 CPU, 512MB RAM)",
+      "evaluations": 3,
+      "invariant_breaches": 0,
+      "status": "PASS"
+    },
+    {
+      "env_id": "VAR-03",
+      "description": "Cutting Edge (Py3.13-nogil, Warm Cache, GPT-4o, 4 CPU, 8GB RAM)",
+      "evaluations": 3,
+      "invariant_breaches": 0,
+      "status": "PASS"
+    },
+    {
+      "env_id": "VAR-04",
+      "description": "Open Weights (Py3.10, Cold Cache, Groq Llama-3, 1 CPU, 1GB RAM)",
+      "evaluations": 3,
+      "invariant_breaches": 0,
+      "status": "PASS"
+    },
+    {
+      "env_id": "VAR-05",
+      "description": "Docker Alternate (Py3.12, Podman Rootless, GPT-4o-mini, 2 CPU, 2GB RAM)",
+      "evaluations": 3,
+      "invariant_breaches": 0,
+      "status": "PASS"
+    }
+  ]
+}

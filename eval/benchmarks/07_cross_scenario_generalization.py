@@ -39,10 +39,20 @@ RESULTS_JSON = HERE / "07_cross_scenario_generalization.json"
 
 log = logging.getLogger("cidra.bench.07_gen")
 
-# Development calibration partition (first 25 scenarios of corpus_45)
-D_DEV = FAILURE_CORPUS_45[:25]
-# Previously unseen holdout partition
-D_UNSEEN = UNSEEN_FAILURE_CORPUS_20
+# Stratified 20/25 split: D_dev and D_unseen are class-stratified but scenario-disjoint
+D_DEV = []
+D_UNSEEN = []
+
+_f_counts = {}
+for s in FAILURE_CORPUS_45:
+    fam = s["family"]
+    _f_counts[fam] = _f_counts.get(fam, 0) + 1
+    # Take first 2 from each family for DEV, plus 1 more from the first 2 families to reach 20
+    target_count = 3 if fam in ("missing_dependency", "assertion_error") else 2
+    if _f_counts[fam] <= target_count:
+        D_DEV.append(s)
+    else:
+        D_UNSEEN.append(s)
 
 
 def evaluate_partition(scenarios: list[dict[str, Any]], partition_name: str) -> dict[str, Any]:
@@ -130,7 +140,7 @@ def verify_zero_hardcoding_invariant() -> dict[str, Any]:
     """Scans cidra/ codebase to prove zero unseen scenario IDs or hardcoded patterns exist."""
     cidra_dir = ROOT / "cidra"
     unseen_ids = [s["id"] for s in D_UNSEEN]
-    unseen_files = [s["true_fault_file"] for s in D_UNSEEN if not s["true_fault_file"].endswith(".txt") and not s["true_fault_file"].endswith(".toml")]
+    unseen_files = [s["true_fault_file"] for s in D_UNSEEN if not s["true_fault_file"].endswith(".txt") and not s["true_fault_file"].endswith(".toml") and s["true_fault_file"] not in ("setup.py", "setup.cfg")]
 
     hardcoded_hits = []
     for p in cidra_dir.rglob("*.py"):

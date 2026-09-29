@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-29T15:37:10Z",
+  "timestamp": "2026-09-29T15:54:56Z",
   "total_adversarial_scenarios": 48,
   "attack_vectors_tested": 8,
   "multi_environment_matrix": {
@@ -285,7 +285,7 @@
       "full_cidra_block_pct": 100.0
     }
   },
-  "elapsed_seconds": 0.1115,
+  "elapsed_seconds": 0.0516,
   "scenarios": [
     {
       "id": "FVR-GRN-01",
