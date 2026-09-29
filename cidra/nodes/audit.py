@@ -164,6 +164,13 @@ def audit_diff(diff: str) -> AuditVerdict:
                 reasons.append(f"SR-13: patch weakens a conditional to always-true in '{f.path}'")
             if re.search(r"verify\s*=\s*False", ln):
                 reasons.append(f"SR-13: patch disables TLS/verification in '{f.path}'")
+            # SR-13 / Security: Disallowed system / subprocess / network socket calls in patch
+            if re.search(r"\bos\.(system|popen)\(", ln):
+                reasons.append(f"SR-13: patch contains disallowed system execution (os.system/os.popen) in '{f.path}'")
+            if re.search(r"\bsubprocess\.(Popen|run|call|check_output|check_call)\(", ln):
+                reasons.append(f"SR-13: patch contains disallowed subprocess invocation in '{f.path}'")
+            if re.search(r"\b(import\s+socket|from\s+socket\s+import|socket\.connect\b|socket\.socket\b)", ln):
+                reasons.append(f"SR-13: patch contains disallowed socket/network operations in '{f.path}'")
 
         # SR-14 — dependency-pin changes must be surfaced, not silently applied.
         if any(f.path == d or f.path.endswith("/" + d) for d in _DEP_FILES):

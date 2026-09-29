@@ -87,3 +87,6 @@ ERROR_MARKERS = (
 # Output safety — disable PR creation by default until the workflow is verified safe
 # (Phase 9.6 / GitHub Action Release Phase)
 ENABLE_PR_CREATION = os.environ.get("CIDRA_ENABLE_PR_CREATION", "false").lower() == "true"
+
+# Air-gapped / on-premise execution flag
+AIR_GAPPED = os.environ.get("CIDRA_AIR_GAPPED", "false").lower() == "true"

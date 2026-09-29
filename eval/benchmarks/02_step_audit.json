@@ -1,0 +1,87 @@
+{
+  "benchmark": "02_step_audit",
+  "manual_steps_total": 8,
+  "cidra_steps_total": 1,
+  "step_reduction_percent": 87.5,
+  "target_met_step_reduction": true,
+  "manual_context_switches": 5,
+  "cidra_context_switches": 0,
+  "context_switch_reduction_percent": 100.0,
+  "target_met_context_switch_reduction": true,
+  "manual_steps": [
+    {
+      "step_number": 1,
+      "step_name": "Notification Ingestion",
+      "description": "Receive email/Slack alert regarding broken CI build on GitHub Actions",
+      "interface": "Slack / Email Client",
+      "context_switch": true,
+      "cognitive_load": "Low"
+    },
+    {
+      "step_number": 2,
+      "step_name": "CI Dashboard Navigation",
+      "description": "Switch context to browser, navigate to repository Actions tab, open failed run",
+      "interface": "Web Browser",
+      "context_switch": true,
+      "cognitive_load": "Medium"
+    },
+    {
+      "step_number": 3,
+      "step_name": "Console Log Triage",
+      "description": "Scroll through 2,000+ lines of raw console logs to locate traceback error block",
+      "interface": "Web Browser Console",
+      "context_switch": false,
+      "cognitive_load": "High"
+    },
+    {
+      "step_number": 4,
+      "step_name": "Local Branch Checkout & Stash",
+      "description": "Switch context to terminal, stash active feature branch, checkout failing branch",
+      "interface": "Terminal (Git)",
+      "context_switch": true,
+      "cognitive_load": "Medium"
+    },
+    {
+      "step_number": 5,
+      "step_name": "Manual Code / Config Edit",
+      "description": "Switch context to IDE, navigate to file, manually add missing dependency or default",
+      "interface": "IDE / Code Editor",
+      "context_switch": true,
+      "cognitive_load": "Medium"
+    },
+    {
+      "step_number": 6,
+      "step_name": "Local Test Reproduction",
+      "description": "Run pytest locally in terminal/IDE to verify proposed modification fixes failure",
+      "interface": "Terminal / Pytest",
+      "context_switch": false,
+      "cognitive_load": "Medium"
+    },
+    {
+      "step_number": 7,
+      "step_name": "Git Commit & Push",
+      "description": "Stage changed files, write conventional commit message, push branch to origin",
+      "interface": "Terminal (Git)",
+      "context_switch": false,
+      "cognitive_load": "Low"
+    },
+    {
+      "step_number": 8,
+      "step_name": "Cloud CI Runner Verification Wait",
+      "description": "Wait 3-5 minutes for GitHub Actions runner to pick up commit and verify green build",
+      "interface": "Web Browser (CI)",
+      "context_switch": true,
+      "cognitive_load": "Low"
+    }
+  ],
+  "cidra_steps": [
+    {
+      "step_number": 1,
+      "step_name": "PR Review & Merge Decision",
+      "description": "Review automated draft PR containing verified patch diff, sandbox execution proof, and HMAC audit manifest; click Merge",
+      "interface": "GitHub PR / Slack Review Action",
+      "context_switch": false,
+      "cognitive_load": "Low"
+    }
+  ]
+}

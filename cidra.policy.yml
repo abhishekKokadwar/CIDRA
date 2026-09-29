@@ -30,6 +30,7 @@ policy:
   # Files and paths CIDRA is strictly forbidden from ever reading or modifying
   forbidden_paths:
     - ".github/workflows/**"
+    - ".github/**"
     - ".cidra/**"
     - "AGENTS.md"
     - "CLAUDE.md"

@@ -186,11 +186,23 @@ class PolicyEngine:
         deletions: list[str] = []
 
         cur_file: Optional[str] = None
+        cur_old_path: Optional[str] = None
         for line in diff.splitlines():
-            if line.startswith("+++ "):
+            if line.startswith("--- "):
+                raw_path = line[4:].strip()
+                if raw_path != "/dev/null":
+                    path = raw_path
+                    for prefix in ("a/", "b/"):
+                        if path.startswith(prefix):
+                            path = path[len(prefix):]
+                    cur_old_path = path
+            elif line.startswith("+++ "):
                 raw_path = line[4:].strip()
                 if raw_path == "/dev/null":
-                    pass
+                    if cur_old_path:
+                        deletions.append(cur_old_path)
+                        if cur_old_path not in changed_files:
+                            changed_files.append(cur_old_path)
                 else:
                     path = raw_path
                     for prefix in ("b/", "a/"):
@@ -199,16 +211,6 @@ class PolicyEngine:
                     cur_file = path
                     if path not in changed_files:
                         changed_files.append(path)
-            elif line.startswith("--- "):
-                raw_path = line[4:].strip()
-                if raw_path != "/dev/null":
-                    path = raw_path
-                    for prefix in ("a/", "b/"):
-                        if path.startswith(prefix):
-                            path = path[len(prefix):]
-                    # Check for file deletion (new file becomes /dev/null)
-                    if "/dev/null" in line:
-                        deletions.append(path)
             elif line.startswith("+") and not line.startswith("+++"):
                 added_lines += 1
             elif line.startswith("-") and not line.startswith("---"):

@@ -1,0 +1,42 @@
+{
+  "benchmark": "04_airgap_check",
+  "air_gapped_conformance": true,
+  "network_egress_bytes": 0,
+  "container_network_disabled": true,
+  "sandbox_isolation": {
+    "network_disabled_enforced": true,
+    "docker_socket_excluded": true,
+    "non_root_runner": true,
+    "status": "PASS"
+  },
+  "manifest_proof": {
+    "network_egress_bytes": 0,
+    "network_disabled": true,
+    "host_docker_socket_mounted": false,
+    "cryptographic_seal_verified": true,
+    "status": "PASS"
+  },
+  "private_llm_presets": [
+    {
+      "name": "Local Ollama Instance",
+      "endpoint": "http://127.0.0.1:11434",
+      "air_gapped_flag": true,
+      "zero_external_egress": true,
+      "status": "PASS"
+    },
+    {
+      "name": "Local vLLM High-Throughput Server",
+      "endpoint": "http://127.0.0.1:8000/v1",
+      "air_gapped_flag": true,
+      "zero_external_egress": true,
+      "status": "PASS"
+    },
+    {
+      "name": "Azure OpenAI Private Link / VNet Endpoint",
+      "endpoint": "https://corp-internal-vnet.openai.azure.com",
+      "air_gapped_flag": true,
+      "zero_external_egress": true,
+      "status": "PASS"
+    }
+  ]
+}

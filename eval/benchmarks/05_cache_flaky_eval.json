@@ -1,0 +1,158 @@
+{
+  "benchmark": "05_cache_flaky_eval",
+  "cache_deduplication": {
+    "experiment": "A_cache_deduplication",
+    "total_replays": 10,
+    "all_cache_hits": true,
+    "zero_tokens_consumed": true,
+    "average_replay_duration_s": 5.3e-05,
+    "target_met_sub_second": true,
+    "replays": [
+      {
+        "replay_index": 1,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 9.2e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 2,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 6e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 3,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 4.8e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 4,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 4.8e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 5,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 5.9e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 6,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 4.7e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 7,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 4.3e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 8,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 4.4e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 9,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 5.1e-05,
+        "sub_second": true
+      },
+      {
+        "replay_index": 10,
+        "cache_hit": true,
+        "tokens_consumed": 0,
+        "duration_s": 4.1e-05,
+        "sub_second": true
+      }
+    ]
+  },
+  "flakiness_quenching": {
+    "experiment": "B_flakiness_quenching",
+    "total_scenarios": 5,
+    "all_flaky_detected": true,
+    "all_fixes_strictly_refused": true,
+    "false_patch_attempts": 0,
+    "scenarios": [
+      {
+        "id": "FLK-01",
+        "name": "Random Timing Race Condition",
+        "description": "Async coroutine sleep variance causes intermittent assertion failure",
+        "runs_total": 5,
+        "passes": 3,
+        "fails": 2,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-02",
+        "name": "Dict Iteration Order Non-Determinism",
+        "description": "Hash seed randomization leads to non-deterministic string concatenation",
+        "runs_total": 5,
+        "passes": 2,
+        "fails": 3,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-03",
+        "name": "Port Collision Simulation",
+        "description": "Local socket test randomly collides with ephemeral port in 1 out of 5 runs",
+        "runs_total": 5,
+        "passes": 4,
+        "fails": 1,
+        "flakiness_score": 40,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-04",
+        "name": "Network Timeout Flutter",
+        "description": "Mock server response latency flutters above 50ms timeout threshold",
+        "runs_total": 5,
+        "passes": 2,
+        "fails": 3,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-05",
+        "name": "Float Rounding Precision Discrepancy",
+        "description": "Floating point calculation drifts at the 7th decimal position intermittently",
+        "runs_total": 5,
+        "passes": 3,
+        "fails": 2,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      }
+    ]
+  },
+  "claim_5_validated": true
+}
