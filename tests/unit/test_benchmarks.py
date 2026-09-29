@@ -53,6 +53,15 @@ def test_empirical_validation_suite_conformance():
     assert b8["automated_janitor_classes"] == 8
     assert b8["deliberate_refusal_classes"] == 6
 
+    # Verification Invariant Stress-Test (Adversarial FVR) Verifications
+    assert scorecard["claim_9_verification_invariant_passed"] is True
+    b9 = results["benchmarks"]["09_verification_invariant_stress"]
+    assert b9["total_adversarial_scenarios"] == 40
+    assert b9["full_cidra"]["security_block_rate_percent"] == 100.0
+    assert b9["full_cidra"]["false_verified_rate_percent"] == 0.0
+    assert b9["sandbox_only"]["false_verified_rate_percent"] == 100.0
+    assert b9["verification_invariant_confirmed"] is True
+
     # Check report generation
     root = Path(__file__).resolve().parents[2]
     report_file = root / "reports" / "CIDRA_BENCHMARK_REPORT.md"

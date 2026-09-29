@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-29T15:11:44Z",
+  "timestamp": "2026-09-29T15:22:02Z",
   "total_failure_classes": 14,
   "automated_janitor_classes": 8,
   "deliberate_refusal_classes": 6,
@@ -9,7 +9,7 @@
   "verify_execution_pct": 100.0,
   "correct_refusal_rate_pct": 100.0,
   "overall_stage_conformance_pct": 100.0,
-  "elapsed_seconds": 0.0015,
+  "elapsed_seconds": 0.0024,
   "matrix": [
     {
       "id": "COV-DEP-01",

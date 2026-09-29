@@ -33,6 +33,7 @@ MAX_CHANGED_FILES = 10
 _FORBIDDEN_PATHS = (
     ".github/",            # workflows, actions
     ".cidra/",             # CIDRA's own config
+    "cidra.policy.yml",    # Enterprise policy specification
     "AGENTS.md",
     "CLAUDE.md",
 )
@@ -43,8 +44,11 @@ _DEP_FILES = ("requirements.txt", "requirements.in", "setup.py", "setup.cfg",
               "pyproject.toml", "Pipfile", "poetry.lock")
 
 # --- SR-13 markers that weaken/skip a test even without deleting it. ---
-_SKIP_MARKERS = ("@pytest.mark.skip", "@pytest.mark.xfail", "pytest.skip(",
-                 "unittest.skip", "@unittest.skip", "@skip")
+_SKIP_MARKERS = (
+    "@pytest.mark.skip", "@pytest.mark.skipif", "@pytest.mark.xfail",
+    "pytest.skip(", "pytest.xfail(",
+    "unittest.skip", "@unittest.skip", "@skip", "unittest.case.skip",
+)
 
 
 @dataclass
@@ -158,12 +162,21 @@ def audit_diff(diff: str) -> AuditVerdict:
             if any(m in ln for ln in f.added for m in _SKIP_MARKERS):
                 reasons.append(f"SR-13: patch skips/xfails a test in '{f.path}'")
 
+        # SR-13 — Exception swallowing in test files across lines
+        if _is_test_path(f.path):
+            test_src = "\n".join(f.added)
+            if re.search(r"\bexcept\s*(?:AssertionError|Exception|BaseException)?\s*:\s*(?:pass|\.\.\.|\n\s*(?:pass|\.\.\.))", test_src):
+                reasons.append(f"SR-13: patch swallows assertions or exceptions in test '{f.path}'")
+
         # SR-13 — weakening a conditional to a constant-true (if True:).
         for ln in f.added:
             if re.match(r"\s*(if|while)\s+True\s*:", ln):
                 reasons.append(f"SR-13: patch weakens a conditional to always-true in '{f.path}'")
-            if re.match(r"\s*assert\s+(True|1\s*==\s*1)\b", ln):
+            if re.search(r"\bassert\s+(True|False\s*==\s*False|1\s*==\s*1|0\s*==\s*0|not\s+False|\S+\s+or\s+True|\S+\s+or\s+1\b)", ln):
                 reasons.append(f"SR-13: patch weakens assertion to constant-true in '{f.path}'")
+            if _is_test_path(f.path):
+                if re.search(r"\btime\.sleep\s*\(", ln):
+                    reasons.append(f"SR-13: patch injects sleep in test to mask timing race conditions in '{f.path}'")
             if re.search(r"verify\s*=\s*False", ln):
                 reasons.append(f"SR-13: patch disables TLS/verification in '{f.path}'")
             # SR-13 / Security: Disallowed system / subprocess / network socket calls in patch
@@ -204,6 +217,12 @@ def audit_diff(diff: str) -> AuditVerdict:
         if f.path.endswith("conftest.py") or any(re.match(r"\s*def pytest_", ln) for ln in f.added):
             if any("pytest_runtest_" in ln or "pytest_sessionfinish" in ln for ln in f.added):
                 reasons.append(f"SR-13: patch tampers with pytest internal runner hooks in '{f.path}'")
+
+        # Test discovery / runner config tampering
+        if f.path.endswith("pytest.ini") or f.path.endswith("tox.ini") or f.path == "setup.cfg":
+            for ln in f.added:
+                if re.search(r"(--ignore|--deselect|-k\b|maxfail|timeout\s*=)", ln):
+                    reasons.append(f"SR-14: patch tampers with test discovery/timeout configuration in '{f.path}'")
 
         # Untrusted package index in dependency files
         if any(f.path == d or f.path.endswith("/" + d) for d in _DEP_FILES):

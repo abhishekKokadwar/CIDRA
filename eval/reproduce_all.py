@@ -3,7 +3,7 @@
 Usage:
     python eval/reproduce_all.py
 
-Executes all 6 validation benchmarks from a clean state, verifies all mathematical
+Executes all 9 validation benchmarks from a clean state, verifies all mathematical
 invariants and cryptographic seals, and certifies reproduction conformance.
 """
 
@@ -132,6 +132,15 @@ def main() -> int:
     assert b8["deliberate_refusal_classes"] == 6, f"Expected 6 refusal classes, got {b8['deliberate_refusal_classes']}"
     print(f"  [PASS] Claim 8 (Operational Boundaries): 14/14 classes (8 auto-remediated, 6 correctly refused, 100.0% stage conformance)")
 
+    # Claim 9: Verification Invariant Stress-Test (Adversarial FVR)
+    b9 = benchmarks["09_verification_invariant_stress"]
+    assert b9["total_adversarial_scenarios"] == 40, f"Expected 40 attacks, got {b9['total_adversarial_scenarios']}"
+    assert b9["full_cidra"]["security_block_rate_percent"] == 100.0, "Full CIDRA block rate < 100%"
+    assert b9["full_cidra"]["false_verified_rate_percent"] == 0.0, "Full CIDRA FVR > 0%"
+    assert b9["sandbox_only"]["false_verified_rate_percent"] == 100.0, "Sandbox-only FVR != 100%"
+    assert b9["verification_invariant_confirmed"] is True, "Verification invariant broken"
+    print(f"  [PASS] Claim 9 (Verification Invariant Stress): 40/40 attacks blocked (Full CIDRA FVR = 0.0% vs Sandbox-only FVR = 100.0%)")
+
     # Cryptographic Receipt Verification
     receipts_file = ROOT / "reports" / "benchmark_receipts.json"
     assert receipts_file.exists(), "Receipt file does not exist"
@@ -141,7 +150,7 @@ def main() -> int:
 
     elapsed_s = time.perf_counter() - t0
     print("\n" + "=" * 80)
-    print(f"ALL 8 EMPIRICAL BENCHMARKS SUCCESSFULLY REPRODUCED IN {elapsed_s:.2f}s")
+    print(f"ALL 9 EMPIRICAL BENCHMARKS SUCCESSFULLY REPRODUCED IN {elapsed_s:.2f}s")
     print(f"Overall Conformance Score: 100.0% (All claims mathematically and empirically validated)")
     print("=" * 80)
     return 0
