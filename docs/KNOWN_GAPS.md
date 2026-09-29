@@ -131,3 +131,19 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
   rewritten to run hostile code via `python -c`. (Phase 6.4)
 - **Benchmark false positive (`/merge` in a comment)** — `no_merge_call` matched prose;
   tightened to real merge calls. (Phase 10)
+
+---
+
+## Stage A Operational Boundaries & Limitations (Empirical Hardening Audit)
+
+1. **Distributed Deadlocks & Complex Concurrency (Out of Scope)**:
+   - Single-job and localized test failures are auto-remediated; multi-service distributed race conditions require distributed tracing and are outside single-pipeline scope.
+2. **Database Migrations with Data Loss Risk (Human Approval Mandate)**:
+   - Changes touching `migrations/**` or `.sql` files are strictly routed to `require_human_approval` by policy rather than auto-merged, preventing automated loss of production data.
+3. **Flaky Test Quenching vs Rewriting (Quarantine by Design)**:
+   - Flaky tests are detected via repeated execution and quarantined via policy strict refusal; CIDRA intentionally does not attempt to rewrite non-deterministic external network calls without human instruction.
+4. **Static AST Analysis Boundaries (Dual-Gate Defense)**:
+   - Static AST parsing reliably detects structural patterns (assertions, imports, skip decorators, system calls).
+   - Highly obfuscated runtime dynamic metaprogramming (e.g. nested string decoders) is contained by the Docker sandbox runner (`network="none"`, read-only rootfs).
+5. **Air-Gapped LLM Inference Latency (Hardware Bound)**:
+   - Local LLMs (Ollama / vLLM) ensure zero external network egress, but inference turnaround is dependent on local GPU compute (2s–15s vs 1s–3s on cloud APIs).

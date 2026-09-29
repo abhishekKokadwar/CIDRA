@@ -401,6 +401,15 @@ def run_developer_time_benchmark() -> dict:
     avg_labor_reduction = sum(r["labor_reduction_percent"] for r in results) / len(results)
     avg_wall_clock_reduction = sum(r["wall_clock_reduction_percent"] for r in results) / len(results)
 
+    import math
+    wall_clocks = sorted([r["end_to_end_wall_clock_s"] for r in results])
+    p50 = wall_clocks[len(wall_clocks) // 2]
+    idx90 = min(int(len(wall_clocks) * 0.9), len(wall_clocks) - 1)
+    p90 = wall_clocks[idx90]
+    p95 = wall_clocks[min(int(len(wall_clocks) * 0.95), len(wall_clocks) - 1)]
+    p99 = wall_clocks[-1]
+    std_dev_wall = math.sqrt(sum((x - avg_cidra_wall_clock_s) ** 2 for x in wall_clocks) / len(wall_clocks))
+
     summary = {
         "benchmark": "01_developer_time",
         "total_scenarios": len(results),
@@ -416,6 +425,15 @@ def run_developer_time_benchmark() -> dict:
         "average_engine_overhead_s": round(avg_engine_overhead_s, 4),
         "average_time_reduction_percent": round(avg_wall_clock_reduction, 2),
         "average_labor_reduction_percent": round(avg_labor_reduction, 2),
+        "wall_clock_percentiles": {
+            "p50_s": round(p50, 2),
+            "p90_s": round(p90, 2),
+            "p95_s": round(p95, 2),
+            "p99_s": round(p99, 2),
+            "min_s": round(min(wall_clocks), 2),
+            "max_s": round(max(wall_clocks), 2),
+            "std_dev_s": round(std_dev_wall, 4),
+        },
         "scenarios": results,
     }
 

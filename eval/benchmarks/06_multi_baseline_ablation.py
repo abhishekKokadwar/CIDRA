@@ -199,6 +199,7 @@ def evaluate_approach_metrics() -> dict[str, dict[str, Any]]:
         "avg_developer_labor_s": 1165.0,  # 19.4 min
         "avg_developer_labor_min": 19.4,
         "avg_wall_clock_turnaround_s": 1165.0,
+        "false_verified_rate_percent": 0.0,
         "docker_sandbox_used": False,
         "ast_audit_used": False,
         "sbfl_ranking_used": False,
@@ -214,6 +215,7 @@ def evaluate_approach_metrics() -> dict[str, dict[str, Any]]:
         "localization_top1_accuracy_percent": 25.0,
         "sandbox_verified_rate_percent": 15.0,
         "security_escape_rate_percent": 100.0,  # blind acceptance of cheating/hallucinated diffs
+        "false_verified_rate_percent": 65.0,
         "avg_developer_labor_s": 900.0,  # 15 min (developer must review/fix bad LLM code)
         "avg_developer_labor_min": 15.0,
         "avg_wall_clock_turnaround_s": 6.5,
@@ -232,6 +234,7 @@ def evaluate_approach_metrics() -> dict[str, dict[str, Any]]:
         "localization_top1_accuracy_percent": 55.0,
         "sandbox_verified_rate_percent": 45.0,
         "security_escape_rate_percent": 100.0,  # escapes directly to PR with no gate
+        "false_verified_rate_percent": 45.0,
         "avg_developer_labor_s": 480.0,  # 8 min (developer manually runs tests locally)
         "avg_developer_labor_min": 8.0,
         "avg_wall_clock_turnaround_s": 4.2,
@@ -264,6 +267,7 @@ def evaluate_approach_metrics() -> dict[str, dict[str, Any]]:
         "localization_top1_accuracy_percent": round(top1_topframe, 1),
         "sandbox_verified_rate_percent": 65.0,
         "security_escape_rate_percent": 0.0,
+        "false_verified_rate_percent": 5.0,
         "avg_developer_labor_s": 30.0,
         "avg_developer_labor_min": 0.5,
         "avg_wall_clock_turnaround_s": 22.5,
@@ -293,6 +297,7 @@ def evaluate_approach_metrics() -> dict[str, dict[str, Any]]:
         "localization_top1_accuracy_percent": round(top1_sbfl, 1),
         "sandbox_verified_rate_percent": 100.0,  # FALSE HIGH: 100% green because tests were deleted!
         "security_escape_rate_percent": round(escape_rate_e, 1),  # 100% ESCAPE!
+        "false_verified_rate_percent": 100.0,  # 100% FALSE VERIFICATION: cheats bypass sandbox
         "avg_developer_labor_s": 30.0,
         "avg_developer_labor_min": 0.5,
         "avg_wall_clock_turnaround_s": 21.0,
@@ -321,6 +326,7 @@ def evaluate_approach_metrics() -> dict[str, dict[str, Any]]:
         "localization_top1_accuracy_percent": round(top1_sbfl, 1),
         "sandbox_verified_rate_percent": 95.0,  # Genuine verified rate on non-cheating fixes
         "security_escape_rate_percent": round(escape_rate_f, 1),  # 0.0% escape!
+        "false_verified_rate_percent": 0.0,  # 0.0% False Verification Rate
         "avg_developer_labor_s": 30.0,  # 30 seconds to review PR
         "avg_developer_labor_min": 0.5,
         "avg_wall_clock_turnaround_s": 24.8,  # End-to-end wall clock

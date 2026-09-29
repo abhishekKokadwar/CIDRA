@@ -5,42 +5,42 @@
     "total_replays": 10,
     "all_cache_hits": true,
     "zero_tokens_consumed": true,
-    "average_replay_duration_s": 5.8e-05,
+    "average_replay_duration_s": 6.5e-05,
     "target_met_sub_second": true,
     "replays": [
       {
         "replay_index": 1,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 9.1e-05,
+        "duration_s": 0.000126,
         "sub_second": true
       },
       {
         "replay_index": 2,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 6.2e-05,
+        "duration_s": 7.3e-05,
         "sub_second": true
       },
       {
         "replay_index": 3,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 5.1e-05,
+        "duration_s": 5.8e-05,
         "sub_second": true
       },
       {
         "replay_index": 4,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 4.9e-05,
+        "duration_s": 5.2e-05,
         "sub_second": true
       },
       {
         "replay_index": 5,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 4.7e-05,
+        "duration_s": 5e-05,
         "sub_second": true
       },
       {
@@ -54,35 +54,35 @@
         "replay_index": 7,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 4.6e-05,
+        "duration_s": 4.9e-05,
         "sub_second": true
       },
       {
         "replay_index": 8,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 6.1e-05,
+        "duration_s": 5.2e-05,
         "sub_second": true
       },
       {
         "replay_index": 9,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 6.3e-05,
+        "duration_s": 8.9e-05,
         "sub_second": true
       },
       {
         "replay_index": 10,
         "cache_hit": true,
         "tokens_consumed": 0,
-        "duration_s": 6.5e-05,
+        "duration_s": 5.1e-05,
         "sub_second": true
       }
     ]
   },
   "flakiness_quenching": {
     "experiment": "B_flakiness_quenching",
-    "total_scenarios": 5,
+    "total_scenarios": 10,
     "all_flaky_detected": true,
     "all_fixes_strictly_refused": true,
     "false_patch_attempts": 0,
@@ -151,6 +151,103 @@
         "policy_decision": "strict_refusal",
         "fix_attempt_refused": true,
         "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-06",
+        "name": "Timezone & System Clock Drift",
+        "description": "Intermittent datetime.now() boundary cross produces flaky timestamp assertion",
+        "runs_total": 5,
+        "passes": 2,
+        "fails": 3,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-07",
+        "name": "Test Order Dependency (pytest-randomly)",
+        "description": "Shared module fixture pollution depends on test execution sequence",
+        "runs_total": 5,
+        "passes": 3,
+        "fails": 2,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-08",
+        "name": "Global Mutable Singleton State Leak",
+        "description": "Uncleaned class-level registry leaks data between sequential test cases",
+        "runs_total": 5,
+        "passes": 2,
+        "fails": 3,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-09",
+        "name": "Temp File Lock Contention",
+        "description": "Windows file lock collision during rapid teardown-recreation cycles",
+        "runs_total": 5,
+        "passes": 3,
+        "fails": 2,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      },
+      {
+        "id": "FLK-10",
+        "name": "Memory Pressure Garbage Collection Sweep",
+        "description": "Weakref callback timing jitter caused by asynchronous GC collector pause",
+        "runs_total": 5,
+        "passes": 3,
+        "fails": 2,
+        "flakiness_score": 80,
+        "flaky_detected": true,
+        "policy_decision": "strict_refusal",
+        "fix_attempt_refused": true,
+        "false_patch_escaped": false
+      }
+    ]
+  },
+  "cache_invalidation": {
+    "experiment": "C_cache_invalidation",
+    "total_invalidation_tests": 5,
+    "all_invalidation_tests_passed": true,
+    "tests": [
+      {
+        "id": "INV-01",
+        "name": "Code Drift Context Invalidation",
+        "passed": true
+      },
+      {
+        "id": "INV-02",
+        "name": "Dependency Version Drift Invalidation",
+        "passed": true
+      },
+      {
+        "id": "INV-03",
+        "name": "TTL Expiration & Stale Purge",
+        "passed": true
+      },
+      {
+        "id": "INV-04",
+        "name": "LRU Capacity Bound Eviction",
+        "passed": true
+      },
+      {
+        "id": "INV-05",
+        "name": "Tamper & Corruption Fault-Tolerance",
+        "passed": true
       }
     ]
   },

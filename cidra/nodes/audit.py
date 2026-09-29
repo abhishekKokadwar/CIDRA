@@ -174,6 +174,43 @@ def audit_diff(diff: str) -> AuditVerdict:
             if re.search(r"\b(import\s+socket|from\s+socket\s+import|socket\.connect\b|socket\.socket\b)", ln):
                 reasons.append(f"SR-13: patch contains disallowed socket/network operations in '{f.path}'")
 
+            # SR-13 / Security Red Team Expanded Controls:
+            # 1. Dynamic code evaluation (eval/exec)
+            if re.search(r"\b(eval|exec)\s*\(", ln):
+                reasons.append(f"SR-13: patch contains dynamic code evaluation (eval/exec) in '{f.path}'")
+            # 2. Obfuscated reflection / import tricks
+            if re.search(r"\b(__import__|__builtins__)\b", ln):
+                reasons.append(f"SR-13: patch contains disallowed dynamic reflection (__import__/__builtins__) in '{f.path}'")
+            # 3. Insecure deserialization
+            if re.search(r"\b(pickle\.loads|yaml\.unsafe_load)\b", ln):
+                reasons.append(f"SR-13: patch contains insecure object deserialization in '{f.path}'")
+            # 4. Outbound network dials / DNS tunneling
+            if re.search(r"\b(urllib\.request|socket\.gethostbyname|socket\.getaddrinfo|socket\.create_connection)\b", ln):
+                reasons.append(f"SR-13: patch contains unauthorized network communication in '{f.path}'")
+            # 5. Sensitive environment variable scraping
+            if re.search(r"\bos\.environ(\.get|\.items|\.values|\[['\"](AWS_|GITHUB_|SECRET|TOKEN|KEY))", ln):
+                reasons.append(f"SR-13: patch attempts to harvest sensitive environment variables in '{f.path}'")
+            # 6. File permission escalation
+            if re.search(r"\bos\.chmod\([^,]+,\s*0o?[0-7]{3}\)", ln) and ("777" in ln or "666" in ln):
+                reasons.append(f"SR-13: patch loosens file permissions in '{f.path}'")
+            # 7. Signal handler tampering
+            if re.search(r"\bsignal\.signal\s*\([^,]+,\s*signal\.SIG_IGN\)", ln):
+                reasons.append(f"SR-13: patch manipulates signal handlers to suppress timeouts in '{f.path}'")
+            # 8. Hardcoded secrets / private keys
+            if re.search(r"(-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9]+)", ln):
+                reasons.append(f"SR-13: patch introduces hardcoded private key or secret token in '{f.path}'")
+
+        # Pytest hook manipulation or conftest tampering
+        if f.path.endswith("conftest.py") or any(re.match(r"\s*def pytest_", ln) for ln in f.added):
+            if any("pytest_runtest_" in ln or "pytest_sessionfinish" in ln for ln in f.added):
+                reasons.append(f"SR-13: patch tampers with pytest internal runner hooks in '{f.path}'")
+
+        # Untrusted package index in dependency files
+        if any(f.path == d or f.path.endswith("/" + d) for d in _DEP_FILES):
+            for ln in f.added:
+                if re.search(r"(--(extra-)?index-url|git\+https?://|https?://)", ln):
+                    reasons.append(f"SR-14: patch injects untrusted external repository or index URL in '{f.path}'")
+
         # SR-14 — dependency-pin changes must be surfaced, not silently applied.
         if any(f.path == d or f.path.endswith("/" + d) for d in _DEP_FILES):
             if f.added or f.removed:

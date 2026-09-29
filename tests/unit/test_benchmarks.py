@@ -25,6 +25,19 @@ def test_empirical_validation_suite_conformance():
     assert scorecard["claim_5_cache_and_flaky_passed"] is True
     assert scorecard["claim_6_ablation_passed"] is True
 
+    # Stage A Hardening Verifications
+    b3 = results["benchmarks"]["03_security_redteam"]
+    assert b3["total_attacks"] == 25
+    assert b3["block_rate_percent"] == 100.0
+
+    b5 = results["benchmarks"]["05_cache_flaky_eval"]
+    assert b5["flakiness_quenching"]["total_scenarios"] == 10
+    assert b5["cache_invalidation"]["all_invalidation_tests_passed"] is True
+
+    b6 = results["benchmarks"]["06_multi_baseline_ablation"]
+    assert b6["metrics_by_condition"]["F"]["false_verified_rate_percent"] == 0.0
+    assert b6["metrics_by_condition"]["E"]["false_verified_rate_percent"] == 100.0
+
     # Check report generation
     root = Path(__file__).resolve().parents[2]
     report_file = root / "reports" / "CIDRA_BENCHMARK_REPORT.md"
