@@ -24,7 +24,8 @@ dependencies = [
     "uvicorn",
     "openai",
     "python-dotenv",
-    "pyyaml"
+    "pyyaml",
+    "httpx"
 ]
 
 [project.optional-dependencies]

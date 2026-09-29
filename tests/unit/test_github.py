@@ -4,7 +4,8 @@ import io
 import zipfile
 
 from cidra.integrations.github import _pick
-from cidra.nodes.ingest import _clean, fetch_log, isolate_error
+from cidra.nodes.ingest import fetch_log, isolate_error
+from cidra.adapters.implementations import _clean
 
 # A real GitHub log line: BOM on line 1, ISO timestamp on every line, ANSI in
 # echoed commands, ##[group] folds around each step.
