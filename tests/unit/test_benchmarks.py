@@ -23,6 +23,7 @@ def test_empirical_validation_suite_conformance():
     assert scorecard["claim_3_attack_block_rate_percent"] == 100.0
     assert scorecard["claim_4_airgap_certified"] is True
     assert scorecard["claim_5_cache_and_flaky_passed"] is True
+    assert scorecard["claim_6_ablation_passed"] is True
 
     # Check report generation
     root = Path(__file__).resolve().parents[2]

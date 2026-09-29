@@ -162,6 +162,8 @@ def audit_diff(diff: str) -> AuditVerdict:
         for ln in f.added:
             if re.match(r"\s*(if|while)\s+True\s*:", ln):
                 reasons.append(f"SR-13: patch weakens a conditional to always-true in '{f.path}'")
+            if re.match(r"\s*assert\s+(True|1\s*==\s*1)\b", ln):
+                reasons.append(f"SR-13: patch weakens assertion to constant-true in '{f.path}'")
             if re.search(r"verify\s*=\s*False", ln):
                 reasons.append(f"SR-13: patch disables TLS/verification in '{f.path}'")
             # SR-13 / Security: Disallowed system / subprocess / network socket calls in patch
