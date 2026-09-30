@@ -112,7 +112,7 @@ def structured(
         ("gemini-3.5-flash", client),
         ("google/gemma-4-31b-it:free", openrouter_client_1),
         ("qwen/qwen3.8-27b:free", openrouter_client_2),
-        ("llama3-70b-8192", groq_client),
+        ("llama-3.1-70b-versatile", groq_client),
         ("moonshotai/kimi-k3", kimi_client),
         ("z-ai/glm-5.3-flash", glm_client),
     ]
