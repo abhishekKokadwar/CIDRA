@@ -154,8 +154,8 @@ def structured(
                 
                 if retry < max_retries - 1:
                     if is_rate_limit:
-                        print(f"Hit rate limit. Backing off for 10s...")
-                        time.sleep(10)
+                        print(f"Hit rate limit. Backing off for 65s to clear quota window...")
+                        time.sleep(65)
                     else:
                         print(f"Transient error. Backing off for 2s...")
                         time.sleep(2)
