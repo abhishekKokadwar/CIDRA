@@ -37,7 +37,7 @@ def client() -> OpenAI:
     if _client is None:
         if not API_KEY:
             raise RuntimeError("CIDRA_API_KEY is not set — see .env.example")
-        _client = OpenAI(api_key=API_KEY, base_url=BASE_URL, timeout=30.0)
+        _client = OpenAI(api_key=API_KEY, base_url=BASE_URL, timeout=120.0)
     return _client
 
 def kimi_client() -> OpenAI:
@@ -45,7 +45,7 @@ def kimi_client() -> OpenAI:
     if _kimi_client is None:
         if not NVIDIA_API_KEY_KIMI:
             raise RuntimeError("NVIDIA_API_KEY_KIMI is not set for fallback")
-        _kimi_client = OpenAI(api_key=NVIDIA_API_KEY_KIMI, base_url=NVIDIA_BASE_URL, timeout=30.0)
+        _kimi_client = OpenAI(api_key=NVIDIA_API_KEY_KIMI, base_url=NVIDIA_BASE_URL, timeout=120.0)
     return _kimi_client
 
 def glm_client() -> OpenAI:
@@ -53,7 +53,7 @@ def glm_client() -> OpenAI:
     if _glm_client is None:
         if not NVIDIA_API_KEY_GLM:
             raise RuntimeError("NVIDIA_API_KEY_GLM is not set for fallback")
-        _glm_client = OpenAI(api_key=NVIDIA_API_KEY_GLM, base_url=NVIDIA_BASE_URL, timeout=30.0)
+        _glm_client = OpenAI(api_key=NVIDIA_API_KEY_GLM, base_url=NVIDIA_BASE_URL, timeout=120.0)
     return _glm_client
 
 def groq_client() -> OpenAI:
@@ -61,7 +61,7 @@ def groq_client() -> OpenAI:
     if _groq_client is None:
         if not GROQ_API_KEY:
             raise RuntimeError("GROQ_API_KEY is not set for fallback")
-        _groq_client = OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL, timeout=30.0)
+        _groq_client = OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL, timeout=120.0)
     return _groq_client
 
 
@@ -146,16 +146,23 @@ def structured(
 
                 return schema.model_validate_json(calls[0].function.arguments)
             except Exception as e:
-                # Engineering solution: robust backoff specifically for our testing on free tiers.
-                is_rate_limit = isinstance(e, RateLimitError) or (hasattr(e, 'status_code') and e.status_code == 429) or (hasattr(e, 'message') and '429' in str(e.message)) or '429' in str(e)
-                if is_rate_limit and os.environ.get("CIDRA_ENABLE_RATE_LIMIT_BACKOFF") == "true":
-                    if retry < max_retries - 1:
-                        print(f"Model {attempt_model} hit rate limit (429). Backing off for 35s...")
-                        time.sleep(35)
-                        continue
-                print(f"Model {attempt_model} failed: {e}")
+                print(f"Model {attempt_model} failed (attempt {retry + 1}/{max_retries}): {e}")
                 last_error = e
-                break # Move to next fallback model
+                
+                # Check for rate limit explicitly
+                is_rate_limit = isinstance(e, RateLimitError) or (hasattr(e, 'status_code') and e.status_code == 429) or (hasattr(e, 'message') and '429' in str(e.message)) or '429' in str(e)
+                
+                if retry < max_retries - 1:
+                    if is_rate_limit:
+                        print(f"Hit rate limit. Backing off for 10s...")
+                        time.sleep(10)
+                    else:
+                        print(f"Transient error. Backing off for 2s...")
+                        time.sleep(2)
+                    continue # Retry the same model
+                else:
+                    print(f"Model {attempt_model} exhausted all {max_retries} retries.")
+                    break # Move to next fallback model
 
     # If all fallbacks fail, raise the last error so the graph can gracefully abort
     raise last_error
