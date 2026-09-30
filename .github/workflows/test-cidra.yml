@@ -27,6 +27,10 @@ jobs:
         python -m pip install --upgrade pip
         pip install ".[dev]"
 
+    - name: Build Sandbox Image
+      run: |
+        docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+
     - name: Run tests
       run: |
         pytest -q 2>&1
