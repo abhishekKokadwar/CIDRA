@@ -110,8 +110,8 @@ def structured(
     # 6. NVIDIA NIM (z-ai/glm-5.3-flash)
     models_to_try = [
         ("gemini-3.5-flash", client),
-        ("google/gemini-pro-1.5", openrouter_client_1),
-        ("google/gemini-pro-1.5", openrouter_client_2),
+        ("google/gemini-flash-1.5-exp:free", openrouter_client_1),
+        ("meta-llama/llama-3.1-70b-instruct:free", openrouter_client_2),
         ("llama3-70b-8192", groq_client),
         ("moonshotai/kimi-k3", kimi_client),
         ("z-ai/glm-5.3-flash", glm_client),
