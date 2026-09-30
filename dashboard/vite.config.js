@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -313,7 +314,7 @@ function syncToPythonStatic() {
 }
 
 export default defineConfig({
-  plugins: [react(), cidraSettingsPlugin(), syncToPythonStatic()],
+  plugins: [tailwindcss(), react(), cidraSettingsPlugin(), syncToPythonStatic()],
   build: {
     outDir: 'dist',
     emptyOutDir: true,

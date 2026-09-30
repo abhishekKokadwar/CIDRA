@@ -1,21 +1,41 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-bg-base: #000000;
+  --color-bg-surface: #000000;
+  --color-bg-elevated: #0A0A0A;
+  --color-border: #1A1A1A;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A3A3A3;
+  --color-text-muted: #525252;
+  --color-critical: #FFFFFF;
+  --color-elevated: #A3A3A3;
+  --color-standard: #525252;
+  --color-patrol: #FFFFFF;
+  --color-accent: #FFFFFF;
+}
 
 :root {
-  --bg-dark: #000000;
-  --bg-panel: #0a0a0a;
-  --bg-panel-hover: #111111;
-  --bg-element: #1a1a1a;
-  --border-light: #222222;
-  --border-focus: #333333;
+  color-scheme: dark;
+  --background: #000000;
+  --foreground: #FFFFFF;
   
-  --text-main: #ededed;
-  --text-muted: #a1a1aa;
-  --text-dim: #71717a;
+  --bg-dark: var(--color-bg-base);
+  --bg-panel: rgba(10, 10, 10, 0.7); /* Glassmorphism base */
+  --bg-panel-hover: rgba(17, 17, 17, 0.8);
+  --bg-element: rgba(26, 26, 26, 0.8);
+  --border-light: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(255, 255, 255, 0.15);
   
-  --color-accent: #0070f3;
-  --color-success: #17c964;
-  --color-error: #f31260;
-  --color-warning: #f5a524;
+  --text-main: #F3F4F6; /* Softer white for better readability */
+  --text-muted: var(--color-text-secondary);
+  --text-dim: var(--color-text-muted);
+  
+  --color-accent: #FFFFFF;
+  --color-success: #10B981;
+  --color-error: #EF4444;
+  --color-warning: #F59E0B;
 
   --font-ui: 'Inter', system-ui, sans-serif;
   --font-code: 'JetBrains Mono', monospace;
@@ -28,26 +48,30 @@
 }
 
 body {
-  background-color: var(--bg-dark);
-  color: var(--text-main);
+  background-color: var(--background);
+  color: var(--foreground);
   font-family: var(--font-ui);
   line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  @apply antialiased;
   min-height: 100vh;
 }
 
-/* Crisp Professional Panel */
+/* Crisp Professional Panel with Glassmorphism */
 .glass-panel {
   background: var(--bg-panel);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-light);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-panel:hover {
   border-color: var(--border-focus);
+  background: var(--bg-panel-hover);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Typography */
@@ -160,24 +184,7 @@ p {
   font-weight: 600;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border-light);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-focus);
-}
+/* Removed duplicate scrollbar definition */
 
 /* Clean Nav Links */
 .nav-link {
@@ -231,25 +238,26 @@ p {
 /* Buttons */
 .btn {
   background: var(--text-main);
-  color: var(--bg-dark);
+  color: #000000;
   border: none;
-  padding: 0.6rem 1.2rem;
+  padding: 0.6rem 1.25rem;
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   text-decoration: none;
+  box-shadow: 0 2px 10px rgba(255, 255, 255, 0.1);
 }
 
 .btn:hover {
   background: #ffffff;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
 }
 
 .btn:disabled {
@@ -355,18 +363,33 @@ tr:last-child td {
   animation: fadeIn 0.4s ease forwards;
 }
 
-/* Scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-dark);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-light);
+  background: #2F333D;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-focus);
+  background: #4B5563;
+}
+
+/* Leaflet Popup Dark Mode Overrides */
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #000000 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #1A1A1A !important;
+  border-radius: 0 !important;
+}
+.leaflet-popup-close-button {
+  color: #A3A3A3 !important;
+}
+.leaflet-popup-close-button:hover {
+  color: #FFFFFF !important;
 }
