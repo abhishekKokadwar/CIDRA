@@ -15,11 +15,18 @@ from openai import OpenAI
 from openai import RateLimitError
 from pydantic import BaseModel
 
-from cidra.config import API_KEY, BASE_URL, NVIDIA_API_KEY_KIMI, NVIDIA_API_KEY_GLM, NVIDIA_BASE_URL, GROQ_API_KEY, GROQ_BASE_URL
+from cidra.config import (
+    API_KEY, BASE_URL, 
+    OPENROUTER_API_KEY, OPENROUTER_API_KEY_2, OPENROUTER_BASE_URL,
+    NVIDIA_API_KEY_KIMI, NVIDIA_API_KEY_GLM, NVIDIA_BASE_URL, 
+    GROQ_API_KEY, GROQ_BASE_URL
+)
 
 T = TypeVar("T", bound=BaseModel)
 
 _client: OpenAI | None = None
+_or_client_1: OpenAI | None = None
+_or_client_2: OpenAI | None = None
 _kimi_client: OpenAI | None = None
 _glm_client: OpenAI | None = None
 _groq_client: OpenAI | None = None
@@ -39,6 +46,22 @@ def client() -> OpenAI:
             raise RuntimeError("CIDRA_API_KEY is not set — see .env.example")
         _client = OpenAI(api_key=API_KEY, base_url=BASE_URL, timeout=120.0)
     return _client
+
+def openrouter_client_1() -> OpenAI:
+    global _or_client_1
+    if _or_client_1 is None:
+        if not OPENROUTER_API_KEY:
+            raise RuntimeError("OPENROUTER_API_KEY is not set for fallback")
+        _or_client_1 = OpenAI(api_key=OPENROUTER_API_KEY, base_url=OPENROUTER_BASE_URL, timeout=120.0)
+    return _or_client_1
+
+def openrouter_client_2() -> OpenAI:
+    global _or_client_2
+    if _or_client_2 is None:
+        if not OPENROUTER_API_KEY_2:
+            raise RuntimeError("OPENROUTER_API_KEY_2 is not set for fallback")
+        _or_client_2 = OpenAI(api_key=OPENROUTER_API_KEY_2, base_url=OPENROUTER_BASE_URL, timeout=120.0)
+    return _or_client_2
 
 def kimi_client() -> OpenAI:
     global _kimi_client
@@ -79,16 +102,19 @@ def structured(
     see routers.route_after_validate.
     """
     # Fallback priority based on model speed & accuracy:
-    # 1. moonshotai/kimi-k3 (Fastest)
-    # 2. z-ai/glm-5.3-flash
-    # 3. z-ai/glm-5.3
-    # 4. OpenRouter model (the 'model' argument)
+    # 1. Gemini (Default CIDRA API KEY)
+    # 2. OpenRouter Key 1 (gemini-pro-1.5)
+    # 3. OpenRouter Key 2 (gemini-pro-1.5)
+    # 4. Groq (llama3-70b-8192)
+    # 5. NVIDIA NIM (moonshotai/kimi-k3)
+    # 6. NVIDIA NIM (z-ai/glm-5.3-flash)
     models_to_try = [
-        (model, client),
+        ("gemini-3.5-flash", client),
+        ("google/gemini-pro-1.5", openrouter_client_1),
+        ("google/gemini-pro-1.5", openrouter_client_2),
         ("llama3-70b-8192", groq_client),
         ("moonshotai/kimi-k3", kimi_client),
         ("z-ai/glm-5.3-flash", glm_client),
-        ("z-ai/glm-5.3", glm_client),
     ]
 
     last_error = None

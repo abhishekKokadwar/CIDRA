@@ -29,6 +29,8 @@ jobs:
         nvidia_api_key_kimi: ${{ secrets.NVIDIA_API_KEY_KIMI }}
         nvidia_api_key_glm: ${{ secrets.NVIDIA_API_KEY_GLM }}
         groq_api_key: ${{ secrets.GROQ_API_KEY }}
+        openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
+        openrouter_api_key_2: ${{ secrets.OPENROUTER_API_KEY_2 }}
         enable_pr_creation: 'true'
         github_token: ${{ secrets.GITHUB_TOKEN }}
 

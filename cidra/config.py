@@ -18,7 +18,12 @@ FLAKY_SCORE_THRESHOLD = 1
 
 # Provider — any OpenAI-compatible endpoint. OpenRouter for now.
 API_KEY = os.environ.get("CIDRA_API_KEY", "")
-BASE_URL = os.environ.get("CIDRA_BASE_URL", "https://openrouter.ai/api/v1")
+BASE_URL = os.environ.get("CIDRA_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+
+# OpenRouter Fallbacks (Multiple keys for quotas)
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_API_KEY_2 = os.environ.get("OPENROUTER_API_KEY_2", "")
+OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # NVIDIA Fallback
 NVIDIA_API_KEY_KIMI = os.environ.get("NVIDIA_API_KEY_KIMI", "")
