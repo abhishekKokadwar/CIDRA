@@ -80,3 +80,11 @@ Thumbs.db
 .env.local
 .env.*.local
 !.env.example
+
+# Run Logs & Audit Reports
+*run_log*.txt
+*AUDIT_REPORT*.md
+
+# IDE
+.vscode/
+.idea/
