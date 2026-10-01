@@ -1,7 +1,7 @@
 <div align="center">
 
 <p align="center">
-  <img src="cidra/static/cidra_logo.png" alt="CIDRA Logo" width="440" />
+  <img src="https://raw.githubusercontent.com/abhishekKokadwar/CIDRA/main/cidra/static/cidra_logo.png" alt="CIDRA Logo" width="440" />
 </p>
 
 **Continuous Integration Debugging and Repair Agent**
@@ -29,7 +29,7 @@
 </p>
 
 <p align="center">
-  <img src="cidra/static/cidra-demo.svg" alt="CIDRA Terminal Execution Preview" width="820" />
+  <img src="https://raw.githubusercontent.com/abhishekKokadwar/CIDRA/main/cidra/static/cidra-demo.svg" alt="CIDRA Terminal Execution Preview" width="820" />
 </p>
 
 ---
@@ -65,7 +65,17 @@ flowchart TD
 
 ## 2. LangGraph Architecture & Workflow
 
-CIDRA orchestrates an 18-node cyclic state graph built on **LangGraph**. The workflow decouples log analysis from code generation and isolates untrusted operations into discrete state transitions.
+CIDRA orchestrates a 20-node cyclic state graph built on **LangGraph**. The workflow decouples log analysis from code generation and isolates untrusted operations into discrete state transitions.
+
+### Runtime architecture
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/abhishekKokadwar/CIDRA/main/docs/assets/cidra-runtime-architecture.png" alt="CIDRA runtime architecture: GitHub webhook, repair engine, BYOK LLM gateway, patch audit gate, and the Docker sandbox across three trust zones" width="920" />
+</p>
+
+A signed `workflow_run` failure reaches the webhook receiver, which verifies the HMAC, claims an idempotency key, and runs the repair engine in the background. The engine calls your own LLM provider (**BYOK**: any OpenAI-compatible endpoint via `CIDRA_API_KEY` + `CIDRA_BASE_URL`), gates every diff through the patch audit, and executes repo code only inside network-off Docker containers. `cidra action` and `cidra fix` invoke the same engine without the webhook. Full detail: [docs/4_architecture.md](docs/4_architecture.md).
+
+### Repair workflow
 
 ```mermaid
 flowchart TD

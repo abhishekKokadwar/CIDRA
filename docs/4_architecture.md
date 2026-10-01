@@ -26,12 +26,12 @@
 graph LR
     subgraph external["External systems"]
         GH["GitHub<br/>(CI, Repo, Comments)"]
-        LLM["Claude API<br/>(Messages, structured output)"]
+        LLM["LLM provider (BYOK)<br/>any OpenAI-compatible API"]
     end
 
     subgraph cidra["CIDRA"]
         WH["Webhook Server<br/>FastAPI"]
-        Q["Job Queue<br/>+ idempotency store"]
+        Q["Idempotency store<br/>SQLite"]
         AG["Agent<br/>LangGraph state machine"]
         SB["Sandbox Runner<br/>Docker SDK"]
     end
@@ -42,8 +42,8 @@ graph LR
     end
 
     GH -- "1 . workflow_run: failure<br/>(HMAC-signed)" --> WH
-    WH -- "2 . enqueue run_id" --> Q
-    Q -- "3 . dispatch" --> AG
+    WH -- "2 . claim (run_id, sha)" --> Q
+    WH -- "3 . dispatch<br/>(BackgroundTask)" --> AG
     AG -- "4 . fetch logs / repo" --> GH
     AG -- "5 . analyse + generate fix" --> LLM
     AG -- "6 . reproduce / verify" --> SB
@@ -57,6 +57,30 @@ graph LR
 
 Seven steps, three subsystems. The agent is the only component that talks to all three
 external surfaces; everything else has exactly one job.
+
+There is no job queue: the webhook handler claims the idempotency key, returns 200, and runs
+the graph in a FastAPI `BackgroundTask` in the same process (`server/worker.py`). The same
+graph is also invoked directly by `cidra action` (the composite GitHub Action) and
+`cidra fix` (local, dry-run), which skip the webhook entirely.
+
+### 1.1 LLM access is BYOK
+
+CIDRA ships no model credentials and is not tied to one vendor. The operator brings their own
+key for any OpenAI-compatible endpoint:
+
+| Setting | Purpose |
+|---|---|
+| `CIDRA_API_KEY` + `CIDRA_BASE_URL` | Primary provider (required) |
+| `CIDRA_MODEL_ANALYZE` / `CIDRA_MODEL_FIX` | Model ids for the two LLM nodes |
+| `OPENROUTER_API_KEY[_2]`, `GROQ_API_KEY`, `NVIDIA_API_KEY_KIMI` / `_GLM` | Optional fallback providers, tried in order when the primary fails |
+
+All calls go through `integrations/llm.py::structured()`: one forced tool call, Pydantic-
+validated, 3 tries per provider (65s backoff on a 429) before falling through to the next.
+Keys live in the host process environment only; the sandbox is created with a fixed
+environment and no host env passthrough, so repo code and LLM patches never see them.
+
+The primary call sends the configured model id (`CIDRA_MODEL_ANALYZE` / `CIDRA_MODEL_FIX`);
+each fallback provider uses its own fixed model id, since ids are provider-specific.
 
 ---
 
@@ -236,11 +260,11 @@ stateDiagram-v2
     validate_analysis --> ck_valid
     ck_valid --> analyze: invalid JSON<br/>attempts &lt; 2
     ck_valid --> compose_report: invalid JSON<br/>attempts ≥ 2 → failed
-    ck_valid --> prepare_sandbox: valid
+    ck_valid --> checkout_commit: valid
 
     state "ENVIRONMENT" as ENV {
-        prepare_sandbox --> checkout_commit
-        checkout_commit --> install_deps
+        checkout_commit --> prepare_sandbox
+        prepare_sandbox --> install_deps
     }
 
     state ck_env <<choice>>
@@ -265,13 +289,24 @@ stateDiagram-v2
     state ck_repro <<choice>>
     reproduce_once --> ck_repro
     ck_repro --> compose_report: not reproduced<br/>→ failed
-    ck_repro --> select_strategy: reproduced red
+    ck_repro --> localize: reproduced red
+    localize --> select_strategy
+
+    state ck_strat <<choice>>
+    select_strategy --> ck_strat
+    ck_strat --> compose_report: no strategy →<br/>diagnosis_only
+    ck_strat --> audit_patch: fix-cache hit<br/>(skip LLM)
+    ck_strat --> generate_fix: otherwise
 
     state "FIX + VERIFY" as FIX {
-        select_strategy --> generate_fix
-        generate_fix --> apply_patch
+        generate_fix --> audit_patch
         apply_patch --> verify_fix
     }
+
+    state ck_audit <<choice>>
+    audit_patch --> ck_audit
+    ck_audit --> apply_patch: audit ok
+    ck_audit --> compose_report: rejected →<br/>diagnosis_only
 
     state ck_verify <<choice>>
     verify_fix --> ck_verify
@@ -296,7 +331,9 @@ a reason:
 |---|---|
 | `fetch_log` / `isolate_error` | Isolation must be **pure** so Phase 2 can regression-test it against fixtures with zero mocking |
 | `analyze` / `validate_analysis` | Retry-on-malformed-JSON needs its own edge; folding it in means a hidden loop inside a node |
-| `prepare_sandbox` / `checkout_commit` / `install_deps` | Three different failure modes with three different messages. Also: `install_deps` is the **only** step allowed network access (§7) |
+| `checkout_commit` / `prepare_sandbox` / `install_deps` | Three different failure modes with three different messages. Checkout runs **first**: it makes a per-run clone through the hardened git wrapper and strips `.git`, and the sandbox is then created from that tree. Also: `install_deps` is the **only** step allowed network access (§7) |
+| `localize` | SBFL (coverage spectrum ranking) runs only on a confirmed-red repro and is best-effort; keeping it out of `generate_fix` means a missing `coverage` package degrades the prompt, not the run |
+| `generate_fix` / `audit_patch` | The audit is a static, no-LLM gate (weakened tests, forbidden paths, size ceiling, `cidra.policy.yml`). As its own node, a rejected diff has its own edge to the report and never reaches the sandbox. Cached diffs pass through it too |
 | `reproduce_once` / `reproduce_n_times` | Fundamentally different semantics — one expects red, the other expects *inconsistency* (§4.3) |
 | `select_strategy` / `generate_fix` | Strategy selection is deterministic per-category routing; generation is an LLM call. Keeping them apart means you can unit-test routing without burning tokens |
 | `generate_fix` / `apply_patch` / `verify_fix` | A patch can fail to *apply* (malformed diff) — that's a different failure than a patch that applies but doesn't fix. Separate nodes, separate error messages |
@@ -380,25 +417,28 @@ Build checklist for Phases 2-7. "Pure" means no I/O — trivially testable again
 |---|---|---|---|---|---|---|
 | 1 | `fetch_log` | `run_id`, `repo` | `raw_log` | GitHub | ✗ | 2 |
 | 2 | `isolate_error` | `raw_log` | `error_region`, `log_markers` | — | ✓ | 2 |
-| 3 | `analyze` | `error_region`, `analysis_error` | `analysis`(raw), `analysis_attempts` | Claude | ✗ | 3 |
+| 3 | `analyze` | `error_region`, `analysis_error` | `analysis`(raw), `analysis_attempts` | LLM (BYOK) | ✗ | 3 |
 | 4 | `validate_analysis` | raw LLM output | `analysis`, `analysis_error` | — | ✓ | 3 |
-| 5 | `prepare_sandbox` | `repo` | `image_tag` | Docker | ✗ | 4 |
-| 6 | `checkout_commit` | `commit_sha` | `env_ready`, `repro_results[+]` | Docker | ✗ | 4 |
+| 5 | `checkout_commit` (runs before 6) | `commit_sha`, `source_dir` | `source_dir` | host git | ✗ | 9 |
+| 6 | `prepare_sandbox` | `source_dir` | `image_tag`, `env_ready` on failure | Docker | ✗ | 4 |
 | 7 | `install_deps` | — | `env_ready`, `repro_results[+]` | Docker **+net** | ✗ | 4 |
 | 8 | `route_category` | `analysis.category` | — (router) | — | ✓ | 4 |
 | 9 | `reproduce_once` | `analysis.failing_test` | `reproduced`, `repro_results[+]` | Docker | ✗ | 4 |
 | 10 | `reproduce_n_times` | `analysis.failing_test` | `repro_results[×N]` | Docker ×N | ✗ | 5 |
 | 11 | `classify_flakiness` | `repro_results` | `flaky_pass_count`, `outcome` | — | ✓ | 5 |
-| 12 | `select_strategy` | `analysis.category` | — (router) | — | ✓ | 5 |
-| 13 | `generate_fix` | `analysis`, `error_region`, last `verify_results` | `fix_diff`, `fix_attempts` | Claude | ✗ | 5 |
+| 11b | `localize` | — | `sbfl_ranking`, `sbfl_evidence` | Docker | ✗ | 8 |
+| 12 | `select_strategy` | `analysis.category`, `error_region` | `fix_strategy`, `fingerprint`, cached `fix_diff` | fix-cache file | ✗ | 5/11 |
+| 13 | `generate_fix` | `analysis`, `error_region`, `sbfl_evidence`, last `verify_results` | `fix_diff`, `fix_attempts` | LLM (BYOK) | ✗ | 5 |
+| 13b | `audit_patch` | `fix_diff` | `patch_audit_ok`, `patch_audit_reasons`, `requires_human_approval` | policy file | ✗ | 10 |
 | 14 | `apply_patch` | `fix_diff` | `patch_applied` | Docker | ✗ | 5 |
 | 15 | `verify_fix` | — | **`verified`**, `verify_results` | Docker | ✗ | 5 |
 | 16 | `compose_report` | everything | `outcome`, `final_output` | — | ✓ | 6 |
 | 17 | `publish` | `final_output` | `comment_url` | GitHub | ✗ | 6 |
 | 18 | `cleanup` | — | — | Docker | ✗ | 4 |
 
-Six pure nodes out of eighteen. Those six are your cheap, fast, deterministic test surface —
-build them first in each phase.
+Twenty nodes. The pure ones are your cheap, fast, deterministic test surface — build them
+first in each phase. (`select_strategy` stopped being pure when the fix cache arrived, and
+`compose_report` now loads the policy file to build the audit manifest.)
 
 ### 5.1 Fix strategies (node 12 → 13)
 
@@ -446,8 +486,10 @@ Every conditional edge is a small pure function. No LLM calls, no I/O — just r
 
 ```python
 def route_after_validate(state) -> str:
+    if state.get("policy_decision") == "strict_refusal":
+        return "compose_report"
     if state.get("analysis") is not None:
-        return "prepare_sandbox"
+        return "checkout_commit"
     return "analyze" if state["analysis_attempts"] < MAX_ANALYSIS_ATTEMPTS else "compose_report"
 
 def route_after_env(state) -> str:
@@ -464,7 +506,17 @@ def route_after_flaky(state) -> str:
     return "reproduce_once" if state["reproduced"] else "compose_report"
 
 def route_after_reproduce(state) -> str:
-    return "select_strategy" if state["reproduced"] else "compose_report"
+    return "localize" if state["reproduced"] else "compose_report"
+
+def route_after_strategy(state) -> str:
+    if not state.get("fix_strategy"):
+        return "compose_report"
+    if state.get("cache_hit") and state.get("fix_diff"):
+        return "audit_patch"          # cached diff skips the LLM, never the audit or verify
+    return "generate_fix"
+
+def route_after_audit(state) -> str:
+    return "apply_patch" if state.get("patch_audit_ok") else "compose_report"
 
 def route_after_verify(state) -> str:
     if state["verified"]:
@@ -472,7 +524,7 @@ def route_after_verify(state) -> str:
     return "generate_fix" if state["fix_attempts"] < MAX_FIX_ATTEMPTS else "compose_report"
 ```
 
-All six fit on one screen and are unit-testable with a dict — no mocking, no tokens.
+All eight fit on one screen and are unit-testable with a dict — no mocking, no tokens.
 
 ---
 
@@ -547,13 +599,13 @@ sequenceDiagram
     participant GH as GitHub
     participant WH as Webhook
     participant AG as Agent (graph)
-    participant AI as Claude
+    participant AI as LLM (BYOK)
     participant SB as Sandbox
 
     GH->>WH: workflow_run.failure (HMAC)
-    WH->>WH: verify sig, check run_id unseen
+    WH->>WH: verify sig, claim (run_id, sha)
     WH-->>GH: 200 OK (immediate)
-    WH->>AG: enqueue job
+    WH->>AG: BackgroundTask: process_job
 
     AG->>GH: fetch_log
     GH-->>AG: 12k lines
@@ -562,14 +614,17 @@ sequenceDiagram
     AI-->>AG: {category: missing_dependency,<br/>missing_package: "requests", conf: 0.95}
     AG->>AG: validate_analysis ✓
 
-    AG->>SB: prepare + checkout + install (net ON)
+    AG->>AG: checkout_commit (host git, .git stripped)
+    AG->>SB: prepare + install (net ON for install only)
     SB-->>AG: env_ready
     AG->>SB: reproduce_once
     SB-->>AG: RED ✓ (ModuleNotFoundError)
+    AG->>SB: localize (SBFL, best-effort)
 
-    AG->>AG: select_strategy → dependency
+    AG->>AG: select_strategy → dependency (cache miss)
     AG->>AI: generate_fix
     AI-->>AG: diff: +requests to requirements.txt
+    AG->>AG: audit_patch ✓
     AG->>SB: apply_patch + verify_fix
     SB-->>AG: GREEN ✓
     AG->>AG: verified = True
@@ -585,7 +640,7 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     participant AG as Agent (graph)
-    participant AI as Claude
+    participant AI as LLM (BYOK)
     participant SB as Sandbox
 
     AG->>AI: analyze(error_region)
@@ -609,7 +664,7 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     participant AG as Agent (graph)
-    participant AI as Claude
+    participant AI as LLM (BYOK)
     participant SB as Sandbox
 
     AG->>SB: reproduce_once
@@ -639,27 +694,41 @@ cidra/
 ├── config.py                 # ALL bounds/limits/constants in one place
 ├── state.py                  # DebugState, Analysis, SandboxResult, Outcome
 ├── graph.py                  # graph assembly: nodes + edges + routers
-├── routers.py                # the six pure routing functions (§6)
+├── routers.py                # the pure routing functions (§6)
+├── cli.py                    # `cidra action | fix | dashboard` entrypoints
+├── git_ops.py                # hardened git wrapper (hooks off, argv only)
+├── policy.py                 # cidra.policy.yml engine
+├── audit_manifest.py         # signed per-run audit manifest
+├── history.py                # run history + dashboard telemetry
 ├── nodes/
 │   ├── ingest.py             # fetch_log, isolate_error              (Ph 2)
 │   ├── analyze.py            # analyze, validate_analysis            (Ph 3)
-│   ├── environment.py        # prepare_sandbox, checkout, install    (Ph 4)
+│   ├── environment.py        # checkout, prepare_sandbox, install    (Ph 4/9)
+│   ├── checkout.py           # per-run isolated clone, .git stripped (Ph 9)
 │   ├── reproduce.py          # reproduce_once, reproduce_n_times,
 │   │                         # classify_flakiness                    (Ph 4/5)
+│   ├── localize.py, sbfl.py  # SBFL fault localization               (Ph 8)
 │   ├── fix.py                # select_strategy, generate_fix,
 │   │                         # apply_patch, verify_fix               (Ph 5)
-│   └── publish.py            # compose_report, publish, cleanup      (Ph 6)
+│   ├── fingerprint.py, fix_cache.py  # verified-fix cache            (Ph 11)
+│   ├── audit.py              # audit_patch static gate               (Ph 10)
+│   ├── pr.py                 # fix branch for the draft PR           (Ph 9)
+│   └── publish.py, report.py # compose_report, publish, cleanup      (Ph 6)
 ├── sandbox/
-│   ├── runner.py             # run_in_sandbox — ONLY Docker caller
+│   ├── runner.py             # Session / run_in_sandbox — ONLY Docker caller
 │   ├── limits.py             # mem/cpu/pids/timeout constants
-│   └── Dockerfile.base       # prebuilt toolchain image
+│   └── Dockerfile            # prebuilt toolchain image
 ├── integrations/
-│   ├── llm.py                # Claude client, structured output, Pydantic
-│   └── github.py             # log fetch + comment (PR creation = Ph 9)
+│   ├── llm.py                # BYOK OpenAI-compatible client + fallback chain
+│   ├── github.py             # read-only: logs, run metadata
+│   └── github_write.py       # write token: comment, draft PR
 ├── server/
-│   ├── app.py                # FastAPI webhook                       (Ph 7)
+│   ├── app.py                # FastAPI webhook + dashboard API       (Ph 7)
 │   ├── security.py           # HMAC verification
-│   └── jobs.py               # queue + idempotency store
+│   ├── events.py             # payload filter → WebhookJob
+│   ├── idempotency.py        # SQLite claim store
+│   ├── worker.py             # background dispatch of the graph
+│   └── settings.py           # dashboard settings API
 ├── prompts/                  # versioned templates (→ 7_prompts.md)
 └── eval/
     ├── fixtures/             # saved logs + expected JSON            (Ph 1)
@@ -680,21 +749,24 @@ Webhook retries are guaranteed, so this is not optional.
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> received: webhook, HMAC ok
-    received --> running: dispatched
-    running --> done: terminal outcome
-    running --> stale: crash / timeout
-    stale --> running: retry after TTL
-    done --> done: duplicate webhook → no-op
-    [*] --> done: run_id already done → 200, no work
+    [*] --> claimed: webhook, HMAC ok,<br/>INSERT wins
+    claimed --> claimed: duplicate delivery → 200 no-op
+    claimed --> [*]: graph runs once in background
 ```
 
-- **Key on `run_id`.** Check the store before enqueuing. Already present → 200, do nothing.
-- **Record transitions, not just completion.** A crash leaves `running`; a TTL lets a retry
-  reclaim it.
-- **One job per `run_id` at a time.** Two containers racing the same commit wastes resources
-  and can produce contradictory `verified` values.
-- Handler does the minimum before 200: verify HMAC → parse ids → idempotency check → enqueue.
+- **Key on `(run_id, commit_sha)`.** `IdempotencyStore.claim()` is one SQLite `INSERT`
+  against a primary key, so exactly one delivery wins. Already present → 200, do nothing.
+- **One job per key.** Two containers racing the same commit wastes resources and can
+  produce contradictory `verified` values.
+- Handler does the minimum before 200: verify HMAC → parse + filter → claim → schedule the
+  `BackgroundTask`.
+- **Crash recovery.** If the graph raises, the worker releases the claim, so redelivering
+  the webhook (GitHub UI or `scripts/replay_delivery.py`) re-drives the run. GitHub does not
+  redeliver on its own, because the handler already returned 200.
+- **Not implemented: transition tracking.** The store records only the claim, not
+  `running` / `done`, and has no TTL. A process killed mid-run leaves its claim behind.
+  Sessions are also held in an in-process dict, so this design assumes a single server
+  process.
 
 ---
 
