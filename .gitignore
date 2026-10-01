@@ -53,12 +53,24 @@ pnpm-debug.log*
 # AI Agent & IDE Tooling Caches
 .claude/
 .code-review-graph/
+.archify/
 .codex/
 .agents/skills/
 .mcp.json
 CLAUDE.md
 AGENTS.md
 .agents
+.cursor/
+.cursorrules
+.gemini/
+GEMINI.md
+.kiro/
+.qoder/
+QODER.md
+.opencode.json
+.windsurfrules
+.vscode/mcp.json
+.github/code-review-graph.instruction.md
 
 # Operating System Files
 .DS_Store
