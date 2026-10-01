@@ -36,8 +36,10 @@ GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 
 # Models — cheap for classification, stronger for code edits.
 # See docs/5_fixtures.md §6: record which model produced each eval row.
-MODEL_ANALYZE = os.environ.get("CIDRA_MODEL_ANALYZE", "anthropic/claude-haiku-4.5")
-MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX", "anthropic/claude-sonnet-4.5")
+# Defaults match the default BASE_URL (Gemini). `or`, not a get() default: the
+# GitHub Action passes an empty string when the input is unset.
+MODEL_ANALYZE = os.environ.get("CIDRA_MODEL_ANALYZE") or "gemini-3.5-flash"
+MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX") or "gemini-3.5-flash"
 
 # GitHub, fine-grained PATs scoped to the practice repo.
 # Reads prefer the read-only token: a token that cannot write cannot be made

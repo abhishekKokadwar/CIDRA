@@ -11,7 +11,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from cidra.config import MODEL_FIX, TEST_COMMAND
+from cidra import config
+from cidra.config import TEST_COMMAND
 from cidra.integrations.llm import structured
 from cidra.nodes.environment import session_for
 from cidra.state import DebugState
@@ -114,7 +115,7 @@ def generate_fix(state: DebugState) -> dict:
         )
     try:
         patch = structured(
-            model=MODEL_FIX,
+            model=config.MODEL_FIX,  # read at call time: the settings API can change it
             schema=Patch,
             system=SYSTEM,
             user=_context(state) + retry_note,

@@ -101,15 +101,14 @@ def structured(
     Raises on a shape we can't trust. The caller decides whether to retry —
     see routers.route_after_validate.
     """
-    # Fallback priority based on model speed & accuracy:
-    # 1. Gemini (Default CIDRA API KEY)
-    # 2. OpenRouter Key 1 (gemini-pro-1.5)
-    # 3. OpenRouter Key 2 (gemini-pro-1.5)
-    # 4. Groq (llama3-70b-8192)
-    # 5. NVIDIA NIM (moonshotai/kimi-k3)
-    # 6. NVIDIA NIM (z-ai/glm-5.3-flash)
+    # BYOK: the primary call uses the caller's model (CIDRA_MODEL_ANALYZE /
+    # CIDRA_MODEL_FIX) against CIDRA_BASE_URL. The fallbacks below are other
+    # providers, so each carries its own provider-specific model id:
+    # 2-3. OpenRouter Key 2
+    # 4. Groq
+    # 5-6. NVIDIA NIM
     models_to_try = [
-        ("gemini-3.5-flash", client),
+        (model, client),
         ("meta-llama/llama-3.1-70b-instruct", openrouter_client_2),
         ("qwen/qwen-2.5-72b-instruct", openrouter_client_2),
         ("llama-3.1-8b-instant", groq_client),

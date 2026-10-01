@@ -4,7 +4,7 @@ Two nodes so a bad LLM response is a retryable state, not an exception:
 analyze calls the model, validate_analysis decides whether to trust it.
 """
 
-from cidra.config import MODEL_ANALYZE
+from cidra import config
 from cidra.integrations.llm import structured
 from cidra.state import Analysis, DebugState
 
@@ -55,7 +55,7 @@ confidence is your genuine certainty, not a score to maximise."""
 def analyze_region(error_region: str) -> Analysis:
     """The LLM call itself. Separated so eval Tier 2 can call it without a graph."""
     return structured(
-        model=MODEL_ANALYZE,
+        model=config.MODEL_ANALYZE,  # read at call time: the settings API can change it
         schema=Analysis,
         system=SYSTEM,
         user=f"Classify this CI failure.\n\n<log>\n{error_region}\n</log>",
