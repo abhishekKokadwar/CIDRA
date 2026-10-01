@@ -40,3 +40,23 @@ def test_process_job_swallows_exceptions(monkeypatch):
     monkeypatch.setattr(g, "build_graph", lambda: Boom())
 
     assert worker.process_job(JOB) is None  # logged, not raised
+
+
+def test_crashed_run_releases_its_claim(monkeypatch, tmp_path):
+    from cidra.server import app as appmod
+    from cidra.server.idempotency import IdempotencyStore
+
+    store = IdempotencyStore(tmp_path / "i.db")
+    monkeypatch.setattr(appmod, "_store", store)
+    monkeypatch.setattr(worker, "resolve_issue_number", lambda j: None)
+
+    class Boom:
+        def invoke(self, state):
+            raise RuntimeError("engine blew up")
+
+    import cidra.graph as g
+    monkeypatch.setattr(g, "build_graph", lambda: Boom())
+
+    assert store.claim(JOB.run_id, JOB.head_sha) is True
+    worker.process_job(JOB)
+    assert store.claim(JOB.run_id, JOB.head_sha) is True  # redelivery can re-drive it

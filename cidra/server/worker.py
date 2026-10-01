@@ -7,9 +7,9 @@ dry-running (Phase 6, step 6.3).
 
 Nothing here is allowed to crash the server: the whole run is wrapped so an
 exception becomes a log line, not a 500 on a request that already succeeded.
-GitHub will retry the delivery, and the idempotency store makes that retry a
-no-op only if we claimed the key — which the receiver does *before* dispatching,
-so a job that failed mid-run is NOT re-claimed and CAN be re-driven by a retry.
+The receiver claims the idempotency key *before* dispatching, so a run that
+raises here releases its claim; redelivering the webhook then re-drives it
+instead of being dropped as a duplicate.
 """
 
 import logging
@@ -47,4 +47,15 @@ def process_job(job: WebhookJob) -> dict | None:
         return final
     except Exception:  # noqa: BLE001 - a background run must never take down the server
         log.exception("run failed run_id=%s", state["run_id"])
+        _release_claim(job)
         return None
+
+
+def _release_claim(job: WebhookJob) -> None:
+    """Un-claim a crashed run so redelivering the webhook re-drives it."""
+    try:
+        from cidra.server import app  # lazy: app imports this module
+
+        app._store.release(job.run_id, job.head_sha)
+    except Exception:  # noqa: BLE001 - best-effort; never mask the original failure
+        log.exception("could not release claim run_id=%s", job.run_id)

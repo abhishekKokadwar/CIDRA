@@ -51,5 +51,13 @@ class IdempotencyStore:
         except sqlite3.IntegrityError:
             return False
 
+    def release(self, run_id: str, commit_sha: str) -> None:
+        """Drop a claim so a redelivery can re-drive a run that crashed."""
+        self._db.execute(
+            "DELETE FROM seen WHERE run_id = ? AND commit_sha = ?",
+            (str(run_id), str(commit_sha)),
+        )
+        self._db.commit()
+
     def close(self) -> None:
         self._db.close()
