@@ -125,13 +125,13 @@ def export_dashboard_telemetry():
         analysis = st.get("analysis") or {}
         if isinstance(analysis, dict):
             category = analysis.get("category", item.get("category", "unknown"))
-            confidence = analysis.get("confidence", 0.9)
+            confidence = analysis.get("confidence")
             action = analysis.get("proposed_action", "")
             missing_pkg = analysis.get("missing_package")
             failing_test = analysis.get("failing_test")
         else:
             category = getattr(analysis, "category", "unknown")
-            confidence = getattr(analysis, "confidence", 0.9)
+            confidence = getattr(analysis, "confidence", None)
             action = getattr(analysis, "proposed_action", "")
             missing_pkg = getattr(analysis, "missing_package", None)
             failing_test = getattr(analysis, "failing_test", None)
@@ -161,9 +161,15 @@ def export_dashboard_telemetry():
             
         llm_telem = st.get("llm_telemetry") or []
         first_call = llm_telem[0] if llm_telem else {}
-        total_toks = sum(c.get("tokens", {}).get("total", 0) for c in llm_telem) if llm_telem else 1420
-        latency = first_call.get("latency_s", round(duration, 2) if duration > 0 else 3.4)
-        model_name = first_call.get("model", "nvidia/nemotron-3-super-120b")
+        # Only what was recorded. A run with no model call has no token counts,
+        # latency or model: those are None, and the dashboard shows "no data".
+        def _tokens(kind: str) -> Optional[int]:
+            if not llm_telem:
+                return None
+            return sum(c.get("tokens", {}).get(kind, 0) for c in llm_telem)
+
+        latency = first_call.get("latency_s")
+        model_name = first_call.get("model")
         
         raw_trace = first_call.get("tool_args")
         if not raw_trace:
@@ -181,12 +187,19 @@ def export_dashboard_telemetry():
             context_files.append(analysis["file"])
         if st.get("fix_strategy") == "append_requirement":
             context_files.append("requirements.txt")
-        if not context_files:
-            context_files = ["tests/test_api.py", "requirements.txt"]
-            
+
+        def _execution(r) -> dict:
+            get = r.get if isinstance(r, dict) else (lambda k, d=None: getattr(r, k, d))
+            return {
+                "step": get("step"),
+                "exit_code": get("exit_code"),
+                "duration_s": get("duration_s"),
+                "passed": get("exit_code") == 0 and not get("timed_out", False),
+            }
+
         runs.append({
             "id": rid,
-            "repo": st.get("repo") or "Abhishek86798/CIDRA",
+            "repo": st.get("repo") or "unknown",
             "commit_sha": st.get("commit_sha") or "HEAD",
             "status": status,
             "outcome": outcome,
@@ -196,12 +209,11 @@ def export_dashboard_telemetry():
             "timestamp": item.get("ts", time.time()),
             "model": model_name,
             "telemetry": {
-                "total_tokens": total_toks or 1420,
-                "prompt_tokens": int(total_toks * 0.7),
-                "completion_tokens": int(total_toks * 0.3),
-                "cost_usd": round((total_toks / 1000) * 0.002, 4),
+                "total_tokens": _tokens("total"),
+                "prompt_tokens": _tokens("prompt"),
+                "completion_tokens": _tokens("completion"),
                 "latency_s": latency,
-                "confidence": round(float(confidence) * 100, 1),
+                "confidence": round(float(confidence) * 100, 1) if confidence is not None else None,
                 "context_files": context_files,
             },
             "error_region": st.get("error_region", ""),
@@ -212,19 +224,23 @@ def export_dashboard_telemetry():
             "reproduced": st.get("reproduced", False),
             "verified": st.get("verified", False),
             "verify_results": verify_results,
+            "executions": [_execution(r) for r in repro_results + verify_results],
             "flaky_score": st.get("flaky_score"),
             "final_output": st.get("final_output", ""),
-            "policy_decision": st.get("policy_decision", "auto_remediate"),
+            "policy_decision": st.get("policy_decision"),
             "requires_human_approval": bool(st.get("requires_human_approval", False)),
             "audit_manifest": st.get("audit_manifest"),
             "pr_url": st.get("pr_url"),
             "comment_url": st.get("comment_url")
         })
         
-    avg_duration = round(total_duration / max(1, duration_count), 1) if duration_count else 42.5
-    mins = int(avg_duration // 60)
-    secs = int(avg_duration % 60)
-    avg_time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
+    if duration_count:
+        avg_duration = round(total_duration / duration_count, 1)
+        mins = int(avg_duration // 60)
+        secs = int(avg_duration % 60)
+        avg_time_str = f"{mins}m {secs}s" if mins > 0 else f"{secs}s"
+    else:
+        avg_time_str = "--"  # nothing measured yet
     
     total_runs = len(runs)
     success_rate = round((total_verified / max(1, total_runs)) * 100, 1) if total_runs else 0.0

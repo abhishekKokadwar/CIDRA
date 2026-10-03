@@ -7,7 +7,7 @@ import CodeDiffViewer from './components/CodeDiffViewer';
 import TimelineNode from './components/TimelineNode';
 import OrchestratorView from './components/OrchestratorView';
 import SettingsView from './components/SettingsView';
-import { Play, CheckCircle2, Clock, ChevronRight, Bot, PlayCircle, Cpu, Zap, Activity, FileJson, RefreshCw, ExternalLink, ShieldCheck, AlertTriangle, Check, Flame, Workflow } from 'lucide-react';
+import { Play, CheckCircle2, Clock, ChevronRight, Bot, PlayCircle, Cpu, Zap, Activity, FileJson, RefreshCw, ExternalLink, ShieldCheck, Check, Workflow } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -98,7 +98,7 @@ export default function App() {
         )}
         
         {activeTab === 'prs' && (
-          <PullRequestsView />
+          <PullRequestsView runs={telemetry.runs} />
         )}
       </main>
     </div>
@@ -153,7 +153,7 @@ function CommandCenter({ stats, runs, loading, refreshing, onRefresh, onRunClick
         />
         <StatCard 
           title="Avg. Time to Fix" 
-          value={loading ? '...' : (stats.avg_time_to_fix ?? '42s')} 
+          value={loading ? '...' : (stats.avg_time_to_fix ?? '--')} 
           icon={<Clock size={16} color="var(--text-muted)" />} 
         />
       </div>
@@ -200,10 +200,10 @@ function CommandCenter({ stats, runs, loading, refreshing, onRefresh, onRunClick
                     </div>
                   </td>
                   <td style={{ color: 'var(--text-main)', fontSize: '0.875rem' }}>
-                    {run.repo === 'x/y' ? 'Abhishek86798/CIDRA' : run.repo}
+                    {run.repo}
                   </td>
                   <td style={{ fontFamily: 'var(--font-code)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                    {run.model?.replace(':free', '')}
+                    {run.model?.replace(':free', '') || '—'}
                   </td>
                   <td>
                     <StatusBadge status={run.status} />
@@ -242,7 +242,7 @@ function RunExplorer({ run, onBack }) {
   }
 
   const telem = run.telemetry || {};
-  const repoName = run.repo === 'x/y' ? 'Abhishek86798/CIDRA' : run.repo;
+  const repoName = run.repo;
 
   return (
     <div className="animate-in" style={{ width: '100%', maxWidth: '100%', paddingBottom: '4rem' }}>
@@ -288,10 +288,10 @@ function RunExplorer({ run, onBack }) {
             <Cpu size={14} /> Total Tokens
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 600, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-            {telem.total_tokens?.toLocaleString() || '1,420'}
+            {telem.total_tokens != null ? telem.total_tokens.toLocaleString() : '—'}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>
-            Cost: ${telem.cost_usd || '0.0028'}
+            {telem.total_tokens != null ? `${telem.prompt_tokens ?? 0} prompt / ${telem.completion_tokens ?? 0} completion` : 'No model call recorded'}
           </div>
         </div>
 
@@ -299,11 +299,11 @@ function RunExplorer({ run, onBack }) {
           <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Activity size={14} /> Confidence Score
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 600, color: (telem.confidence >= 90 ? 'var(--color-success)' : 'var(--color-warning)'), letterSpacing: '-0.02em' }}>
-            {telem.confidence ? `${telem.confidence}%` : '90.0%'}
+          <div style={{ fontSize: '1.6rem', fontWeight: 600, color: (telem.confidence == null ? 'var(--text-main)' : telem.confidence >= 90 ? 'var(--color-success)' : 'var(--color-warning)'), letterSpacing: '-0.02em' }}>
+            {telem.confidence != null ? `${telem.confidence}%` : '—'}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>
-            Class: {run.category || 'analyzed'}
+            Class: {run.category || 'not classified'}
           </div>
         </div>
 
@@ -312,10 +312,10 @@ function RunExplorer({ run, onBack }) {
             <Zap size={14} /> Latency
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 600, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-            {telem.latency_s ? `${telem.latency_s}s` : '3.4s'}
+            {telem.latency_s != null ? `${telem.latency_s}s` : '—'}
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem' }}>
-            Model Inference & Repro
+            First model call
           </div>
         </div>
 
@@ -324,10 +324,10 @@ function RunExplorer({ run, onBack }) {
             <FileJson size={14} /> Context Gathered
           </div>
           <div style={{ fontSize: '1.6rem', fontWeight: 600, color: 'var(--text-main)', letterSpacing: '-0.02em' }}>
-            {telem.context_files?.length || 2} Files
+            {telem.context_files?.length ?? 0} Files
           </div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {telem.context_files?.join(', ') || 'tests/test_api.py, requirements.txt'}
+            {telem.context_files?.join(', ') || 'None recorded'}
           </div>
         </div>
       </div>
@@ -358,7 +358,7 @@ function RunExplorer({ run, onBack }) {
         
         <TimelineNode 
           title="AI Model Diagnosis" 
-          description={`Evaluated with ${run.model}. Classified as category: "${run.category || 'unknown'}".`}
+          description={`Evaluated with ${run.model || 'no recorded model'}. Classified as category: "${run.category || 'unknown'}".`}
           status="success"
           icon={<Bot size={14} />}
         >
@@ -367,7 +367,7 @@ function RunExplorer({ run, onBack }) {
               <Bot size={20} color="var(--color-accent)" />
               <div>
                 <h4 style={{ color: 'var(--text-main)', fontSize: '0.9rem', margin: 0 }}>
-                  Model Decision ({run.model})
+                  Model Decision ({run.model || 'model not recorded'})
                 </h4>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                   Action proposed: <strong style={{ color: 'var(--text-main)' }}>{run.analysis?.proposed_action || run.fix}</strong>
@@ -415,7 +415,7 @@ function RunExplorer({ run, onBack }) {
           {run.fix_diff ? (
             <div>
               <CodeDiffViewer 
-                filename={telem.context_files?.[1] || "requirements.txt"} 
+                filename={telem.context_files?.[1] || telem.context_files?.[0] || "patch"} 
                 diffLines={run.fix_diff} 
               />
               {run.verify_results && run.verify_results.length > 0 && (
@@ -484,17 +484,17 @@ function RunExplorer({ run, onBack }) {
 }
 
 function EnterpriseCompliancePanel({ run }) {
-  const policyDecision = run.policy_decision || (run.requires_human_approval ? 'require_human_approval' : 'auto_remediate');
+  const policyDecision = run.policy_decision || (run.requires_human_approval ? 'require_human_approval' : null);
   const isAuto = policyDecision === 'auto_remediate';
   const isHuman = policyDecision === 'require_human_approval';
   const isRefusal = policyDecision === 'strict_refusal';
 
-  const badgeColor = isAuto ? 'var(--color-success)' : isHuman ? 'var(--color-warning)' : 'var(--color-danger, #ff4d4f)';
-  const badgeText = isAuto ? 'AUTO-REMEDIATE' : isHuman ? 'HUMAN APPROVAL REQUIRED' : 'STRICT REFUSAL';
+  const badgeColor = isAuto ? 'var(--color-success)' : isHuman ? 'var(--color-warning)' : isRefusal ? 'var(--color-danger, #ff4d4f)' : 'var(--text-dim)';
+  const badgeText = isAuto ? 'AUTO-REMEDIATE' : isHuman ? 'HUMAN APPROVAL REQUIRED' : isRefusal ? 'STRICT REFUSAL' : 'NOT EVALUATED';
 
   const manifest = run.audit_manifest || {};
   const seal = manifest.seal || {};
-  const sigSnippet = seal.signature ? seal.signature.slice(0, 16) : 'd4a19e8b7c2f01a3';
+  const sigSnippet = seal.signature ? seal.signature.slice(0, 16) : null;
 
   return (
     <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '2.5rem', borderLeft: `3px solid ${badgeColor}` }}>
@@ -540,7 +540,7 @@ function EnterpriseCompliancePanel({ run }) {
         <div style={{ background: 'var(--bg-element)', padding: '0.65rem 0.85rem', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
           <div style={{ color: 'var(--text-dim)', fontSize: '0.7rem', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Cryptographic Proof</div>
           <div style={{ color: 'var(--color-accent)', fontFamily: 'var(--font-code)', fontSize: '0.75rem', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-            HMAC:{sigSnippet}…
+            {sigSnippet ? `HMAC:${sigSnippet}…` : 'Unsigned (no signing key set)'}
           </div>
         </div>
       </div>
@@ -549,64 +549,24 @@ function EnterpriseCompliancePanel({ run }) {
 }
 
 function ContainerFlakinessLab({ run }) {
-  const [iterations, setIterations] = useState(5);
-  const [isRunning, setIsRunning] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [testResults, setTestResults] = useState(null);
-  const [approved, setApproved] = useState(false);
+  const executions = run.executions || [];
+  const [approval, setApproval] = useState(null);
+  const [approving, setApproving] = useState(false);
 
-  const startContainerRun = async () => {
-    setIsRunning(true);
-    setTestResults(null);
-    setCurrentStep(0);
-
-    const isFlakyTarget = run.category === 'flaky_test' || run.id === 't-f04';
-    const isFixTarget = run.outcome === 'verified_fix' || run.verified;
-    
-    const results = [];
-    for (let i = 1; i <= iterations; i++) {
-      setCurrentStep(i);
-      // Realistic simulation delay
-      await new Promise(r => setTimeout(r, 400));
-      
-      let passed;
-      if (isFixTarget) {
-        passed = true;
-      } else if (isFlakyTarget) {
-        passed = Math.random() < 0.45; // Fluttering test
-      } else {
-        passed = false; // Persistent bug
-      }
-      
-      const duration = (0.12 + Math.random() * 0.15).toFixed(2);
-      results.push({
-        iteration: i,
-        passed,
-        duration: `${duration}s`,
-        testName: run.analysis?.failing_test || 'tests/test_suite.py::test_case'
-      });
+  // Records a human review through the local CIDRA server. Nothing is merged:
+  // merging the pull request happens on GitHub.
+  const handleApprove = async () => {
+    setApproving(true);
+    try {
+      const res = await fetch(`/api/runs/${encodeURIComponent(run.id)}/approve`, { method: 'POST' });
+      if (!res.ok) throw new Error(`server answered ${res.status}`);
+      const data = await res.json();
+      setApproval({ ok: true, message: data.message, prUrl: data.pr_url });
+    } catch (err) {
+      setApproval({ ok: false, message: `Approval was not recorded (${err.message}). It needs the local CIDRA server: run "cidra dashboard".` });
+    } finally {
+      setApproving(false);
     }
-
-    const passes = results.filter(r => r.passed).length;
-    const fails = results.length - passes;
-    // Formula from cidra/nodes/reproduce.py: round(100 * (1 - |passes - fails| / n))
-    const score = Math.round(100 * (1 - Math.abs(passes - fails) / results.length));
-
-    setTestResults({
-      results,
-      passes,
-      fails,
-      score,
-      total: results.length
-    });
-    setIsRunning(false);
-  };
-
-  const handleApprove = () => {
-    setApproved(true);
-    setTimeout(() => {
-      alert(`[HITL Gate] Run ${run.id} verified and approved for automated PR merge.`);
-    }, 200);
   };
 
   return (
@@ -614,162 +574,79 @@ function ContainerFlakinessLab({ run }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h3 style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Cpu size={16} color="var(--color-accent)" /> 
-            Ephemeral Container Sandbox & Flakiness Lab
+            <Cpu size={16} color="var(--color-accent)" />
+            Sandbox Executions
           </h3>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            Execute isolated test cycles in Docker sandbox to detect non-deterministic flakiness (SR-08).
+            What this run actually executed in the Docker sandbox, as recorded by the engine.
           </p>
         </div>
 
-        {/* Iteration Selector & Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'var(--bg-dark)', padding: '0.25rem', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', paddingLeft: '0.5rem', paddingRight: '0.25rem' }}>Runs:</span>
-            {[1, 3, 5, 10].map((n) => (
-              <button
-                key={n}
-                onClick={() => setIterations(n)}
-                disabled={isRunning}
-                style={{
-                  background: iterations === n ? 'var(--bg-element)' : 'transparent',
-                  color: iterations === n ? 'var(--text-main)' : 'var(--text-muted)',
-                  border: iterations === n ? '1px solid var(--border-focus)' : 'none',
-                  borderRadius: '4px',
-                  padding: '0.2rem 0.5rem',
-                  fontSize: '0.75rem',
-                  fontFamily: 'var(--font-code)',
-                  cursor: 'pointer'
-                }}
-              >
-                {n}x
-              </button>
-            ))}
-          </div>
-
-          <button 
-            className="btn" 
-            onClick={startContainerRun} 
-            disabled={isRunning}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.45rem 0.9rem', fontSize: '0.8rem' }}
-          >
-            <Play size={13} className={isRunning ? 'lucide-spin' : ''} />
-            {isRunning ? `Testing (${currentStep}/${iterations})...` : `Run in Container`}
-          </button>
-
+          {run.flaky_score != null && (
+            <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-code)', color: run.flaky_score > 0 ? 'var(--color-warning)' : 'var(--text-muted)' }}>
+              Flakiness score: {run.flaky_score} / 100
+            </span>
+          )}
           {run.outcome === 'verified_fix' && (
-            <button 
+            <button
               className="btn-secondary"
               onClick={handleApprove}
-              disabled={approved}
-              style={{ 
+              disabled={approving || approval?.ok}
+              style={{
                 display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.45rem 0.9rem', fontSize: '0.8rem',
-                borderColor: approved ? 'var(--color-success)' : 'var(--border-light)',
-                color: approved ? 'var(--color-success)' : 'var(--text-main)'
+                borderColor: approval?.ok ? 'var(--color-success)' : 'var(--border-light)',
+                color: approval?.ok ? 'var(--color-success)' : 'var(--text-main)'
               }}
             >
               <Check size={13} />
-              {approved ? 'Approved & Merged' : 'Approve Fix (HITL)'}
+              {approval?.ok ? 'Approval recorded' : approving ? 'Recording...' : 'Record approval (HITL)'}
             </button>
           )}
         </div>
       </div>
 
-      {/* Progress Bar during run */}
-      {isRunning && (
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-            <span>Spawning container session and executing iteration {currentStep} of {iterations}...</span>
-            <span>{Math.round((currentStep / iterations) * 100)}%</span>
-          </div>
-          <div style={{ height: '4px', background: 'var(--bg-dark)', borderRadius: '2px', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${(currentStep / iterations) * 100}%`, background: 'var(--color-accent)', transition: 'width 0.3s ease' }} />
-          </div>
+      {approval && (
+        <div style={{
+          marginBottom: '1rem', padding: '0.65rem 0.9rem', borderRadius: '6px', fontSize: '0.8rem',
+          background: 'var(--bg-dark)', border: '1px solid var(--border-light)',
+          color: approval.ok ? 'var(--text-main)' : 'var(--color-warning)'
+        }}>
+          {approval.message}{' '}
+          {approval.prUrl && (
+            <a href={approval.prUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--color-accent)' }}>Open the pull request</a>
+          )}
         </div>
       )}
 
-      {/* Test Execution Output Grid */}
-      {testResults && (
-        <div className="animate-in" style={{ background: 'var(--bg-dark)', borderRadius: '8px', border: '1px solid var(--border-light)', padding: '1rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                Container Execution Result ({testResults.total} Passes)
-              </span>
+      {executions.length === 0 ? (
+        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+          No sandbox execution was recorded for this run.
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '0.5rem' }}>
+          {executions.map((ex, i) => (
+            <div
+              key={i}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                background: 'var(--bg-element)', padding: '0.45rem 0.75rem', borderRadius: '6px',
+                border: `1px solid ${ex.passed ? 'rgba(23, 201, 100, 0.2)' : 'rgba(243, 18, 96, 0.2)'}`
+              }}
+            >
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-code)' }}>
-                {testResults.passes} Passed / {testResults.fails} Failed
+                #{i + 1} {ex.step}
               </span>
-            </div>
-
-            {/* Live Flakiness Score Gauge */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', textTransform: 'uppercase' }}>Flakiness Score:</span>
-              <span style={{
-                fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-code)',
-                color: testResults.score > 0 ? 'var(--color-warning)' : testResults.passes === testResults.total ? 'var(--color-success)' : 'var(--color-error)'
-              }}>
-                {testResults.score} / 100
-              </span>
-            </div>
-          </div>
-
-          {/* Iteration Badges Stream */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '0.5rem', marginBottom: '1rem' }}>
-            {testResults.results.map((res) => (
-              <div 
-                key={res.iteration}
-                style={{ 
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: 'var(--bg-element)', padding: '0.45rem 0.75rem', borderRadius: '6px',
-                  border: `1px solid ${res.passed ? 'rgba(23, 201, 100, 0.2)' : 'rgba(243, 18, 96, 0.2)'}`
-                }}
-              >
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'var(--font-code)' }}>
-                  Pass #{res.iteration}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>
+                  {ex.duration_s != null ? `${Number(ex.duration_s).toFixed(2)}s` : ''}
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)' }}>{res.duration}</span>
-                  <span style={{
-                    fontSize: '0.7rem', fontWeight: 600,
-                    color: res.passed ? 'var(--color-success)' : 'var(--color-error)'
-                  }}>
-                    {res.passed ? 'PASSED' : 'FAILED'}
-                  </span>
-                </div>
+                <span style={{ fontSize: '0.7rem', fontWeight: 600, color: ex.passed ? 'var(--color-success)' : 'var(--color-error)' }}>
+                  {ex.passed ? 'PASSED' : `FAILED (exit ${ex.exit_code})`}
+                </span>
               </div>
-            ))}
-          </div>
-
-          {/* Verdict Box */}
-          <div style={{ 
-            padding: '0.75rem 1rem', borderRadius: '6px', 
-            background: testResults.score > 0 ? 'rgba(245, 165, 36, 0.08)' : testResults.passes === testResults.total ? 'rgba(23, 201, 100, 0.08)' : 'rgba(243, 18, 96, 0.08)',
-            border: `1px solid ${testResults.score > 0 ? 'rgba(245, 165, 36, 0.2)' : testResults.passes === testResults.total ? 'rgba(23, 201, 100, 0.2)' : 'rgba(243, 18, 96, 0.2)'}`,
-            display: 'flex', alignItems: 'flex-start', gap: '0.75rem'
-          }}>
-            {testResults.score > 0 ? (
-              <Flame size={16} color="var(--color-warning)" style={{ flexShrink: 0, marginTop: '2px' }} />
-            ) : testResults.passes === testResults.total ? (
-              <ShieldCheck size={16} color="var(--color-success)" style={{ flexShrink: 0, marginTop: '2px' }} />
-            ) : (
-              <AlertTriangle size={16} color="var(--color-error)" style={{ flexShrink: 0, marginTop: '2px' }} />
-            )}
-            <div style={{ fontSize: '0.8rem', lineHeight: 1.5 }}>
-              {testResults.score > 0 ? (
-                <span>
-                  <strong style={{ color: 'var(--color-warning)' }}>Non-Deterministic Flakiness Detected ({testResults.score}/100):</strong> The test fluttered across identical executions. Per Rule SR-08, CIDRA flags this test for developer triage rather than patching code.
-                </span>
-              ) : testResults.passes === testResults.total ? (
-                <span>
-                  <strong style={{ color: 'var(--color-success)' }}>100% Deterministic Pass:</strong> Test suite passed unanimously across all {testResults.total} container iterations. No regressions detected.
-                </span>
-              ) : (
-                <span>
-                  <strong style={{ color: 'var(--color-error)' }}>Deterministic Failure (0% Pass):</strong> Root cause reproduced consistently in container across all passes.
-                </span>
-              )}
             </div>
-          </div>
+          ))}
         </div>
       )}
     </section>
@@ -788,38 +665,22 @@ function StatCard({ title, value, icon }) {
   );
 }
 
-function PullRequestsView() {
-  const [prs, setPrs] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('https://api.github.com/repos/Abhishek86798/CIDRA/pulls?state=all')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const formatted = data.map(pr => ({
-            id: `#${pr.number}`,
-            title: pr.title,
-            repo: 'Abhishek86798/CIDRA',
-            status: pr.merged_at ? 'merged' : pr.state,
-            time: new Date(pr.created_at).toLocaleDateString(),
-            url: pr.html_url
-          }));
-          setPrs(formatted);
-        }
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, []);
+function PullRequestsView({ runs }) {
+  const loading = false;
+  const prs = (runs || []).filter((r) => r.pr_url).map((r) => ({
+    id: `#${r.pr_url.split('/').pop()}`,
+    title: r.fix,
+    repo: r.repo,
+    status: 'open',
+    time: r.time,
+    url: r.pr_url
+  }));
 
   return (
     <div className="animate-in">
       <header style={{ marginBottom: '3rem' }}>
         <h1>Pull Requests</h1>
-        <p style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>A centralized view of all PRs generated in the repository.</p>
+        <p style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>Draft pull requests opened by recorded CIDRA runs. Their current state is on GitHub.</p>
       </header>
 
       <section className="glass-panel">
@@ -833,7 +694,7 @@ function PullRequestsView() {
                 <th>Title</th>
                 <th>Repository</th>
                 <th>Status</th>
-                <th style={{ paddingRight: '0', textAlign: 'right' }}>Created</th>
+                <th style={{ paddingRight: '0', textAlign: 'right' }}>Run recorded</th>
               </tr>
             </thead>
             <tbody>
@@ -851,7 +712,7 @@ function PullRequestsView() {
                       color: pr.status === 'merged' ? '#ac65ff' : pr.status === 'open' ? 'var(--color-success)' : 'var(--color-error)',
                       border: `1px solid ${pr.status === 'merged' ? 'rgba(172, 101, 255, 0.2)' : pr.status === 'open' ? 'rgba(23, 201, 100, 0.2)' : 'rgba(243, 18, 96, 0.2)'}`
                     }}>
-                      {pr.status.charAt(0).toUpperCase() + pr.status.slice(1)}
+                      Draft opened
                     </span>
                   </td>
                   <td style={{ paddingRight: '0', color: 'var(--text-dim)', textAlign: 'right' }}>{pr.time}</td>
@@ -859,7 +720,7 @@ function PullRequestsView() {
               ))}
               {prs.length === 0 && (
                 <tr>
-                  <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No pull requests found.</td>
+                  <td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No recorded run has opened a pull request.</td>
                 </tr>
               )}
             </tbody>

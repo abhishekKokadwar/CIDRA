@@ -201,11 +201,16 @@ def test_approve_run_hitl_gate(client, monkeypatch):
     """Verify POST /api/runs/{run_id}/approve processes approval."""
     mock_state = {"run_id": "run-xyz", "status": "verified_fix"}
     monkeypatch.setattr("cidra.history.load_full_state", lambda run_id: mock_state if run_id == "run-xyz" else None)
+    saved = []
+    monkeypatch.setattr("cidra.history.save_full_state", saved.append)
 
     # Valid run
     res = client.post("/api/runs/run-xyz/approve")
     assert res.status_code == 200
     assert res.json()["status"] == "approved"
+    # The approval is recorded; nothing is merged, and the response says so.
+    assert saved and saved[0]["approved_at"] == res.json()["approved_at"]
+    assert "never merges" in res.json()["message"]
 
     # Nonexistent run -> 404
     res_404 = client.post("/api/runs/nonexistent/approve")

@@ -52,7 +52,7 @@ const PRESETS = [
     name: 'Assertion Logic Patch (t-calc)',
     badge: 'Logic Repair',
     badgeColor: '#ac65ff',
-    repo: 'Abhishek86798/CIDRA',
+    repo: 'abhishekKokadwar/CIDRA',
     branch: 'main',
     command: 'pytest -q tests/test_calc.py',
     model: 'anthropic/claude-3.5-sonnet',
@@ -124,7 +124,7 @@ export default function OrchestratorView({ onRunCreated }) {
     // Node 1: Ingest
     setActiveNodeIndex(0);
     setNodeStatuses({ ingest: 'running' });
-    addLog(`> Starting CIDRA Graph execution on ${repo} (${branch})`);
+    addLog(`> [scripted demo] Nothing below is executed. Example walkthrough for ${repo} (${branch})`);
     addLog(`> Test Command: ${command}`);
     await new Promise((r) => setTimeout(r, 650));
     addLog(`[ingest] Intercepted failure logs. Captured 42 lines of traceback context.`);
@@ -230,12 +230,12 @@ export default function OrchestratorView({ onRunCreated }) {
 
   const handleApplyLocal = () => {
     setAppliedLocal(true);
-    addLog(`[git_ops] Applied patch directly to active worktree (requirements.txt). Verification complete.`, 'success');
+    addLog(`[scripted demo] In a real run the patch would be applied to the worktree here. Nothing was changed.`, 'success');
   };
 
   const handleOpenPR = () => {
     setOpenedPR(true);
-    addLog(`[github] Draft Pull Request created on ${repo}: "fix(ci): declare missing requests dependency"`, 'success');
+    addLog(`[scripted demo] In a real run a draft pull request would be opened on ${repo} here. None was created.`, 'success');
   };
 
   return (
@@ -252,11 +252,11 @@ export default function OrchestratorView({ onRunCreated }) {
                 fontSize: '0.75rem', padding: '0.25rem 0.75rem', borderRadius: '99px',
                 border: '1px solid rgba(0, 112, 243, 0.25)', fontWeight: 600, letterSpacing: '0.02em' 
               }}>
-                Interactive Co-Pilot
+                Scripted demo
               </span>
             </div>
             <p style={{ fontSize: '1rem', color: 'var(--text-muted)', maxWidth: '640px', lineHeight: 1.6 }}>
-              Trigger on-demand local test repairs, stress-test flakiness in Docker sandboxes, and inspect AI-synthesized patches before CI commits.
+              A scripted walkthrough of the repair pipeline. It plays a fixed example in the browser: it does not run CIDRA, call a model, start a container or open a pull request. Real runs are in the Command Center.
             </p>
           </div>
 
@@ -268,7 +268,7 @@ export default function OrchestratorView({ onRunCreated }) {
             }}>
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-success)' }}></div>
               <span style={{ fontWeight: 600, color: 'var(--text-main)', fontSize: '0.8rem', letterSpacing: '0.02em' }}>
-                ENGINE ONLINE
+                DEMO MODE
               </span>
             </div>
           </div>
@@ -344,7 +344,7 @@ export default function OrchestratorView({ onRunCreated }) {
               style={{ width: '100%', background: 'var(--bg-dark)', border: '1px solid var(--border-light)', color: 'var(--text-main)', padding: '0.75rem 0.85rem', borderRadius: '8px', fontSize: '0.875rem' }}
             >
               <option value="local/dev">local/dev (Active Local Workspace)</option>
-              <option value="Abhishek86798/CIDRA">Abhishek86798/CIDRA (GitHub Repo)</option>
+              <option value="abhishekKokadwar/CIDRA">abhishekKokadwar/CIDRA (GitHub Repo)</option>
             </select>
           </div>
 
@@ -661,7 +661,7 @@ export default function OrchestratorView({ onRunCreated }) {
                     }}
                   >
                     <Check size={16} />
-                    {appliedLocal ? 'Applied to Worktree' : 'Apply Patch to Worktree'}
+                    {appliedLocal ? 'Shown (demo)' : 'Apply Patch (demo)'}
                   </button>
 
                   <button
@@ -671,7 +671,7 @@ export default function OrchestratorView({ onRunCreated }) {
                     style={{ padding: '0.85rem 1.75rem', fontSize: '0.9rem', fontWeight: 600 }}
                   >
                     <ExternalLink size={16} />
-                    {openedPR ? 'Draft PR Created' : 'Open Draft PR on GitHub'}
+                    {openedPR ? 'Shown (demo)' : 'Open Draft PR (demo)'}
                   </button>
                 </>
               )}

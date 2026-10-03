@@ -177,14 +177,29 @@ def get_run(run_id: str):
 
 @app.post("/api/runs/{run_id}/approve", dependencies=[Depends(api_guard)])
 def approve_run(run_id: str):
-    """HITL Gate: approve a patch and merge the PR."""
+    """HITL gate: record that a human reviewed and approved the run's patch.
+
+    CIDRA never merges (SR-11). Merging the pull request is done on GitHub.
+    """
+    import time
+
     state = history.load_full_state(run_id)
     if not state:
         raise HTTPException(status_code=404, detail="Run not found")
-    
-    # In a real implementation, this would trigger github_write.merge_pr
-    log.info("HITL approval received for run_id=%s. (Mocked PR merge)", run_id)
-    return {"status": "approved", "run_id": run_id, "message": "PR merged successfully"}
+
+    state["approved_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    try:
+        history.save_full_state(state)
+    except Exception:  # noqa: BLE001 - the response must not depend on the disk
+        log.warning("could not persist approval for run_id=%s", run_id)
+    log.info("HITL approval recorded for run_id=%s", run_id)
+    return {
+        "status": "approved",
+        "run_id": run_id,
+        "approved_at": state["approved_at"],
+        "pr_url": state.get("pr_url"),
+        "message": "Approval recorded. CIDRA never merges: merge the pull request on GitHub.",
+    }
 
 
 @app.get("/api/settings", dependencies=[Depends(api_guard)])
