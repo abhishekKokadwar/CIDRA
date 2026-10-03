@@ -41,11 +41,16 @@ def test_open_draft_pr_creates_when_none(monkeypatch):
 def test_open_draft_pr_is_idempotent(monkeypatch):
     def handler(req):
         if req.url.path.endswith("/pulls") and req.method == "GET":
-            return httpx.Response(200, json=[{"html_url": "https://gh/pr/existing"}])
+            return httpx.Response(200, json=[{"html_url": "https://gh/pr/existing", "number": 7}])
+        if req.method == "PATCH" and req.url.path.endswith("/pulls/7"):
+            seen["body"] = req.read().decode()  # the description is refreshed
+            return httpx.Response(200, json={})
         raise AssertionError("must not POST when a PR already exists")
 
+    seen = {}
     _mock(monkeypatch, handler)
-    assert github_write.open_draft_pr("o/r", "cidra/patch-1", "t", "b") == "https://gh/pr/existing"
+    assert github_write.open_draft_pr("o/r", "cidra/patch-1", "t", "new body") == "https://gh/pr/existing"
+    assert "new body" in seen["body"]
 
 
 def test_open_draft_pr_never_merges(monkeypatch):

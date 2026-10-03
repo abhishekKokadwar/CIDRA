@@ -74,7 +74,11 @@ def open_draft_pr(repo: str, head_branch: str, title: str, body: str,
                          params={"head": f"{owner}:{head_branch}", "state": "open"})
         existing.raise_for_status()
         if existing.json():
-            return existing.json()[0]["html_url"]
+            pr = existing.json()[0]
+            # The branch was just re-pushed: keep the description in step with it.
+            if pr.get("number") is not None:
+                c.patch(f"/repos/{repo}/pulls/{pr['number']}", json={"body": body}).raise_for_status()
+            return pr["html_url"]
 
         base = base or _default_branch(c, repo)
         r = c.post(f"/repos/{repo}/pulls", json={
