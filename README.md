@@ -8,11 +8,11 @@
 
 *The autonomous, deterministic CI repair agent powered by LangGraph, Spectrum-Based Fault Localization (SBFL), and a hardened, zero-trust Docker execution sandbox.*
 
-[![PyPI version](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)](https://pypi.org/project/cidra/)
+[![PyPI version](https://img.shields.io/badge/pypi-v0.2.0-blue.svg)](https://pypi.org/project/cidra/)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker Security](https://img.shields.io/badge/sandbox-network--isolated-green.svg)](#7-hardened-sandbox--threat-model-adv-01adv-08)
-[![Tests](https://img.shields.io/badge/tests-178%20passed-success.svg)](#8-testing--verification-suite)
+[![CI](https://github.com/abhishekKokadwar/CIDRA/actions/workflows/test-cidra.yml/badge.svg)](https://github.com/abhishekKokadwar/CIDRA/actions/workflows/test-cidra.yml)
 [![Dashboard](https://img.shields.io/badge/dashboard-react%20%2B%20vite-61dafb.svg)](#3-interactive-web-dashboard--hitl-gate)
 [![Live Demo](https://img.shields.io/badge/live%20demo-cidra.vercel.app-2ea043.svg)](https://cidra.vercel.app)
 
@@ -59,7 +59,7 @@ flowchart TD
 
 1. **Verify (Zero False Claims)**: CIDRA **never** claims a bug is fixed unless it reproduces the failure **red** inside an isolated Docker sandbox, applies the candidate patch, and re-executes the test suite to observe a clean **green** exit code. If a patch fails to apply or the tests remain red, the patch is discarded.
 2. **Declare (Honest Failure Taxonomies)**: Rather than burning LLM tokens trying to fix environmental outages, flaky network calls, or invalid test configurations, CIDRA classifies root causes into formal categories. If an error is flaky, it declares `flaky_detected` and stops with **0 LLM fix attempts**.
-3. **Confine (Zero-Trust Blast Radius)**: LLM generated code is treated as hostile by default. Patches pass through an AST Security Audit Gate (blocking shell injections, unauthorized imports, and socket opens) before entering a network-disabled, non-root, PID-capped container.
+3. **Confine (Zero-Trust Blast Radius)**: LLM generated code is treated as hostile by default. Patches pass through a static audit gate (blocking process execution, dynamic code evaluation, socket use, and edits that weaken or delete tests) before entering a network-disabled, non-root, PID-capped container.
 
 ---
 
@@ -119,9 +119,9 @@ flowchart TD
 
 ### Key Engineering Innovations
 
-- **Spectrum-Based Fault Localization (SBFL)**: In [cidra/nodes/sbfl.py](file:///d:/CODES/cidra/cidra/nodes/sbfl.py), CIDRA computes **Ochiai** and **Tarantula** suspiciousness coefficients from execution spectra. It scores source code lines based on their ratio of execution in failing vs. passing test runs, ensuring the LLM fix prompt focuses exclusively on high-probability fault locations.
-- **Statistical Flakiness Detection (SR-08)**: Non-deterministic tests break autonomous repair loops. CIDRA executes a 5-run statistical binomial test in the sandbox. If an identical commit produces mixed pass/fail outcomes, the run is flagged as `flaky_detected` and halts immediately, preventing token waste on phantom bugs.
-- **AST Security Audit Gate**: Patches are parsed into an Abstract Syntax Tree ([cidra/nodes/audit.py](file:///d:/CODES/cidra/cidra/nodes/audit.py)) prior to execution. Any patch attempting to import `os`, `subprocess`, `socket`, `eval`, or modify system files is immediately rejected.
+- **Spectrum-Based Fault Localization (SBFL)**: In [cidra/nodes/sbfl.py](cidra/nodes/sbfl.py), CIDRA computes **Ochiai** and **Tarantula** suspiciousness coefficients from execution spectra. It scores source code lines based on their ratio of execution in failing vs. passing test runs, ensuring the LLM fix prompt focuses exclusively on high-probability fault locations.
+- **Statistical Flakiness Detection (SR-08)**: Non-deterministic tests break autonomous repair loops. CIDRA re-runs the suite 5 times in the sandbox. If an identical commit produces mixed pass/fail outcomes, the run is flagged as `flaky_detected` and halts immediately, preventing token waste on phantom bugs.
+- **Static Patch Audit Gate**: Every patch is checked before it reaches the sandbox ([cidra/nodes/audit.py](cidra/nodes/audit.py)). The gate matches patterns on the added lines and uses Python's `ast` only to count assertions. It rejects `os.system`/`os.popen`, `subprocess`, `socket`, `eval`/`exec`, dynamic imports, unsafe deserialization, and any change that deletes, skips or weakens a test, or touches CI config. It does not block a plain `import os`; the no-network, non-root sandbox is what contains code the gate does not catch.
 - **Persistent Fix Cache**: Hashes of error signatures and verified diffs are cached in `cidra_fix_cache.json`. Repeated CI breakages across different branches hit the cache for **instant, 0-token repairs**.
 
 ---
@@ -155,13 +155,13 @@ cidra dashboard
 
 1. **Command Center**: Real-time KPI counters tracking mean time to recovery (MTTR), repair success rate, token consumption, and system health status.
 2. **Run Explorer**: Complete trace inspector displaying step-by-step state transitions, raw CI terminal logs, and syntax-highlighted unified diffs.
-3. **Visual Orchestrator**: Interactive LangGraph DAG visualization rendering nodes in real time, highlighting active execution branches and conditional routing decisions.
+3. **Visual Orchestrator**: A diagram of the LangGraph topology with an animated walkthrough. It is illustrative and does not follow a live run.
 4. **4-Tab Configuration Manager**:
    - **API Keys**: Configure OpenRouter, Groq, NVIDIA NIM, and GitHub PAT credentials with **one-click live round-trip latency probes**.
    - **Model Chain**: Configure analysis models, fix models, and base URLs.
-   - **Flakiness & Sandbox**: Tune the 5-run flaky threshold, container execution timeouts, and retry limits.
+   - **Flakiness & Sandbox**: Shows the flaky-run count, container timeouts and retry limits the engine is using. These are fixed in code and read-only here.
    - **Runtime Status**: View active paths, worktree directories, and SQLite database connectivity.
-5. **HITL (Human-in-the-Loop) Approval Gate**: Inspect candidate diffs, verify execution green markers, and merge or reject pull requests with a single click.
+5. **HITL (Human-in-the-Loop) Review**: Inspect candidate diffs and the verification result, and record an approval. CIDRA never merges: merging the draft pull request is done by a person on GitHub.
 
 ---
 
@@ -175,8 +175,11 @@ CIDRA is distributed as a lightweight, pre-packaged Python wheel bundling the co
 # Install CIDRA via pip
 pip install cidra
 
-# Configure your primary LLM provider (OpenRouter, Groq, or OpenAI)
-export CIDRA_API_KEY="sk-or-v1-..."
+# Bring your own key: any OpenAI-compatible endpoint
+export CIDRA_API_KEY="..."
+export CIDRA_BASE_URL="https://openrouter.ai/api/v1"
+export CIDRA_MODEL_ANALYZE="<model id>"
+export CIDRA_MODEL_FIX="<model id>"
 
 # Launch the visual dashboard
 cidra dashboard
@@ -187,8 +190,11 @@ cidra dashboard
 To diagnose and repair a failing codebase locally without pushing to GitHub:
 
 ```bash
-# Ensure local Docker daemon is running, then build the sandbox container:
+# Ensure local Docker daemon is running, then build the sandbox container.
+# From a clone:
 docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+# From a pip install (the Dockerfile ships inside the package):
+docker build -t cidra-sandbox:base "$(python -c 'import cidra, os; print(os.path.join(os.path.dirname(cidra.__file__), "sandbox"))')"
 
 # Run CIDRA against your local repository
 cidra fix
@@ -211,7 +217,7 @@ CIDRA runs natively inside your GitHub Actions workflows using the `workflow_run
 ### Dual-Token Security Architecture
 
 To protect production branches from compromised dependencies or malicious PRs:
-- **`CIDRA_GITHUB_TOKEN_RO`**: Read-only PAT used to fetch workflow run logs and commit metadata.
+- **`CIDRA_GITHUB_TOKEN_RO`**: Read-only PAT used to fetch workflow run logs and commit metadata. Optional: when it is not set, the write token is used for reads too.
 - **`CIDRA_GITHUB_TOKEN`**: Scoped write PAT used strictly to push verified fix branches and open Draft PRs.
 
 ### Complete Workflow (`.github/workflows/cidra.yml`)
@@ -270,52 +276,66 @@ jobs:
           fi
 ```
 
+### Repository setup for pull requests
+
+- **Allow Actions to open pull requests.** In the repository: Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests". Without it GitHub returns 403: the fix branch is pushed but no PR is opened.
+- **CI on CIDRA's pull requests.** GitHub does not start workflows for a PR opened with the built-in `GITHUB_TOKEN`. To get checks on the fix PR, pass a personal access token or a GitHub App token as `CIDRA_GITHUB_TOKEN`.
+- **Where the PR goes.** A fix for a failure on a branch push is opened as a draft PR against that branch. A fix for a failure on an existing pull request is pushed to that PR's branch, and is never force-pushed.
+- **Every run leaves a job summary** on the Actions run page with the diagnosis, whatever the outcome. The job fails only when CIDRA itself could not run (no log, no model, no sandbox).
+
 ---
 
 ## 6. Multi-Tier LLM Fallback Chain
 
-Network blips, rate limits, and model outages should never bring down your CI repair engine. CIDRA implements an automatic, multi-tier fallback architecture:
+CIDRA is bring-your-own-key. The primary call goes to the endpoint and model you configure. If it fails, CIDRA tries each fallback provider that has a key set, in order. A fallback with no key is skipped, and a permanent error (bad key, unknown model, no credit) moves straight to the next provider.
 
 ```mermaid
 flowchart TD
-    P["<b>Primary Gateway (Tier 0)</b><br/>OpenRouter API (Claude 3.5 Sonnet / Claude 3.7 / GPT-4o)"]
-    F1["<b>Fast Fallback (Tier 1)</b><br/>NVIDIA NIM API (Moonshot Kimi K1.5 / GLM-4 / DeepSeek R1)"]
-    F2["<b>Ultra-Fast LPU (Tier 2)</b><br/>Groq Cloud API (Llama 3.3 70B Versatile @ 500+ tok/s)"]
-    
-    P -- "Rate Limit / 5xx Error" --> F1
-    F1 -- "Latency Spike / Outage" --> F2
-    
+    P["<b>Primary</b><br/>CIDRA_BASE_URL + CIDRA_API_KEY<br/>CIDRA_MODEL_ANALYZE / CIDRA_MODEL_FIX"]
+    F1["<b>Fallback 1</b><br/>OpenRouter (OPENROUTER_API_KEY_2)"]
+    F2["<b>Fallback 2</b><br/>Groq (GROQ_API_KEY)"]
+    F3["<b>Fallback 3</b><br/>NVIDIA NIM (NVIDIA_API_KEY_KIMI, NVIDIA_API_KEY_GLM)"]
+
+    P -- "failed" --> F1
+    F1 -- "failed or no key" --> F2
+    F2 -- "failed or no key" --> F3
+
     style P fill:#161b22,stroke:#58a6ff,stroke-width:2px,color:#c9d1d9
     style F1 fill:#161b22,stroke:#bc8cff,stroke-width:2px,color:#c9d1d9
     style F2 fill:#161b22,stroke:#f0883e,stroke-width:2px,color:#c9d1d9
+    style F3 fill:#161b22,stroke:#3fb950,stroke-width:2px,color:#c9d1d9
 ```
+
+The fallback model IDs are fixed in [cidra/integrations/llm.py](cidra/integrations/llm.py). Providers retire models; check them against your provider before relying on a fallback.
 
 ### Configuration Environment Variables (`.env`)
 
-Copy [.env.example](file:///d:/CODES/cidra/.env.example) to `.env` to configure your environment:
+Copy [.env.example](.env.example) to `.env` to configure your environment:
 
 | Variable | Description | Default |
 |---|---|---|
-| `CIDRA_API_KEY` | Primary inference key (OpenRouter / OpenAI) | *Required* |
-| `CIDRA_BASE_URL` | Primary inference base endpoint URL | `https://openrouter.ai/api/v1` |
-| `CIDRA_MODEL_ANALYZE` | Model ID for root cause analysis | `anthropic/claude-3.5-sonnet` |
-| `CIDRA_MODEL_FIX` | Model ID for patch generation | `anthropic/claude-3.5-sonnet` |
-| `NVIDIA_API_KEY_KIMI` | NVIDIA NIM Tier 1 fallback key (Kimi K1.5) | *Optional* |
-| `NVIDIA_API_KEY_GLM` | NVIDIA NIM Tier 2 fallback key (GLM-4) | *Optional* |
-| `GROQ_API_KEY` | Groq Cloud Tier 3 ultra-fast fallback key | *Optional* |
-| `CIDRA_GITHUB_TOKEN` | GitHub PAT with branch/PR write permissions | *Optional (for PRs)* |
-| `CIDRA_GITHUB_TOKEN_RO` | GitHub PAT with read-only permissions for logs | *Optional (for CI logs)* |
+| `CIDRA_API_KEY` | Key for the primary endpoint | *Required* |
+| `CIDRA_BASE_URL` | Primary OpenAI-compatible endpoint | `https://generativelanguage.googleapis.com/v1beta/openai/` |
+| `CIDRA_MODEL_ANALYZE` | Model ID for root cause analysis | `gemini-3.5-flash` |
+| `CIDRA_MODEL_FIX` | Model ID for patch generation | `gemini-3.5-flash` |
+| `OPENROUTER_API_KEY_2` | OpenRouter fallback key | *Optional* |
+| `GROQ_API_KEY` | Groq fallback key | *Optional* |
+| `NVIDIA_API_KEY_KIMI` | NVIDIA NIM fallback key | *Optional* |
+| `NVIDIA_API_KEY_GLM` | NVIDIA NIM fallback key | *Optional* |
+| `CIDRA_GITHUB_TOKEN` | GitHub token with branch and PR write permissions | *Optional (for PRs)* |
+| `CIDRA_GITHUB_TOKEN_RO` | Read-only GitHub token for CI logs | *Optional (falls back to the write token)* |
+| `CIDRA_ENABLE_PR_CREATION` | Open a draft PR for a verified fix | `false` |
 | `CIDRA_WEBHOOK_SECRET` | HMAC SHA256 secret for webhook validation | *Optional (for webhook)* |
-| `FLAKY_RUNS` | Repetitions for statistical flakiness testing | `5` |
-| `FLAKY_SCORE_THRESHOLD` | Threshold score to classify a test as flaky | `1` |
-| `MAX_FIX_ATTEMPTS` | Maximum fix retry loops before terminating | `3` |
-| `CONTAINER_TIMEOUT` | Hard execution timeout per test run in seconds | `60` |
+| `CIDRA_DASHBOARD_TOKEN` | Token for the dashboard API; required to serve it on a non-loopback host | *Optional* |
+| `CIDRA_AUDIT_SIGNING_KEY` | Key that signs the audit manifest; without it the manifest is unsigned | *Optional* |
+
+The flaky-run count (5), the fix-attempt limit (3) and the sandbox timeouts (300 s per test run) are constants in [cidra/config.py](cidra/config.py) and [cidra/sandbox/limits.py](cidra/sandbox/limits.py), not environment settings.
 
 ---
 
 ## 7. Hardened Sandbox & Threat Model (ADV-01..ADV-08)
 
-The Docker sandbox ([cidra/sandbox/runner.py](file:///d:/CODES/cidra/cidra/sandbox/runner.py)) is CIDRA's highest blast-radius component. Its isolation boundaries are hardcoded into the runner architecture and cannot be overridden by callers.
+The Docker sandbox ([cidra/sandbox/runner.py](cidra/sandbox/runner.py)) is CIDRA's highest blast-radius component. Its isolation boundaries are hardcoded into the runner architecture and cannot be overridden by callers.
 
 ```mermaid
 flowchart TD
@@ -326,10 +346,10 @@ flowchart TD
     
     subgraph Sandbox["Hardened Docker Sandbox (Untrusted Execution)"]
         direction TB
-        S1["<b>AST Policy Gate (ADV-07)</b><br/>Pre-execution syntax inspection"]
+        S1["<b>Static Patch Audit Gate (ADV-07)</b><br/>Pre-execution pattern checks"]
         S2["<b>Network Isolation (ADV-03)</b><br/>network_mode='none' during test/verify"]
-        S3["<b>User & PID Caps (ADV-04 & ADV-06)</b><br/>UID 1000 (non-root) & pids_limit=100"]
-        S4["<b>Resource Limits (ADV-05 & ADV-08)</b><br/>1GB RAM, 1.0 CPU, auto-cleanup on exit"]
+        S3["<b>User & PID Caps (ADV-04 & ADV-06)</b><br/>UID 1000 (non-root) & pids_limit=256"]
+        S4["<b>Resource Limits (ADV-05 & ADV-08)</b><br/>2GB RAM, 1.0 CPU, auto-cleanup on exit"]
         S1 --> S2 --> S3 --> S4
     end
     
@@ -339,7 +359,7 @@ flowchart TD
     style Sandbox fill:#0d1117,stroke:#238636,stroke-width:2px,color:#c9d1d9
 ```
 
-Verified by comprehensive unit checks in [tests/unit/test_sandbox.py](file:///d:/CODES/cidra/tests/unit/test_sandbox.py) and [tests/unit/test_audit.py](file:///d:/CODES/cidra/tests/unit/test_audit.py).
+Checked by the Docker isolation tests in [tests/integration/test_sandbox.py](tests/integration/test_sandbox.py) and [tests/unit/test_audit.py](tests/unit/test_audit.py).
 
 ---
 
@@ -348,22 +368,28 @@ Verified by comprehensive unit checks in [tests/unit/test_sandbox.py](file:///d:
 CIDRA maintains high test coverage with automated unit and integration verification suites:
 
 ```bash
-# 1. Run all server and API integration tests (41 tests)
+# 1. Run the server and API tests (47 tests)
 pytest tests/server -v
 
-# 2. Run core unit tests (137 unit tests covering SBFL, AST, Git ops, and LangGraph)
+# 2. Run the core unit tests (168 tests: SBFL, patch audit, git ops, LangGraph routing)
+#    No Docker, network or API key needed
 pytest tests/unit -v
 
-# 3. Run the Dashboard-to-Backend live wiring test suite
+# 3. Run the Docker integration tests against a clone of the practice repo (21 tests)
+CIDRA_PRACTICE_REPO=/path/to/cidra-practice pytest tests/integration -v
+
+# 4. Run the Dashboard-to-Backend live wiring test suite
 cd dashboard
 npm run test:wiring
 ```
 
 ### Test Suite Summary
 
-- **Server Test Suite (`tests/server/`)**: 41 passed (FastAPI endpoints, HMAC signatures, settings persistence, replay safety).
-- **Core Unit Suite (`tests/unit/`)**: 137 passed (Ochiai/Tarantula SBFL ranking, AST security guards, git isolation, flaky detection).
-- **Wiring Verification (`test-backend-wiring.js`)**: 5 passed (Live latency probes to OpenRouter and Groq, settings round-trip, telemetry parsing).
+- **Server Test Suite (`tests/server/`)**: 47 tests (FastAPI endpoints, HMAC signatures, settings persistence, replay safety).
+- **Core Unit Suite (`tests/unit/`)**: 168 tests (Ochiai/Tarantula SBFL ranking, patch audit guards, git isolation, flaky detection).
+- **Integration Suite (`tests/integration/`)**: 21 tests (real sandbox runs on fixture branches; skipped when `CIDRA_PRACTICE_REPO` is not set).
+- **Key-free end-to-end run**: `scripts/fake_llm.py` stands in for the model so the whole pipeline can run without an API key.
+- **Wiring Verification (`test-backend-wiring.js`)**: 5 checks (Live latency probes to OpenRouter and Groq, settings round-trip, telemetry parsing).
 
 ---
 
@@ -392,8 +418,9 @@ cidra/
 ├── docs/                 # Engineering specs, threat model, API contracts
 ├── eval/                 # Evaluation harness & benchmark fixtures
 ├── tests/                # Test suites
-│   ├── unit/             # 138 unit tests (SBFL, AST guards, sandbox)
-│   └── server/           # 41 integration tests (FastAPI, settings, wiring)
+│   ├── unit/             # Unit tests (SBFL, patch audit, routing)
+│   ├── integration/      # Docker sandbox tests (need the practice repo)
+│   └── server/           # API tests (FastAPI, settings, webhook)
 ├── .env.example          # Template configuration
 ├── .gitignore            # Clean, standardized ignore rules
 ├── action.yml            # GitHub Action definition
@@ -405,7 +432,7 @@ cidra/
 
 ```bash
 # Clone the repository
-git clone https://github.com/Abhishek86798/CIDRA.git
+git clone https://github.com/abhishekKokadwar/CIDRA.git
 cd CIDRA
 
 # Install Python package in editable mode with development dependencies
