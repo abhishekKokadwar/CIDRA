@@ -25,7 +25,9 @@ from cidra.git_ops import git
 
 def _run_dir(run_id: str) -> Path:
     safe = "".join(c for c in run_id if c.isalnum() or c in "-_") or "run"
-    return Path(config.WORKTREE_ROOT) / f"cidra-patch-{safe}"
+    # Absolute: callers run git with cwd=<this dir> and pass paths under it, and a
+    # relative root (the default "worktrees") would then resolve twice.
+    return Path(config.WORKTREE_ROOT).resolve() / f"cidra-patch-{safe}"
 
 
 def prepare_checkout(run_id: str, source: str | Path,

@@ -104,6 +104,18 @@ def test_build_fix_branch_no_push(repo_and_remote):
     assert branch == "cidra/patch-run2"
 
 
+def test_build_fix_branch_with_the_default_relative_worktree_root(repo_and_remote, monkeypatch, tmp_path):
+    # The default CIDRA_WORKTREE_ROOT is the relative "worktrees": the patch file
+    # path must still resolve when git runs with cwd inside the clone.
+    src, _ = repo_and_remote
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(config, "WORKTREE_ROOT", "worktrees")
+    diff = ("--- a/calc.py\n+++ b/calc.py\n@@ -1,2 +1,2 @@\n"
+            " def add(a, b):\n-    return a - b\n+    return a + b\n")
+    assert pr.build_fix_branch("run3", src, diff, "o/r", "tok",
+                               "https://api.github.com", push=False) == "cidra/patch-run3"
+
+
 # ---------- publish wiring ----------
 
 def test_publish_opens_pr_on_verified_fix(monkeypatch):
