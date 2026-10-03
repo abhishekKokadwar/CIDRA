@@ -65,6 +65,14 @@ def analyze_region(error_region: str) -> Analysis:
 
 def analyze(state: DebugState) -> dict:
     attempts = state.get("analysis_attempts", 0) + 1
+    if not (state.get("error_region") or "").strip():
+        # Nothing to classify (e.g. the log fetch failed). Asking the model about
+        # an empty log only buys a made-up answer, so fail here and don't retry.
+        return {
+            "analysis_attempts": config.MAX_ANALYSIS_ATTEMPTS,
+            "analysis": None,
+            "analysis_error": state.get("analysis_error") or "no CI log to analyse",
+        }
     try:
         analysis = analyze_region(state.get("error_region", ""))
     except Exception as e:  # network, rate limit, or ValidationError on a bad shape
@@ -95,7 +103,10 @@ def validate_analysis(state: DebugState) -> dict:
         "requires_human_approval": decision == PolicyDecision.REQUIRE_HUMAN_APPROVAL,
     }
 
-    if decision == PolicyDecision.STRICT_REFUSAL:
+    # A refused category stops here — except flaky_test. Refusal means "never
+    # patch it", and the flaky path never patches: it only re-runs the test to
+    # confirm non-determinism. Short-circuiting it made flaky_detected unreachable.
+    if decision == PolicyDecision.STRICT_REFUSAL and analysis.category != "flaky_test":
         updates["outcome"] = "diagnosis_only"
 
     return updates

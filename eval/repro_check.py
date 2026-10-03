@@ -1,9 +1,10 @@
 """Phase 4 exit criterion: every fixture must reproduce RED in the sandbox."""
 import json, pathlib, subprocess, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+from cidra.config import PRACTICE_REPO_DIR
 from cidra.sandbox.runner import Session
 
-PRACTICE = pathlib.Path("d:/CODES/cidra-practice")
+PRACTICE = pathlib.Path(PRACTICE_REPO_DIR)
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
 # F-03 breaks by REMOVING the env var from CI, so the sandbox must omit it too.
 ENV = {"F-03": "", "default": "API_TOKEN=tok_practice_value "}

@@ -7,6 +7,12 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends git \
  && rm -rf /var/lib/apt/lists/*
 
+# The test runner must exist even when the repo's requirements don't list it:
+# a missing pytest exits 127, which is not a reproduced failure. coverage is for
+# SBFL. Installed system-wide (as root) so /usr/local/bin is on the runner's
+# PATH; a repo-pinned version installed by the install step still wins.
+RUN pip install --no-cache-dir pytest coverage
+
 # Non-root user baked in, so no root exec is needed at runtime.
 RUN useradd -u 1000 -m cidra && mkdir -p /work && chown cidra /work
 

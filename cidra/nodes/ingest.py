@@ -57,10 +57,13 @@ def isolate_error(state: DebugState) -> dict:
         
     failure = dispatcher.parse_log(raw_log)
     
-    # If the adapter failed to recognize the log, handle gracefully
+    # No adapter recognised the log: still hand the model something to read.
+    # _extract_region falls back to the tail of the log when no marker hits.
     if failure.language == "unknown":
-        return {"analysis_error": "unsupported_or_unrecognized_failure"}
-        
+        from cidra.adapters.implementations import _extract_region
+        region, markers = _extract_region(raw_log, ERROR_MARKERS)
+        return {"error_region": region, "log_markers": markers}
+
     # Return both the full FailureEvent object mapping and the legacy keys
     # so we don't break existing graph operations (Tier 1 vs Tier 2, etc.)
     out = failure.to_dict()

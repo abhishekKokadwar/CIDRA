@@ -18,7 +18,7 @@ FLAKY_SCORE_THRESHOLD = 1
 
 # Provider — any OpenAI-compatible endpoint. OpenRouter for now.
 API_KEY = os.environ.get("CIDRA_API_KEY", "")
-BASE_URL = os.environ.get("CIDRA_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/")
+BASE_URL = os.environ.get("CIDRA_BASE_URL") or "https://generativelanguage.googleapis.com/v1beta/openai/"
 
 # OpenRouter Fallbacks (Multiple keys for quotas)
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
@@ -53,6 +53,11 @@ GITHUB_API = os.environ.get("CIDRA_GITHUB_API", "https://api.github.com")
 # same value in the repo's webhook config. An unsigned request is rejected, so a
 # missing secret means CIDRA refuses every delivery rather than trusting it.
 WEBHOOK_SECRET = os.environ.get("CIDRA_WEBHOOK_SECRET", "")
+
+# Dashboard API token. Optional on loopback (the API then only answers same-origin
+# requests); REQUIRED to serve the dashboard on any other interface. Clients send
+# it as the X-CIDRA-Token header.
+DASHBOARD_TOKEN = os.environ.get("CIDRA_DASHBOARD_TOKEN", "")
 
 # Idempotency store location.
 IDEMPOTENCY_DB = os.environ.get("CIDRA_IDEMPOTENCY_DB", "cidra_idempotency.db")

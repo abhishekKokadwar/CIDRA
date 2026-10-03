@@ -75,7 +75,7 @@ policy:
 
 
 def test_diff_path_boundaries(tmp_path: Path):
-    pe = PolicyEngine.find_and_load(Path("d:/CODES/cidra"))
+    pe = PolicyEngine.find_and_load(Path(__file__).resolve().parents[2])
     
     # Safe diff
     safe_diff = """--- a/src/math/calc.py

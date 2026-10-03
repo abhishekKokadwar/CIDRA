@@ -14,6 +14,7 @@ protocol.file.allow` stays 'never' via the wrapper — the clone uses a plain
 filesystem path, not the file:// transport that flag blocks.
 """
 
+import logging
 import shutil
 from pathlib import Path
 from typing import Optional
@@ -55,7 +56,9 @@ def prepare_checkout(run_id: str, source: str | Path,
         try:
             git("checkout", "--quiet", commit_sha, cwd=dest)
         except Exception:
-            pass
+            logging.getLogger("cidra.checkout").warning(
+                "commit %s is not in %s; reproducing on its checked-out HEAD instead",
+                commit_sha, source)
 
     if not keep_git:
         # SR-17: strip .git so nothing ever runs inside an attacker-supplied .git

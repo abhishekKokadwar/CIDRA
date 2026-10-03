@@ -7,7 +7,7 @@ Provider-agnostic on purpose: CIDRA_BASE_URL points at OpenRouter today and
 can point at any OpenAI-compatible endpoint later. Only .env changes.
 """
 
-import os
+import logging
 import time
 from typing import Type, TypeVar
 
@@ -23,6 +23,12 @@ from cidra.config import (
 )
 
 T = TypeVar("T", bound=BaseModel)
+
+log = logging.getLogger("cidra.llm")
+
+# The request itself is wrong for this provider (bad key, no credit, unknown
+# model, rejected schema). Retrying cannot help, so move to the next provider.
+_NO_RETRY_STATUS = {400, 401, 402, 403, 404, 422}
 
 _client: OpenAI | None = None
 _or_client_1: OpenAI | None = None
@@ -107,14 +113,15 @@ def structured(
     # 2-3. OpenRouter Key 2
     # 4. Groq
     # 5-6. NVIDIA NIM
-    models_to_try = [
-        (model, client),
-        ("meta-llama/llama-3.1-70b-instruct", openrouter_client_2),
-        ("qwen/qwen-2.5-72b-instruct", openrouter_client_2),
-        ("llama-3.1-8b-instant", groq_client),
-        ("moonshotai/kimi-k3", kimi_client),
-        ("z-ai/glm-5.3-flash", glm_client),
+    fallbacks = [
+        ("meta-llama/llama-3.1-70b-instruct", openrouter_client_2, OPENROUTER_API_KEY_2),
+        ("qwen/qwen-2.5-72b-instruct", openrouter_client_2, OPENROUTER_API_KEY_2),
+        ("llama-3.1-8b-instant", groq_client, GROQ_API_KEY),
+        ("moonshotai/kimi-k3", kimi_client, NVIDIA_API_KEY_KIMI),
+        ("z-ai/glm-5.3-flash", glm_client, NVIDIA_API_KEY_GLM),
     ]
+    # A fallback with no key configured is not in the chain at all.
+    models_to_try = [(model, client)] + [(m, c) for m, c, key in fallbacks if key]
 
     last_error = None
     
@@ -122,7 +129,7 @@ def structured(
         max_retries = 3
         for retry in range(max_retries):
             try:
-                print(f"Attempting inference with {attempt_model}... (try {retry + 1}/{max_retries})")
+                log.info("Attempting inference with %s (try %d/%d)", attempt_model, retry + 1, max_retries)
                 start_time = time.time()
                 resp = get_client().chat.completions.create(
                     model=attempt_model,
@@ -171,22 +178,26 @@ def structured(
 
                 return schema.model_validate_json(calls[0].function.arguments)
             except Exception as e:
-                print(f"Model {attempt_model} failed (attempt {retry + 1}/{max_retries}): {e}")
+                log.warning("Model %s failed (attempt %d/%d): %s",
+                            attempt_model, retry + 1, max_retries, str(e)[:300])
                 last_error = e
+
+                if getattr(e, "status_code", None) in _NO_RETRY_STATUS:
+                    break  # Move to next fallback model
                 
                 # Check for rate limit explicitly
                 is_rate_limit = isinstance(e, RateLimitError) or (hasattr(e, 'status_code') and e.status_code == 429) or (hasattr(e, 'message') and '429' in str(e.message)) or '429' in str(e)
                 
                 if retry < max_retries - 1:
                     if is_rate_limit:
-                        print(f"Hit rate limit. Backing off for 65s to clear quota window...")
+                        log.info("Hit rate limit. Backing off for 65s to clear quota window...")
                         time.sleep(65)
                     else:
-                        print(f"Transient error. Backing off for 2s...")
+                        log.info("Transient error. Backing off for 2s...")
                         time.sleep(2)
                     continue # Retry the same model
                 else:
-                    print(f"Model {attempt_model} exhausted all {max_retries} retries.")
+                    log.warning("Model %s exhausted all %d retries.", attempt_model, max_retries)
                     break # Move to next fallback model
 
     # If all fallbacks fail, raise the last error so the graph can gracefully abort

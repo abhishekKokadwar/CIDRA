@@ -61,8 +61,13 @@ def action_run():
 
     # If triggered by workflow_run, the failing run is in the payload.
     # Otherwise, it might be the current run.
-    target_run_id = str(event_data.get("workflow_run", {}).get("id", run_id))
-    
+    workflow_run = event_data.get("workflow_run") or {}
+    target_run_id = str(workflow_run.get("id", run_id))
+    # On workflow_run, GITHUB_SHA is the default branch's tip, not the commit
+    # whose CI failed. The failing commit is head_sha; the workflow must check
+    # that commit out (actions/checkout `ref:`) so it exists in the workspace.
+    sha = workflow_run.get("head_sha") or sha
+
     # We might have an issue number if it's a pull_request
     issue_number = None
     pr_branch = None
@@ -80,10 +85,18 @@ def action_run():
         "commit_sha": sha,
         "issue_number": issue_number,
         "pr_branch": pr_branch,
-        "source_dir": os.getenv("GITHUB_WORKSPACE"),
+        # CIDRA_SOURCE_DIR: where the failing commit is checked out, when that
+        # is not the workspace root (e.g. a second checkout in a subfolder).
+        "source_dir": os.getenv("CIDRA_SOURCE_DIR") or os.getenv("GITHUB_WORKSPACE"),
+        # The failing workflow's own file: its `env:` is replayed in the sandbox.
+        "workflow_file": workflow_run.get("path"),
     }
-    
-    _run_graph(state)
+
+    final = _run_graph(state)
+    # A run where CIDRA itself broke (no log, no model, no sandbox) must not show
+    # as a green job. diagnosis_only and flaky_detected are real results: exit 0.
+    if final and final.get("outcome") == "failed":
+        sys.exit(1)
 
 
 def local_run(args):
@@ -129,6 +142,11 @@ def dashboard_run(args):
     import webbrowser
     port = getattr(args, "port", 8000)
     host = getattr(args, "host", "127.0.0.1")
+    from cidra import config
+    if host not in ("127.0.0.1", "localhost", "::1") and not config.DASHBOARD_TOKEN:
+        log.error("Refusing to serve the dashboard on %s without CIDRA_DASHBOARD_TOKEN: "
+                  "its API reads credentials and writes .env.", host)
+        sys.exit(1)
     url = f"http://{host}:{port}"
     log.info(f"Starting CIDRA Web Dashboard at {url}")
     if not getattr(args, "no_open", False):

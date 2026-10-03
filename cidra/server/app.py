@@ -18,8 +18,7 @@ Returns:
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import BackgroundTasks, FastAPI, Header, Request, Response, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, Response, HTTPException
 
 from cidra import config, history
 from cidra.server.events import parse_event
@@ -49,13 +48,47 @@ async def _lifespan(app: FastAPI):
 
 app = FastAPI(title="CIDRA webhook", lifespan=_lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # For development
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# No CORS middleware on purpose: the dashboard is served from this same origin,
+# so no other origin has any business reading or writing these endpoints.
+
+_LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def _hostname(netloc: str) -> str:
+    """'localhost:8000' -> 'localhost', '[::1]:8000' -> '::1'."""
+    netloc = netloc.strip().lower()
+    if netloc.startswith("["):
+        return netloc[1:].split("]", 1)[0]
+    return netloc.rsplit(":", 1)[0] if ":" in netloc else netloc
+
+
+def api_guard(request: Request) -> None:
+    """Gate for every /api/* route. These endpoints read masked credentials and
+    write .env, so a web page open in the same browser must not reach them.
+
+      - Origin, when sent, must be this server's own origin (blocks cross-site
+        requests; browsers always send Origin on cross-origin writes).
+      - With CIDRA_DASHBOARD_TOKEN set, X-CIDRA-Token must match.
+      - Without a token, the Host must be loopback (blocks DNS rebinding and
+        accidental exposure on a LAN interface).
+    """
+    import hmac
+    from urllib.parse import urlsplit
+
+    host = request.headers.get("host", "")
+    origin = request.headers.get("origin")
+    if origin and urlsplit(origin).netloc.lower() != host.lower():
+        raise HTTPException(status_code=403, detail="cross-origin request refused")
+
+    token = config.DASHBOARD_TOKEN
+    if token:
+        if not hmac.compare_digest(request.headers.get("x-cidra-token", ""), token):
+            raise HTTPException(status_code=401, detail="missing or invalid X-CIDRA-Token")
+    elif _hostname(host) not in _LOOPBACK_HOSTS:
+        raise HTTPException(
+            status_code=403,
+            detail="set CIDRA_DASHBOARD_TOKEN to use the API from a non-loopback host",
+        )
 
 _store = IdempotencyStore(config.IDEMPOTENCY_DB)
 
@@ -127,13 +160,13 @@ async def webhook(
     return Response(status_code=200, content="accepted")
 
 
-@app.get("/api/runs")
+@app.get("/api/runs", dependencies=[Depends(api_guard)])
 def list_runs(limit: int = 50):
     """Fetch recent runs for the dashboard."""
     return history.load(limit=limit)
 
 
-@app.get("/api/runs/{run_id}")
+@app.get("/api/runs/{run_id}", dependencies=[Depends(api_guard)])
 def get_run(run_id: str):
     """Fetch the full DebugState of a run."""
     state = history.load_full_state(run_id)
@@ -142,7 +175,7 @@ def get_run(run_id: str):
     return state
 
 
-@app.post("/api/runs/{run_id}/approve")
+@app.post("/api/runs/{run_id}/approve", dependencies=[Depends(api_guard)])
 def approve_run(run_id: str):
     """HITL Gate: approve a patch and merge the PR."""
     state = history.load_full_state(run_id)
@@ -154,14 +187,14 @@ def approve_run(run_id: str):
     return {"status": "approved", "run_id": run_id, "message": "PR merged successfully"}
 
 
-@app.get("/api/settings")
+@app.get("/api/settings", dependencies=[Depends(api_guard)])
 def get_settings():
     """Fetch live settings and masked credentials from .env and config."""
     from cidra.server import settings
     return settings.get_current_settings()
 
 
-@app.post("/api/settings")
+@app.post("/api/settings", dependencies=[Depends(api_guard)])
 async def update_settings(request: Request):
     """Save updated settings directly to .env and reload in-memory config."""
     from cidra.server import settings
@@ -169,7 +202,7 @@ async def update_settings(request: Request):
     return settings.save_settings(payload)
 
 
-@app.post("/api/settings/test")
+@app.post("/api/settings/test", dependencies=[Depends(api_guard)])
 async def test_provider_endpoint(request: Request):
     """Test connectivity and measure latency to a provider."""
     from cidra.server import settings

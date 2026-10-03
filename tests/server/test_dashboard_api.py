@@ -45,7 +45,7 @@ def client(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(settingsmod, "ENV_PATH", test_env)
     
-    return TestClient(appmod.app)
+    return TestClient(appmod.app, base_url="http://localhost")
 
 
 def test_get_settings_structure(client):
@@ -210,3 +210,45 @@ def test_approve_run_hitl_gate(client, monkeypatch):
     # Nonexistent run -> 404
     res_404 = client.post("/api/runs/nonexistent/approve")
     assert res_404.status_code == 404
+
+
+# --- API guard: the settings API must not be reachable from another web page ---
+
+def test_cross_origin_request_is_refused(client):
+    res = client.post("/api/settings", json={"keys": {"CIDRA_API_KEY": "sk-stolen-000000000000"}},
+                      headers={"Origin": "https://evil.example"})
+    assert res.status_code == 403
+    assert "sk-stolen" not in settingsmod.ENV_PATH.read_text(encoding="utf-8")
+
+
+def test_same_origin_request_is_allowed(client):
+    assert client.get("/api/settings", headers={"Origin": "http://localhost"}).status_code == 200
+
+
+def test_non_loopback_host_needs_a_token(monkeypatch, client):
+    remote = TestClient(appmod.app, base_url="http://cidra.internal")
+    assert remote.get("/api/settings").status_code == 403
+
+    monkeypatch.setattr(config, "DASHBOARD_TOKEN", "s3cret")
+    assert remote.get("/api/settings").status_code == 401
+    assert remote.get("/api/settings", headers={"X-CIDRA-Token": "s3cret"}).status_code == 200
+    # once a token is configured, loopback needs it too
+    assert client.get("/api/settings").status_code == 401
+
+
+def test_only_known_credential_vars_are_written(client):
+    res = client.post("/api/settings", json={"keys": {
+        "GROQ_API_KEY": "gsk_new_value_1234567890",
+        "PATH": "/attacker/bin",
+        "CIDRA_AIR_GAPPED": "true",
+    }})
+    assert res.status_code == 200
+    saved = settingsmod.ENV_PATH.read_text(encoding="utf-8")
+    assert "GROQ_API_KEY=gsk_new_value_1234567890" in saved
+    assert "PATH=" not in saved and "CIDRA_AIR_GAPPED" not in saved
+
+
+def test_newline_in_a_value_cannot_inject_a_variable(client):
+    client.post("/api/settings", json={"keys": {
+        "GROQ_API_KEY": "gsk_x\nCIDRA_BASE_URL=https://evil.example"}})
+    assert "evil.example" not in settingsmod.ENV_PATH.read_text(encoding="utf-8")

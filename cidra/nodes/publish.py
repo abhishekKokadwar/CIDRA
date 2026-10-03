@@ -53,6 +53,7 @@ def publish(state: DebugState) -> dict:
             pass
 
     body = render_comment(state)
+    _write_job_summary(body)
     issue = state.get("issue_number")
     has_token = bool(GITHUB_TOKEN)
     dry = state.get("dry_run") or not has_token
@@ -68,6 +69,10 @@ def publish(state: DebugState) -> dict:
         else:
             # Where did failure originate? -> main push -> Open new PR
             out["pr_url"] = _open_pr(state, body)
+        if out["pr_url"] is None and issue is not None:
+            # The PR step failed: a verified fix must still be reported somewhere.
+            from cidra.integrations.github_write import post_or_update_comment
+            out["comment_url"] = post_or_update_comment(state["repo"], issue, body)
     else:
         # Refused or Failed (or dry run) -> Comment on existing PR
         if not dry and issue is not None:
@@ -77,18 +82,41 @@ def publish(state: DebugState) -> dict:
     return out
 
 
+def _write_job_summary(body: str) -> None:
+    """Every Actions run leaves its report on the run page, whatever the outcome.
+
+    A failure on a branch push has no PR to comment on, so without this a
+    diagnosis-only or failed run is visible nowhere but the raw log.
+    """
+    import os
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not path:
+        return
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(body + "\n")
+    except OSError:
+        pass  # best-effort: never sink the run over a summary
+
+
+def _repo_dir(state: DebugState) -> str:
+    """The repo to branch from. NOT source_dir: after checkout_commit that is the
+    sandbox tree, which has no .git and cannot be cloned."""
+    from cidra.config import PRACTICE_REPO_DIR
+    return state.get("repo_dir") or state.get("source_dir") or PRACTICE_REPO_DIR
+
+
 def _open_pr(state: DebugState, body: str) -> Optional[str]:
     """Build the fix branch and open a draft PR. Returns its URL, or None on error."""
-    from cidra.config import GITHUB_API, GITHUB_TOKEN, PRACTICE_REPO_DIR
+    from cidra.config import GITHUB_API, GITHUB_TOKEN
     from cidra.integrations.github_write import open_draft_pr
     from cidra.nodes.pr import build_fix_branch, fix_branch_name
 
     run_id = state["run_id"]
     repo = state["repo"]
     try:
-        source = state.get("source_dir") or PRACTICE_REPO_DIR
         branch = build_fix_branch(
-            run_id, source, state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
+            run_id, _repo_dir(state), state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
             base_sha=state.get("commit_sha"),
         )
         return open_draft_pr(
@@ -104,17 +132,16 @@ def _open_pr(state: DebugState, body: str) -> Optional[str]:
 
 def _apply_to_existing_pr(state: DebugState, body: str) -> Optional[str]:
     """Build and push the fix branch to the existing PR, and post a comment."""
-    from cidra.config import GITHUB_API, GITHUB_TOKEN, PRACTICE_REPO_DIR
+    from cidra.config import GITHUB_API, GITHUB_TOKEN
     from cidra.nodes.pr import build_fix_branch
     from cidra.integrations.github_write import post_or_update_comment
 
     run_id = state["run_id"]
     repo = state["repo"]
     try:
-        source = state.get("source_dir") or PRACTICE_REPO_DIR
         # Push to the existing PR branch
         build_fix_branch(
-            run_id, source, state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
+            run_id, _repo_dir(state), state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
             base_sha=state.get("commit_sha"),
             branch_name=state["pr_branch"]
         )

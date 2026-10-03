@@ -118,7 +118,11 @@ def test_audit_gate_blocks_unsafe_patch_from_sandbox():
     assert routers.route_after_audit({}) == "compose_report"  # fail safe
 
 
-def test_graph_compiles_and_terminates():
+def test_graph_compiles_and_terminates(monkeypatch):
+    # No model in a unit test: a failing analyze must still end the graph cleanly.
+    def no_llm(_region):
+        raise RuntimeError("no LLM in unit tests")
+    monkeypatch.setattr("cidra.nodes.analyze.analyze_region", no_llm)
     g = build_graph()
     final = g.invoke({"run_id": "t1", "repo": "x/y", "commit_sha": "abc", "raw_log": LOG})
     assert "error_region" in final

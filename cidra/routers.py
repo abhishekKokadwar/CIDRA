@@ -5,9 +5,13 @@ from cidra.state import DebugState
 
 
 def route_after_validate(state: DebugState) -> str:
-    if state.get("policy_decision") == "strict_refusal":
+    analysis = state.get("analysis")
+    is_flaky = analysis is not None and analysis.category == "flaky_test"
+    # Refused categories go straight to the report. flaky_test is refused for
+    # *patching* only; it still takes the detection path, which never patches.
+    if state.get("policy_decision") == "strict_refusal" and not is_flaky:
         return "compose_report"
-    if state.get("analysis") is not None:
+    if analysis is not None:
         return "checkout_commit"  # Phase 9: isolated checkout runs before sandbox
     if state.get("analysis_attempts", 0) < MAX_ANALYSIS_ATTEMPTS:
         return "analyze"

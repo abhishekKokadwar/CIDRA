@@ -4,7 +4,7 @@ One place, referenced everywhere. Never remove a limit — raise it if a legitim
 fixture needs more, and record why here.
 """
 
-# Built from sandbox/Dockerfile: python:3.11-slim + git + the non-root user.
+# Built from sandbox/Dockerfile: python:3.11-slim + git + pytest/coverage + the non-root user.
 # git is needed by `git apply`; baking the user in means no root exec at runtime.
 IMAGE = "cidra-sandbox:base"
 

@@ -40,6 +40,9 @@ inputs:
     description: 'If true, CIDRA will open a PR with the verified fix'
     required: false
     default: 'false'
+  source_dir:
+    description: 'Path to the checkout of the commit whose CI failed. Defaults to the workspace root.'
+    required: false
 
 runs:
   using: "composite"
@@ -76,5 +79,6 @@ runs:
         OPENROUTER_API_KEY: ${{ inputs.openrouter_api_key }}
         OPENROUTER_API_KEY_2: ${{ inputs.openrouter_api_key_2 }}
         CIDRA_ENABLE_PR_CREATION: ${{ inputs.enable_pr_creation }}
+        CIDRA_SOURCE_DIR: ${{ inputs.source_dir }}
       run: |
         cidra action

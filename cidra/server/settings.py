@@ -17,6 +17,21 @@ from cidra import config
 ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 
 
+# The only credential variables the settings API may write. Anything else in the
+# payload is ignored: the endpoint must not be a way to set arbitrary env vars.
+ALLOWED_KEY_VARS = frozenset({
+    "CIDRA_API_KEY",
+    "OPENROUTER_API_KEY",
+    "OPENROUTER_API_KEY_2",
+    "NVIDIA_API_KEY_KIMI",
+    "NVIDIA_API_KEY_GLM",
+    "GROQ_API_KEY",
+    "CIDRA_GITHUB_TOKEN",
+    "CIDRA_GITHUB_TOKEN_RO",
+    "CIDRA_WEBHOOK_SECRET",
+})
+
+
 def mask_secret(secret: str | None) -> str:
     """Mask a secret showing only prefix and suffix for UI security."""
     if not secret:
@@ -196,6 +211,8 @@ def save_settings(payload: Dict[str, Any]) -> Dict[str, Any]:
     keys_input = payload.get("keys", {})
     if isinstance(keys_input, dict):
         for k, v in keys_input.items():
+            if k not in ALLOWED_KEY_VARS or not isinstance(v, str):
+                continue
             if v and not v.startswith("••••") and "••••" not in v:
                 updates[k] = v
 
@@ -222,6 +239,10 @@ def save_settings(payload: Dict[str, Any]) -> Dict[str, Any]:
         updates["CIDRA_ENABLE_PR_CREATION"] = "true" if flakiness_input["enable_pr_creation"] else "false"
     if "practice_repo" in flakiness_input:
         updates["CIDRA_PRACTICE_REPO_SLUG"] = str(flakiness_input["practice_repo"])
+
+    # One value per line in .env: a line break in a value would smuggle in a
+    # second variable.
+    updates = {k: v for k, v in updates.items() if "\n" not in v and "\r" not in v}
 
     if updates:
         write_env_file(updates)

@@ -66,10 +66,15 @@ def build_fix_branch(run_id: str, source: str | Path, diff: str,
 
         if push:
             remote = _authenticated_remote(repo, token, api)
-            # --force: a re-run of the same run_id replaces its own branch.
+            # --force only for CIDRA's own cidra/patch-* branch, where a re-run
+            # of the same run_id replaces its previous attempt. A contributor's
+            # PR branch (branch_name given) is never forced: if they pushed
+            # since the failing commit, the push is rejected rather than
+            # overwriting their work.
             # allow_file so a local-path remote works (tests / self-hosted); a
             # real https github remote is unaffected by the flag.
-            git("push", "--force", "--quiet", remote, f"{branch}:{branch}",
+            force = [] if branch_name else ["--force"]
+            git("push", *force, "--quiet", remote, f"{branch}:{branch}",
                 cwd=tree, allow_file=True)
         return branch
     finally:

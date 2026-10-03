@@ -7,6 +7,7 @@ verify_fix is the sole writer of `verified` — the one field the final report i
 allowed to make a claim from.
 """
 
+import shlex
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -14,7 +15,7 @@ from pydantic import BaseModel, Field
 from cidra import config
 from cidra.config import TEST_COMMAND
 from cidra.integrations.llm import structured
-from cidra.nodes.environment import session_for
+from cidra.nodes.environment import env_prefix, session_for
 from cidra.state import DebugState
 
 # Which file each category is allowed to touch. Deterministic, no LLM.
@@ -95,7 +96,9 @@ def _context(state: DebugState) -> str:
     for path in dict.fromkeys(wanted):
         if session is None:
             break
-        shown = session.run("test", f"cat {path}", timeout_s=30)
+        # `path` can come from the model (analysis.file): quote it so it is an
+        # argument to cat, never shell syntax (SR-03).
+        shown = session.run("test", f"cat -- {shlex.quote(path)}", timeout_s=30)
         if shown.passed:
             parts.append(f"<file path=\"{path}\">\n{shown.stdout_tail}</file>")
     if analysis is not None:
@@ -152,9 +155,7 @@ def verify_fix(state: DebugState) -> dict:
         if not results[-1].passed:
             return {"verified": False, "verify_results": [*state.get("verify_results", []), *results]}
 
-    env = state.get("ci_env") or {}
-    prefix = "".join(f"{k}={v} " for k, v in sorted(env.items()))
-    verified_run = session.run("verify", prefix + TEST_COMMAND)
+    verified_run = session.run("verify", env_prefix(state) + TEST_COMMAND)
     results.append(verified_run)
 
     # Phase 11: cache a freshly verified fix (only on a genuine verify, and not

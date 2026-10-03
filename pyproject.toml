@@ -43,5 +43,6 @@ include = ["cidra", "cidra.*"]
 [tool.setuptools.package-data]
 cidra = [
     "static/**",
-    "static/**/*"
+    "static/**/*",
+    "sandbox/Dockerfile"
 ]

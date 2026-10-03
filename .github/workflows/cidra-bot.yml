@@ -17,11 +17,21 @@ jobs:
       actions: read
 
     steps:
+    # The action itself always runs from the default branch (trusted code).
     - uses: actions/checkout@v4
+
+    # The commit whose CI failed goes in a subfolder: it is only ever copied
+    # into the sandbox, never executed on the runner next to the secrets.
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.workflow_run.head_sha }}
+        path: cidra-target
+        persist-credentials: false
 
     - name: Run CIDRA
       uses: ./
       with:
+        source_dir: ${{ github.workspace }}/cidra-target
         api_key: ${{ secrets.GEMINI_API_KEY }}
         base_url: 'https://generativelanguage.googleapis.com/v1beta/openai/'
         model_analyze: 'gemini-3.5-flash'

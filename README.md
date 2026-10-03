@@ -238,6 +238,8 @@ jobs:
       - name: Checkout Codebase
         uses: actions/checkout@v4
         with:
+          # The commit whose CI failed, not the default branch's tip
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -249,7 +251,8 @@ jobs:
         run: pip install cidra
 
       - name: Build Sandbox Image
-        run: docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+        # The Dockerfile ships inside the installed package
+        run: docker build -t cidra-sandbox:base "$(python -c 'import cidra, os; print(os.path.join(os.path.dirname(cidra.__file__), "sandbox"))')"
 
       - name: Execute Autonomous Repair
         env:
@@ -423,7 +426,6 @@ npm run build
 
 <div align="center">
 
-**Built with rigor by the CIDRA Team.**  
 *Autonomous repair you can actually trust.*
 
 </div>

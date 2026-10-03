@@ -131,3 +131,65 @@ def test_publish_no_pr_when_not_verified(monkeypatch):
     out = publish.publish({"repo": "o/r", "run_id": "1", "outcome": "diagnosis_only",
                            "analysis": None})
     assert out["pr_url"] is None and called["n"] == 0
+
+
+# ---------- the PR path after checkout_commit (regression: .git-stripped source) ----------
+
+_FIX = ("--- a/calc.py\n+++ b/calc.py\n@@ -1,2 +1,2 @@\n"
+        " def add(a, b):\n-    return a - b\n+    return a + b\n")
+
+
+def test_pr_branch_builds_after_checkout_commit(repo_and_remote, monkeypatch):
+    """checkout_commit points source_dir at a tree with no .git; the PR path
+    must still clone the real repo, not that tree."""
+    from cidra.nodes import environment, publish
+    src, remote = repo_and_remote
+    monkeypatch.setattr(pr, "_authenticated_remote", lambda repo, token, api: str(remote))
+
+    state = {"run_id": "run3", "repo": "o/r", "source_dir": str(src), "fix_diff": _FIX}
+    state.update(environment.checkout_commit(state))
+    assert not (Path(state["source_dir"]) / ".git").exists()  # sandbox tree
+    assert state["repo_dir"] == str(src)                       # real repo kept
+
+    pr.build_fix_branch("run3", publish._repo_dir(state), _FIX, "o/r", "tok",
+                        "https://api.github.com")
+    heads = git("ls-remote", "--heads", str(remote), cwd=src, allow_file=True).stdout
+    assert "cidra/patch-run3" in heads
+
+
+def test_existing_pr_branch_is_never_force_pushed(repo_and_remote, monkeypatch):
+    src, remote = repo_and_remote
+    monkeypatch.setattr(pr, "_authenticated_remote", lambda repo, token, api: str(remote))
+    base = git("rev-parse", "HEAD", cwd=src).stdout.strip()
+
+    # The contributor's branch has moved on since the failing commit.
+    git("checkout", "-q", "-b", "feature", cwd=src)
+    (src / "new.py").write_text("x = 1\n")
+    git("add", "-A", cwd=src); git("commit", "-qm", "contributor work", cwd=src)
+    git("push", "-q", str(remote), "feature:feature", cwd=src, allow_file=True)
+    theirs = git("rev-parse", "HEAD", cwd=src).stdout.strip()
+
+    with pytest.raises(Exception):  # non-fast-forward push is rejected
+        pr.build_fix_branch("run4", src, _FIX, "o/r", "tok", "https://api.github.com",
+                            base_sha=base, branch_name="feature")
+    remote_head = git("ls-remote", str(remote), "refs/heads/feature", cwd=src,
+                      allow_file=True).stdout.split()[0]
+    assert remote_head == theirs  # their work is intact
+
+
+def test_verified_fix_still_comments_when_pr_step_fails(monkeypatch):
+    from cidra.nodes import publish
+    import cidra.config as cfg
+    import cidra.integrations.github_write as gw
+    monkeypatch.setattr(cfg, "GITHUB_TOKEN", "wtok", raising=False)
+    monkeypatch.setattr(cfg, "ENABLE_PR_CREATION", True, raising=False)
+    monkeypatch.setattr(publish, "_apply_to_existing_pr", lambda state, body: None)
+    monkeypatch.setattr(gw, "post_or_update_comment", lambda repo, issue, body: "https://gh/c/1")
+
+    from cidra.state import Analysis
+    out = publish.publish({
+        "repo": "o/r", "run_id": "1", "outcome": "verified_fix", "verified": True,
+        "fix_diff": "+x", "commit_sha": "abc", "issue_number": 7, "pr_branch": "feature",
+        "analysis": Analysis(category="missing_dependency", confidence=0.9,
+                             evidence="e", proposed_action="p")})
+    assert out["pr_url"] is None and out["comment_url"] == "https://gh/c/1"

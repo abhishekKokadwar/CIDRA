@@ -58,6 +58,7 @@ class DebugState(TypedDict, total=False):
     commit_sha: str
     workflow_file: Optional[str]
     source_dir: Optional[str]  # host checkout copied into the sandbox
+    repo_dir: Optional[str]  # the original repo WITH .git; the PR path clones this
     ci_env: dict  # env the workflow sets; replicated in the sandbox
 
     # Ingestion

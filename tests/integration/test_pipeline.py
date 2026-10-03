@@ -11,7 +11,15 @@ from unittest.mock import patch as mockpatch
 from cidra.graph import build_graph
 from cidra.state import Analysis
 
-PRACTICE = pathlib.Path("d:/CODES/cidra-practice")
+import pytest
+
+from cidra.config import PRACTICE_REPO_DIR
+
+# These drive real fixture branches of the practice repo in a real sandbox.
+# Point CIDRA_PRACTICE_REPO at a clone; without one (e.g. in CI) they skip.
+PRACTICE = pathlib.Path(PRACTICE_REPO_DIR)
+if not (PRACTICE / ".git").exists():
+    pytest.skip(f"practice repo not found at {PRACTICE}", allow_module_level=True)
 CI_ENV = {"API_TOKEN": "tok_practice_value"}
 
 

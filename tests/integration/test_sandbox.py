@@ -10,7 +10,15 @@ import tempfile
 from cidra.sandbox import limits
 from cidra.sandbox.runner import client, run_in_sandbox
 
-REPO = pathlib.Path("d:/CODES/cidra-practice")
+import pytest
+
+from cidra.config import PRACTICE_REPO_DIR
+
+# These drive real fixture branches of the practice repo in a real sandbox.
+# Point CIDRA_PRACTICE_REPO at a clone; without one (e.g. in CI) they skip.
+REPO = pathlib.Path(PRACTICE_REPO_DIR)
+if not (REPO / ".git").exists():
+    pytest.skip(f"practice repo not found at {REPO}", allow_module_level=True)
 
 
 def _tmp_source() -> pathlib.Path:
