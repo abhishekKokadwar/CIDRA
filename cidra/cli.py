@@ -85,6 +85,7 @@ def action_run():
         "commit_sha": sha,
         "issue_number": issue_number,
         "pr_branch": pr_branch,
+        "base_branch": workflow_run.get("head_branch"),
         # CIDRA_SOURCE_DIR: where the failing commit is checked out, when that
         # is not the workspace root (e.g. a second checkout in a subfolder).
         "source_dir": os.getenv("CIDRA_SOURCE_DIR") or os.getenv("GITHUB_WORKSPACE"),

@@ -59,6 +59,7 @@ class DebugState(TypedDict, total=False):
     workflow_file: Optional[str]
     source_dir: Optional[str]  # host checkout copied into the sandbox
     repo_dir: Optional[str]  # the original repo WITH .git; the PR path clones this
+    base_branch: Optional[str]  # branch whose CI failed; a new fix PR targets it
     ci_env: dict  # env the workflow sets; replicated in the sandbox
 
     # Ingestion

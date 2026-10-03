@@ -123,6 +123,9 @@ def _open_pr(state: DebugState, body: str) -> Optional[str]:
             repo, fix_branch_name(run_id),
             title=f"CIDRA: verified fix for {state.get('commit_sha', run_id)[:12]}",
             body=body,
+            # Target the branch whose CI failed. Against the default branch the PR
+            # would carry the breaking commit too, and can net out to an empty diff.
+            base=state.get("base_branch"),
         )
     except Exception:  # noqa: BLE001 - a PR failure must not sink the comment
         import logging

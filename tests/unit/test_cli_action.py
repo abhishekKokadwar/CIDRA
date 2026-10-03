@@ -24,12 +24,13 @@ def _run(monkeypatch, tmp_path, event, **env):
 
 def test_workflow_run_uses_head_sha_of_the_failed_run(monkeypatch, tmp_path):
     state = _run(monkeypatch, tmp_path, {"workflow_run": {
-        "id": 999, "head_sha": "failing-sha",
+        "id": 999, "head_sha": "failing-sha", "head_branch": "feature",
         "pull_requests": [{"number": 7, "head": {"ref": "feature"}}],
     }})
     assert state["commit_sha"] == "failing-sha"
     assert state["run_id"] == "999"
     assert state["issue_number"] == 7 and state["pr_branch"] == "feature"
+    assert state["base_branch"] == "feature"  # a new fix PR targets the failing branch
 
 
 def test_other_events_fall_back_to_github_sha(monkeypatch, tmp_path):
