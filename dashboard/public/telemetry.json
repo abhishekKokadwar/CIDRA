@@ -2,67 +2,67 @@
   "stats": {
     "total_interventions": 1,
     "success_rate": "0.0%",
-    "avg_time_to_fix": "15s",
+    "avg_time_to_fix": "16s",
     "system_status": "SYSTEM SECURE"
   },
   "runs": [
     {
-      "id": "37115730552",
+      "id": "37115911663",
       "repo": "abhishekKokadwar/CIDRA",
-      "commit_sha": "7ca654c1bba2eed2860edd4059cb46cbbd74d294",
+      "commit_sha": "44e4feca7b142a85a9f914f77e218278607ef1d7",
       "status": "pending",
       "outcome": "diagnosis_only",
       "category": "unknown",
-      "fix": "Investigate why 'overall_stage_conformance_pct' is missing from b8_summary in eval/benchmark_suite.py and ensure the benchmark suite returns the expected keys.",
-      "time": "Oct 03, 10:17",
-      "timestamp": 1791022620,
+      "fix": "Update the benchmark 8 execution or summary generation to include the 'overall_stage_conformance_pct' key, or update eval/benchmark_suite.py to safely retrieve it or use the correct key name.",
+      "time": "Oct 03, 10:19",
+      "timestamp": 1791022783,
       "model": "gemini-3.5-flash",
       "telemetry": {
-        "total_tokens": 2726,
-        "prompt_tokens": 1908,
-        "completion_tokens": 817,
-        "cost_usd": 0.0055,
-        "latency_s": 73.41,
+        "total_tokens": 2620,
+        "prompt_tokens": 1833,
+        "completion_tokens": 786,
+        "cost_usd": 0.0052,
+        "latency_s": 41.89,
         "confidence": 95.0,
         "context_files": [
           ".github/workflows/test-cidra.yml",
           "tests/unit/test_benchmarks.py"
         ]
       },
-      "error_region": "                \"04_airgap_check\": b4_summary,\n                \"05_cache_flaky_eval\": b5_summary,\n                \"06_multi_baseline_ablation\": b6_summary,\n                \"07_cross_scenario_generalization\": b7_summary,\n                \"08_failure_class_coverage\": b8_summary,\n                \"09_verification_invariant_stress\": b9_summary,\n            },\n            \"scorecard\": {\n                \"claim_1_time_reduction_percent\": b1_summary[\"average_time_reduction_percent\"],\n                \"claim_2_touchpoint_reduction_percent\": b2_summary[\"step_reduction_percent\"],\n                \"claim_3_attack_block_rate_percent\": b3_summary[\"block_rate_percent\"],\n                \"claim_4_airgap_certified\": b4_summary[\"air_gapped_conformance\"],\n                \"claim_5_cache_and_flaky_passed\": b5_summary[\"claim_5_validated\"],\n                \"claim_6_ablation_passed\": True,\n                \"claim_7_generalization_passed\": b7_summary[\"generalization_gaps\"][\"generalization_hypothesis_confirmed\"],\n>               \"claim_8_failure_class_coverage_passed\": b8_summary[\"overall_stage_conformance_pct\"] == 100.0,\n                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                \"claim_9_verification_invariant_passed\": b9_summary[\"verification_invariant_confirmed\"],\n                \"all_claims_proven\": (\n                    b1_summary[\"all_90pct_reduction\"]\n                    and b2_summary[\"target_met_step_reduction\"]\n                    and b3_summary[\"target_met_100pct_block\"]\n                    and b4_summary[\"air_gapped_conformance\"]\n                    and b5_summary[\"claim_5_validated\"]\n                    and b7_summary[\"generalization_gaps\"][\"generalization_hypothesis_confirmed\"]\n                    and (b8_summary[\"overall_stage_conformance_pct\"] == 100.0)\n                    and b9_summary[\"verification_invariant_confirmed\"]\n                ),\n            },\n        }\nE       KeyError: 'overall_stage_conformance_pct'\n\neval/benchmark_suite.py:493: KeyError\n----------------------------- Captured stdout call -----------------------------\n===========================================================================\nSTARTING CIDRA COMPREHENSIVE EMPIRICAL VALIDATION SUITE\n===========================================================================\n\n>>> Executing Benchmark 1: Developer Time Reduction...\n>>> Executing Benchmark 2: Step-Reduction Analysis...\n>>> Executing Benchmark 3: Unsafe Fix Resistance...\n>>> Executing Benchmark 4: Private / Air-Gapped Conformance...\n>>> Executing Benchmark 5: Cache Deduplication & Flakiness Stability...\n>>> Executing Benchmark 6: Multi-Baseline Comparison & Ablation Study...\n>>> Executing Benchmark 7: Cross-Scenario Generalization & Overfitting Defense...\n>>> Executing Benchmark 8: Failure-Class Coverage & Operational Boundaries...\n>>> Executing Benchmark 9: Verification Invariant Stress-Test (Adversarial FVR)...\n=========================== short test summary info ============================\nFAILED tests/unit/test_benchmarks.py::test_empirical_validation_suite_conformance - KeyError: 'overall_stage_conformance_pct'\n1 failed, 211 passed, 2 skipped in 2.51s\n##[error]Process completed with exit code 1.",
+      "error_region": "                \"04_airgap_check\": b4_summary,\n                \"05_cache_flaky_eval\": b5_summary,\n                \"06_multi_baseline_ablation\": b6_summary,\n                \"07_cross_scenario_generalization\": b7_summary,\n                \"08_failure_class_coverage\": b8_summary,\n                \"09_verification_invariant_stress\": b9_summary,\n            },\n            \"scorecard\": {\n                \"claim_1_time_reduction_percent\": b1_summary[\"average_time_reduction_percent\"],\n                \"claim_2_touchpoint_reduction_percent\": b2_summary[\"step_reduction_percent\"],\n                \"claim_3_attack_block_rate_percent\": b3_summary[\"block_rate_percent\"],\n                \"claim_4_airgap_certified\": b4_summary[\"air_gapped_conformance\"],\n                \"claim_5_cache_and_flaky_passed\": b5_summary[\"claim_5_validated\"],\n                \"claim_6_ablation_passed\": True,\n                \"claim_7_generalization_passed\": b7_summary[\"generalization_gaps\"][\"generalization_hypothesis_confirmed\"],\n>               \"claim_8_failure_class_coverage_passed\": b8_summary[\"overall_stage_conformance_pct\"] == 100.0,\n                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n                \"claim_9_verification_invariant_passed\": b9_summary[\"verification_invariant_confirmed\"],\n                \"all_claims_proven\": (\n                    b1_summary[\"all_90pct_reduction\"]\n                    and b2_summary[\"target_met_step_reduction\"]\n                    and b3_summary[\"target_met_100pct_block\"]\n                    and b4_summary[\"air_gapped_conformance\"]\n                    and b5_summary[\"claim_5_validated\"]\n                    and b7_summary[\"generalization_gaps\"][\"generalization_hypothesis_confirmed\"]\n                    and (b8_summary[\"overall_stage_conformance_pct\"] == 100.0)\n                    and b9_summary[\"verification_invariant_confirmed\"]\n                ),\n            },\n        }\nE       KeyError: 'overall_stage_conformance_pct'\n\neval/benchmark_suite.py:493: KeyError\n----------------------------- Captured stdout call -----------------------------\n===========================================================================\nSTARTING CIDRA COMPREHENSIVE EMPIRICAL VALIDATION SUITE\n===========================================================================\n\n>>> Executing Benchmark 1: Developer Time Reduction...\n>>> Executing Benchmark 2: Step-Reduction Analysis...\n>>> Executing Benchmark 3: Unsafe Fix Resistance...\n>>> Executing Benchmark 4: Private / Air-Gapped Conformance...\n>>> Executing Benchmark 5: Cache Deduplication & Flakiness Stability...\n>>> Executing Benchmark 6: Multi-Baseline Comparison & Ablation Study...\n>>> Executing Benchmark 7: Cross-Scenario Generalization & Overfitting Defense...\n>>> Executing Benchmark 8: Failure-Class Coverage & Operational Boundaries...\n>>> Executing Benchmark 9: Verification Invariant Stress-Test (Adversarial FVR)...\n=========================== short test summary info ============================\nFAILED tests/unit/test_benchmarks.py::test_empirical_validation_suite_conformance - KeyError: 'overall_stage_conformance_pct'\n1 failed, 212 passed, 2 skipped in 3.16s\n##[error]Process completed with exit code 1.",
       "analysis": {
         "category": "unknown",
         "confidence": 0.95,
-        "evidence": "KeyError: 'overall_stage_conformance_pct'\nat eval/benchmark_suite.py:493\nfailing test: tests/unit/test_benchmarks.py::test_empirical_validation_suite_conformance",
-        "proposed_action": "Investigate why 'overall_stage_conformance_pct' is missing from b8_summary in eval/benchmark_suite.py and ensure the benchmark suite returns the expected keys.",
+        "evidence": "KeyError: 'overall_stage_conformance_pct' in eval/benchmark_suite.py:493 when building the scorecard, during test_empirical_validation_suite_conformance.",
+        "proposed_action": "Update the benchmark 8 execution or summary generation to include the 'overall_stage_conformance_pct' key, or update eval/benchmark_suite.py to safely retrieve it or use the correct key name.",
         "file": "eval/benchmark_suite.py",
         "line": 493,
         "failing_test": "tests/unit/test_benchmarks.py::test_empirical_validation_suite_conformance",
         "missing_package": null,
         "env_var": null
       },
-      "raw_json_trace": "{\"file\":\"eval/benchmark_suite.py\",\"category\":\"unknown\",\"failing_test\":\"tests/unit/test_benchmarks.py::test_empirical_validation_suite_conformance\",\"proposed_action\":\"Investigate why 'overall_stage_conformance_pct' is missing from b8_summary in eval/benchmark_suite.py and ensure the benchmark suite returns the expected keys.\",\"line\":493,\"evidence\":\"KeyError: 'overall_stage_conformance_pct'\\nat eval/benchmark_suite.py:493\\nfailing test: tests/unit/test_benchmarks.py::test_empirical_validation_suite_conformance\",\"confidence\":0.95}",
+      "raw_json_trace": "{\"line\":493,\"confidence\":0.95,\"proposed_action\":\"Update the benchmark 8 execution or summary generation to include the 'overall_stage_conformance_pct' key, or update eval/benchmark_suite.py to safely retrieve it or use the correct key name.\",\"failing_test\":\"tests/unit/test_benchmarks.py::test_empirical_validation_suite_conformance\",\"file\":\"eval/benchmark_suite.py\",\"evidence\":\"KeyError: 'overall_stage_conformance_pct' in eval/benchmark_suite.py:493 when building the scorecard, during test_empirical_validation_suite_conformance.\",\"category\":\"unknown\"}",
       "fix_diff": null,
       "fix_strategy": null,
       "reproduced": true,
       "verified": false,
       "verify_results": [],
       "flaky_score": null,
-      "final_output": "<!-- cidra:report -->\n\ud83d\udd0e **CIDRA \u2014 diagnosis only** (no verified fix)\n\n**Failure class:** `unknown`\n\nCIDRA classified the failure but did **not** produce a fix it could verify green. No change is suggested. See the analysis below.\n\n> _Model-generated analysis (untrusted; shown for the reviewer):_\n>\n> KeyError: 'overall_stage_conformance_pct'\n> at eval/benchmark_suite.py:493\n> failing test: tests/unit/test_benchmarks.py::test_empirical_validation_suite_conformance\n>\n> **Proposed action:**\n> Investigate why 'overall_stage_conformance_pct' is missing from b8_summary in eval/benchmark_suite.py and ensure the benchmark suite returns the expected keys.\n\n\ud83d\udd12 **Enterprise Audit Manifest:**\n- **Policy Decision:** `REQUIRE_HUMAN_APPROVAL`\n- **AST Security Gate:** `BLOCKED`\n- **Sandbox Isolation:** `0 egress bytes` (network disabled)\n- **Cryptographic Seal:** `HMAC-SHA256:a3e0f608f1c6f6a3\u2026`\n\n---\n_CIDRA never merges. A human approves every change._",
+      "final_output": "<!-- cidra:report -->\n\ud83d\udd0e **CIDRA \u2014 diagnosis only** (no verified fix)\n\n**Failure class:** `unknown`\n\nCIDRA classified the failure but did **not** produce a fix it could verify green. No change is suggested. See the analysis below.\n\n> _Model-generated analysis (untrusted; shown for the reviewer):_\n>\n> KeyError: 'overall_stage_conformance_pct' in eval/benchmark_suite.py:493 when building the scorecard, during test_empirical_validation_suite_conformance.\n>\n> **Proposed action:**\n> Update the benchmark 8 execution or summary generation to include the 'overall_stage_conformance_pct' key, or update eval/benchmark_suite.py to safely retrieve it or use the correct key name.\n\n\ud83d\udd12 **Enterprise Audit Manifest:**\n- **Policy Decision:** `REQUIRE_HUMAN_APPROVAL`\n- **AST Security Gate:** `BLOCKED`\n- **Sandbox Isolation:** `0 egress bytes` (network disabled)\n- **Cryptographic Seal:** `HMAC-SHA256:59db8b5f04dc09ec\u2026`\n\n---\n_CIDRA never merges. A human approves every change._",
       "policy_decision": "require_human_approval",
       "requires_human_approval": true,
       "audit_manifest": {
-        "manifest_id": "man_c3e52fc0774a462e",
+        "manifest_id": "man_71c7d9f2eb9e430d",
         "schema_version": "1.0.0",
-        "timestamp": "2026-10-03T10:16:58.550969+00:00",
+        "timestamp": "2026-10-03T10:19:42.427958+00:00",
         "target": {
           "repo": "abhishekKokadwar/CIDRA",
-          "commit_sha": "7ca654c1bba2eed2860edd4059cb46cbbd74d294",
-          "run_id": "37115730552",
+          "commit_sha": "44e4feca7b142a85a9f914f77e218278607ef1d7",
+          "run_id": "37115911663",
           "engine_version": "1.0.0"
         },
         "policy": {
-          "source": "worktrees/cidra-patch-37115730552/cidra.policy.yml",
+          "source": "/home/runner/work/CIDRA/CIDRA/worktrees/cidra-patch-37115911663/cidra.policy.yml",
           "sha256": "1a75eb0c88fcf62be3fc171f1df2028d64a5867d30d2e737d3536e6b020f7d1d",
           "decision": "require_human_approval",
           "reasons": [
@@ -70,8 +70,8 @@
           ]
         },
         "evidence": {
-          "raw_log_sha256": "f4adc194bc01395b98dfc64f5dd6cf896afdc5afd9b14a71e96c7290d7a6b5d0",
-          "error_region_sha256": "f942b780a84a3a442fe1082b1ca69ce62e0840f4450c7615d8e1eadbac4eb810",
+          "raw_log_sha256": "0eb21f99c0f8e3f78f54788d1978294086ab28ba16ed2a006e128b6501b20dd4",
+          "error_region_sha256": "d4866cd4322e7d5d4694a633870ced436cc9a578bcba286a7657b3984ebf35d3",
           "patch_diff_sha256": null,
           "files_modified": []
         },
@@ -101,9 +101,9 @@
         },
         "seal": {
           "algorithm": "HMAC-SHA256",
-          "payload_sha256": "e7f73f14588fdf39e201232458e71bc04ca1087779e1ec8194f61373ec5ccd95",
-          "signature": "a3e0f608f1c6f6a351905298a4bd21eeec9c4f3f058b5969b5f66606ff421f05",
-          "signed_at": "2026-10-03T10:16:58.550969+00:00"
+          "payload_sha256": "fd311f595195ad40d938b065e3d52d1dba1c33b09044f42132ad65bbb4f3b41d",
+          "signature": "59db8b5f04dc09ec98157ddc5c65cd505f5cdd1d476d07f3e8a690c911698d55",
+          "signed_at": "2026-10-03T10:19:42.427958+00:00"
         }
       },
       "pr_url": null,
