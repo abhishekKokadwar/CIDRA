@@ -1,5 +1,0 @@
-﻿def add(a, b):
-    return a - b  # Deliberate bug!
-
-def test_add():
-    assert add(2, 3) == 5

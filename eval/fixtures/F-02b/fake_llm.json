@@ -1,0 +1,15 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.95,
+    "evidence": "assert [1, 3] == [1, 3, 6]: running_total drops the last element.",
+    "proposed_action": "Iterate over every value in running_total.",
+    "file": "src/calc.py",
+    "failing_test": "tests/test_calc.py::test_running_total"
+  },
+  "Patch": {
+    "diff": "--- a/src/calc.py\n+++ b/src/calc.py\n@@ -12,7 +12,7 @@\n     \"\"\"Cumulative sums. Returns one entry per input value.\"\"\"\n     out = []\n     total = 0\n-    for v in values[:-1]:\n+    for v in values:\n         total += v\n         out.append(total)\n     return out\n",
+    "target_file": "src/calc.py",
+    "rationale": "The loop skipped the last value (values[:-1])."
+  }
+}
