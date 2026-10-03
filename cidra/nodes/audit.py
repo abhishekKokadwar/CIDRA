@@ -23,11 +23,14 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
+from cidra.policy import ContainmentLimits
 from cidra.state import DebugState
 
-# --- SR-15 ceilings. A CIDRA fix class is narrow; a sprawling diff is off-scope. ---
-MAX_CHANGED_LINES = 200
-MAX_CHANGED_FILES = 10
+# --- SR-15 ceilings. A CIDRA fix class is narrow; a sprawling diff is off-scope.
+# One source of truth: the policy's containment_limits. These are its defaults,
+# used when no policy is passed to audit_diff. ---
+MAX_CHANGED_LINES = ContainmentLimits().max_changed_lines
+MAX_CHANGED_FILES = ContainmentLimits().max_changed_files
 
 # --- SR-14 forbidden paths: config CIDRA must never rewrite. ---
 _FORBIDDEN_PATHS = (
@@ -127,8 +130,12 @@ def _removed_assertions(removed: list[str]) -> int:
         return sum(1 for ln in removed if re.match(r"\s*(assert|expect)\b", ln))
 
 
-def audit_diff(diff: str) -> AuditVerdict:
-    """Static policy verdict for a unified diff. No side effects, no LLM."""
+def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None) -> AuditVerdict:
+    """Static policy verdict for a unified diff. No side effects, no LLM.
+
+    `limits` are the loaded policy's containment limits; defaults apply without them.
+    """
+    limits = limits or ContainmentLimits()
     if not diff or not diff.strip():
         # An empty diff is an honest non-fix, not a violation — let it route on.
         return AuditVerdict(ok=True)
@@ -138,10 +145,10 @@ def audit_diff(diff: str) -> AuditVerdict:
     surfaced: list[str] = []
 
     total_changed = sum(len(f.added) + len(f.removed) for f in files)
-    if len(files) > MAX_CHANGED_FILES:
-        reasons.append(f"SR-15: patch touches {len(files)} files (max {MAX_CHANGED_FILES})")
-    if total_changed > MAX_CHANGED_LINES:
-        reasons.append(f"SR-15: patch changes {total_changed} lines (max {MAX_CHANGED_LINES})")
+    if len(files) > limits.max_changed_files:
+        reasons.append(f"SR-15: patch touches {len(files)} files (max {limits.max_changed_files})")
+    if total_changed > limits.max_changed_lines:
+        reasons.append(f"SR-15: patch changes {total_changed} lines (max {limits.max_changed_lines})")
 
     for f in files:
         # SR-14 — forbidden config paths.
@@ -255,11 +262,11 @@ def audit_patch(state: DebugState) -> dict:
     where it becomes diagnosis_only (an honest "no safe fix found").
     """
     diff = state.get("fix_diff") or ""
-    verdict = audit_diff(diff)
 
     from cidra.policy import PolicyEngine, PolicyDecision
     source_dir = state.get("source_dir")
     policy_engine = PolicyEngine.find_and_load(source_dir)
+    verdict = audit_diff(diff, policy_engine.rule.containment)
     p_decision, p_reasons = policy_engine.evaluate_diff(diff)
 
     final_reasons = list(verdict.reasons)

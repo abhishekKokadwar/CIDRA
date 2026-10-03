@@ -27,7 +27,10 @@ from cidra.state import DebugState
 
 log = logging.getLogger("cidra.audit")
 
-_DEFAULT_SIGNING_KEY = os.environ.get("CIDRA_AUDIT_SIGNING_KEY", "cidra-enterprise-audit-key-v1")
+def _signing_key() -> str:
+    """The operator's key, read at call time. There is no default: a key that
+    ships in the source proves nothing about who wrote the manifest."""
+    return os.environ.get("CIDRA_AUDIT_SIGNING_KEY", "")
 
 
 def _sha256(text: Optional[str]) -> str:
@@ -195,11 +198,17 @@ def generate_manifest(state: DebugState, policy_engine: Optional[PolicyEngine] =
     # Cryptographically seal the manifest with HMAC-SHA256
     canonical = manifest.canonical_json()
     payload_hash = _sha256(canonical)
-    key = _DEFAULT_SIGNING_KEY.encode("utf-8")
-    sig = hmac.new(key, canonical.encode("utf-8"), hashlib.sha256).hexdigest()
+    key = _signing_key()
+    if key:
+        sig = hmac.new(key.encode("utf-8"), canonical.encode("utf-8"), hashlib.sha256).hexdigest()
+        algorithm = "HMAC-SHA256"
+    else:
+        # Unsigned: the hash still detects accidental change, but is not tamper
+        # evidence. Set CIDRA_AUDIT_SIGNING_KEY to get a signature.
+        sig, algorithm = "", "none"
 
     manifest.seal = CryptographicSeal(
-        algorithm="HMAC-SHA256",
+        algorithm=algorithm,
         payload_sha256=payload_hash,
         signature=sig,
         signed_at=now_iso,
@@ -212,15 +221,16 @@ def verify_manifest(manifest_data: dict[str, Any], signing_key: Optional[str] = 
     """Verifies that an AuditManifest has not been modified or tampered with."""
     try:
         seal = manifest_data.get("seal")
-        if not seal or "signature" not in seal:
-            return False
+        key_text = signing_key or _signing_key()
+        if not seal or not seal.get("signature") or not key_text:
+            return False  # unsigned, or no key to check against: not verifiable
 
         recorded_sig = seal["signature"]
         copy_data = json.loads(json.dumps(manifest_data))
         copy_data["seal"] = None
         canonical = json.dumps(copy_data, sort_keys=True, indent=2)
 
-        key = (signing_key or _DEFAULT_SIGNING_KEY).encode("utf-8")
+        key = key_text.encode("utf-8")
         expected_sig = hmac.new(key, canonical.encode("utf-8"), hashlib.sha256).hexdigest()
         return hmac.compare_digest(recorded_sig, expected_sig)
     except Exception as err:

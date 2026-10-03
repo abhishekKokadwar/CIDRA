@@ -8,6 +8,19 @@ from cidra.policy import PolicyEngine, PolicyDecision
 from cidra.audit_manifest import generate_manifest, verify_manifest, save_manifest
 
 
+@pytest.fixture(autouse=True)
+def signing_key(monkeypatch):
+    # Signing needs an operator key; there is no built-in default.
+    monkeypatch.setenv("CIDRA_AUDIT_SIGNING_KEY", "test-signing-key")
+
+
+def test_manifest_is_unsigned_without_an_operator_key(monkeypatch):
+    monkeypatch.delenv("CIDRA_AUDIT_SIGNING_KEY")
+    manifest = generate_manifest({"run_id": "r", "repo": "o/r", "commit_sha": "abc"})
+    assert manifest.seal.algorithm == "none" and manifest.seal.signature == ""
+    assert verify_manifest(manifest.to_dict()) is False  # nothing to verify against
+
+
 def test_audit_manifest_generation():
     state: DebugState = {
         "run_id": "test_run_123",

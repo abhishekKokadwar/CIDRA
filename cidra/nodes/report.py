@@ -120,13 +120,15 @@ def render_comment(state: DebugState) -> str:
         pol_dec = manifest.get("policy", {}).get("decision", "auto_remediate").upper()
         ast_status = "PASSED" if manifest.get("security", {}).get("ast_audit_passed") else "BLOCKED"
         sig_hex = manifest["seal"].get("signature", "")[:16]
+        seal_line = (f"`HMAC-SHA256:{sig_hex}…`" if sig_hex
+                     else "unsigned (set `CIDRA_AUDIT_SIGNING_KEY` to sign)")
         parts += [
             "",
             "🔒 **Enterprise Audit Manifest:**",
             f"- **Policy Decision:** `{pol_dec}`",
             f"- **AST Security Gate:** `{ast_status}`",
             f"- **Sandbox Isolation:** `0 egress bytes` (network disabled)",
-            f"- **Cryptographic Seal:** `HMAC-SHA256:{sig_hex}…`",
+            f"- **Cryptographic Seal:** {seal_line}",
         ]
 
     parts += ["", "---", "_CIDRA never merges. A human approves every change._"]

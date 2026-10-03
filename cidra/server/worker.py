@@ -41,6 +41,8 @@ def process_job(job: WebhookJob) -> dict | None:
     log.info("dispatch run_id=%s repo=%s issue=%s",
              state["run_id"], state["repo"], state.get("issue_number"))
     try:
+        from cidra.integrations.llm import clear_latest_telemetry
+        clear_latest_telemetry()  # telemetry is per run, not per server process
         final = build_graph().invoke(state)
         log.info("done run_id=%s outcome=%s comment=%s",
                  state["run_id"], final.get("outcome"), final.get("comment_url"))

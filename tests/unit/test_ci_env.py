@@ -38,6 +38,17 @@ def test_env_prefix_quotes_values_and_drops_bad_names():
     assert prefix == "A='x; rm -rf /' B=ok "
 
 
+def test_malformed_identifiers_are_refused_before_anything_runs():
+    from cidra.nodes.ingest import fetch_log, invalid_identifier
+
+    ok = {"repo": "o/r", "run_id": "local-1a2b", "commit_sha": "HEAD", "raw_log": "x"}
+    assert invalid_identifier(ok) is None and fetch_log(ok) == {}
+    for field, value in (("commit_sha", "--upload-pack=x"), ("repo", "o/r; rm -rf /"),
+                         ("run_id", "../../etc")):
+        out = fetch_log({**ok, field: value})
+        assert out["raw_log"] == "" and field in out["analysis_error"]
+
+
 def test_analyze_does_not_call_the_model_on_an_empty_log(monkeypatch):
     def boom(_region):
         raise AssertionError("model was called")

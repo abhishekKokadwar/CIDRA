@@ -17,12 +17,34 @@ _TIMESTAMP = re.compile(r"^\S*\d{4}-\d{2}-\d{2}T[\d:.]+Z?\s?")
 _DIRECTIVE = re.compile(r"^##\[(?:endgroup|group|command|debug|section)\]")
 
 
+# SR-04: these reach URLs, paths and git argv. Plain charset, and never a leading
+# "-" (which git or a shell would read as an option).
+_IDENTIFIERS = {
+    "repo": re.compile(r"^[A-Za-z0-9_.][A-Za-z0-9_.-]*/[A-Za-z0-9_.][A-Za-z0-9_.-]*$"),
+    "run_id": re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_.-]{0,99}$"),
+    "commit_sha": re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_./-]{0,99}$"),
+}
+
+
+def invalid_identifier(state: DebugState) -> str | None:
+    """Name of the first malformed identifier in the run's input, or None."""
+    for name, pattern in _IDENTIFIERS.items():
+        value = state.get(name)
+        if value is not None and not pattern.match(str(value)):
+            return name
+    return None
+
+
 def fetch_log(state: DebugState) -> dict:
     """Pull the failing job's log from GitHub Actions.
 
     A fixture that already supplied raw_log wins, which keeps the Tier 1/Tier 2
     eval suites offline and token-free.
     """
+    bad = invalid_identifier(state)
+    if bad:
+        # Drop the log too, so nothing downstream acts on this run.
+        return {"raw_log": "", "analysis_error": f"invalid {bad}: refused (SR-04)"}
     if state.get("raw_log"):
         return {}
     repo, run_id = state.get("repo"), state.get("run_id")

@@ -24,6 +24,8 @@ def _setup_logging():
 
 def _run_graph(state: dict) -> dict:
     log.info("Starting CIDRA graph execution...")
+    from cidra.integrations.llm import clear_latest_telemetry
+    clear_latest_telemetry()  # telemetry is per run, not per process
     try:
         final_state = build_graph().invoke(state)
         outcome = final_state.get("outcome")

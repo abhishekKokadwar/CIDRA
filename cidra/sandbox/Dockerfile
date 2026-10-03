@@ -1,7 +1,9 @@
 # Sandbox base. See docs/6_sandbox_spec.md §4.
 # Built once, reused for every run — keeps `git apply` available without
 # giving the container network access at patch time.
-FROM python:3.11-slim
+# Pinned by digest (SR-18): the tag can move, the digest cannot. Refresh with
+#   docker pull python:3.11-slim && docker inspect --format '{{index .RepoDigests 0}}' python:3.11-slim
+FROM python:3.11-slim@sha256:bab1b7ef4b450c81002278d035eff85ebe394ae94df904f7a3ba14f7e16e487b
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git \
@@ -11,7 +13,7 @@ RUN apt-get update \
 # a missing pytest exits 127, which is not a reproduced failure. coverage is for
 # SBFL. Installed system-wide (as root) so /usr/local/bin is on the runner's
 # PATH; a repo-pinned version installed by the install step still wins.
-RUN pip install --no-cache-dir pytest coverage
+RUN pip install --no-cache-dir pytest==9.1.1 coverage==7.16.2
 
 # Non-root user baked in, so no root exec is needed at runtime.
 RUN useradd -u 1000 -m cidra && mkdir -p /work && chown cidra /work

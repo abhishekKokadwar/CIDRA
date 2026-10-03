@@ -21,6 +21,9 @@ inputs:
     description: 'GitHub token for posting comments'
     required: false
     default: ${{ github.token }}
+  github_token_ro:
+    description: 'Optional read-only token used to fetch CI logs. Defaults to github_token.'
+    required: false
   nvidia_api_key_kimi:
     description: 'NVIDIA API Key for Kimi-k3 fallback'
     required: false
@@ -73,6 +76,7 @@ runs:
         CIDRA_MODEL_FIX: ${{ inputs.model_fix }}
         CIDRA_ENABLE_RATE_LIMIT_BACKOFF: 'true'
         CIDRA_GITHUB_TOKEN: ${{ inputs.github_token }}
+        CIDRA_GITHUB_TOKEN_RO: ${{ inputs.github_token_ro }}
         NVIDIA_API_KEY_KIMI: ${{ inputs.nvidia_api_key_kimi }}
         NVIDIA_API_KEY_GLM: ${{ inputs.nvidia_api_key_glm }}
         GROQ_API_KEY: ${{ inputs.groq_api_key }}
