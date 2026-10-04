@@ -60,3 +60,15 @@ def test_pr_lookup_failure_means_no_pr(monkeypatch, tmp_path):
     state = _run(monkeypatch, tmp_path, {"workflow_run": {
         "id": 1, "head_sha": "s", "head_branch": "feature", "pull_requests": []}})
     assert state["issue_number"] is None and state["pr_branch"] is None
+
+
+def test_every_initial_state_key_is_declared(monkeypatch, tmp_path):
+    # LangGraph silently drops input keys the state schema does not declare, so an
+    # undeclared key never reaches the node that needs it (pr_branch once did not).
+    from cidra.state import DebugState
+
+    state = _run(monkeypatch, tmp_path, {"workflow_run": {
+        "id": 999, "head_sha": "failing-sha", "head_branch": "feature", "path": ".github/workflows/ci.yml",
+        "pull_requests": [{"number": 7, "head": {"ref": "feature"}}],
+    }})
+    assert set(state) <= set(DebugState.__annotations__), set(state) - set(DebugState.__annotations__)
