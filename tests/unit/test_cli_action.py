@@ -46,16 +46,17 @@ def test_source_dir_override(monkeypatch, tmp_path):
 
 def test_workflow_run_without_listed_prs_looks_the_pr_up(monkeypatch, tmp_path):
     # GitHub often sends pull_requests: [] even when the commit has an open PR.
-    monkeypatch.setattr("cidra.integrations.github.open_pr_for_commit",
-                        lambda repo, sha: (12, "feature") if (repo, sha) == ("o/r", "failing-sha") else None)
+    monkeypatch.setattr("cidra.integrations.github.open_pr_for_branch",
+                        lambda repo, branch: 12 if (repo, branch) == ("o/r", "feature") else None)
     state = _run(monkeypatch, tmp_path, {"workflow_run": {
         "id": 999, "head_sha": "failing-sha", "head_branch": "feature", "pull_requests": []}})
     assert state["issue_number"] == 12 and state["pr_branch"] == "feature"
 
 
 def test_pr_lookup_failure_means_no_pr(monkeypatch, tmp_path):
-    def boom(repo, sha):
+    def boom(repo, branch):
         raise RuntimeError("api down")
-    monkeypatch.setattr("cidra.integrations.github.open_pr_for_commit", boom)
-    state = _run(monkeypatch, tmp_path, {"workflow_run": {"id": 1, "head_sha": "s", "pull_requests": []}})
+    monkeypatch.setattr("cidra.integrations.github.open_pr_for_branch", boom)
+    state = _run(monkeypatch, tmp_path, {"workflow_run": {
+        "id": 1, "head_sha": "s", "head_branch": "feature", "pull_requests": []}})
     assert state["issue_number"] is None and state["pr_branch"] is None
