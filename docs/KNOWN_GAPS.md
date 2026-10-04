@@ -7,7 +7,7 @@
 > **Blocker legend:** 🐳 needs a running Docker daemon · 🔑 needs LLM credits (OpenRouter)
 > · 🌐 needs a write token / live GitHub · 🛠 real code work (not just an environment)
 >
-> Last reviewed: 2026-09-21.
+> Last reviewed: 2026-10-05.
 
 ---
 
@@ -29,6 +29,9 @@ session and asserts a non-empty ranking whose #1 is the known-buggy element.
 offline — this gap is only the live plumbing.
 
 ### G-02 · Full engine live run via webhook (Phase 7) — 🐳 🔑 🌐
+**Status 2026-10-05:** the full engine has now run live through the GitHub Action and the
+local runner with a real model. The webhook entry point itself is still unproven, and it has
+no source checkout: it works only where the failing repo is already cloned.
 **What:** the webhook path is proven end-to-end *except* the final analysis→sandbox→comment
 leg. A real replayed delivery got as far as fetching the CI log, then the LLM call returned
 OpenRouter `402: insufficient credits` (correctly handled as `outcome=failed`).
@@ -37,23 +40,6 @@ funded endpoint) + Docker up. Then
 `python scripts/replay_delivery.py --repo helpmecode69/cidra-practice --run-id <RUN_ID>`.
 **Done when:** a replayed real failure produces a verified fix and a posted comment, with no
 manual command; `--twice` shows the idempotency no-op.
-
-### G-03 · Draft-PR live POST (Phase 9.6) — 🔑 🌐
-**What:** branch-from-diff + push + draft-PR REST are built and unit-tested against a mocked
-GitHub API and a real local git remote (`tests/unit/test_pr.py` 7/7). The *live POST to
-github.com* has not run.
-**Unblock / fix:** same gate as G-02 (needs a verified fix, so LLM credits) + the write token.
-**Done when:** a verified fix opens a real draft PR on `cidra-practice`; a re-run updates the
-same PR (idempotent), never merges.
-
-### G-04 · Live PR-thread comment (Phase 6 → 7) — 🔑 🌐
-**What:** `publish` posts a real comment only when `issue_number` is present. The
-practice-repo fixtures are branch pushes (`pull_requests=[]`), so publish dry-runs. The
-comment composer + write path are unit-proven; a real posted comment on a PR has not run.
-**Unblock / fix:** either open a PR for a fixture branch so SHA-lookup resolves it, or run
-G-02 against a genuine PR. (Optional code: a commit-comment fallback for no-PR runs — see
-G-08.)
-**Done when:** a CIDRA comment appears on a real PR thread on `cidra-practice`.
 
 ### G-05 · Adversarial + benchmark on Docker are point-in-time (Phases 4/6/9) — 🐳
 **What:** ADV-01..08 (8/8 contained) and the security benchmark (SEC-01/04/06/07 PASS) were
@@ -115,6 +101,14 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-03 · Draft-PR live POST** — Closed 2026-10-04. A verified fix opened a real draft PR on
+  `helpmecode69/cidra-practice` through the GitHub Action, first with a stub model and then
+  with a real one (PR #8). A re-run reuses the same PR and refreshes its description; one
+  failing commit gets one fix branch. It never merges. The repository must allow Actions to
+  create pull requests (README, "Repository setup for pull requests").
+- **G-04 · Live PR-thread comment** — Closed 2026-10-04 (stub model). For a failure on an
+  existing pull request the fix commit is pushed to that PR's branch, not forced, and one
+  comment is posted and then updated on later runs. Not yet repeated with a real model.
 - **G-14 · Web dashboard + live view + interactive HITL gate (Phase 13)** — Built React dashboard
   (`dashboard/`) with Command Center, Run Explorer, Ephemeral Container Sandbox & Flakiness Lab (SR-08),
   Pipeline Orchestrator (LangGraph topology), and 4-tab Settings view with live .env synchronization
