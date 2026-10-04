@@ -46,6 +46,17 @@ def _run_graph(state: dict) -> dict:
         sys.exit(1)
 
 
+def _lookup_pr(repo: str, sha: str) -> tuple[Optional[int], Optional[str]]:
+    """Open PR for the failing commit, or (None, None). Never sinks the run."""
+    try:
+        from cidra.integrations.github import open_pr_for_commit
+        found = open_pr_for_commit(repo, sha)
+    except Exception as e:  # noqa: BLE001 - a failed lookup means "no PR", not a crash
+        log.warning("pull request lookup failed: %s", str(e)[:200])
+        return None, None
+    return found if found else (None, None)
+
+
 def action_run():
     """Execution path when running inside a GitHub Action."""
     log.info("Running in GitHub Actions mode")
@@ -84,6 +95,9 @@ def action_run():
         pr_data = event_data["workflow_run"]["pull_requests"][0]
         issue_number = pr_data["number"]
         pr_branch = pr_data["head"]["ref"]
+    elif workflow_run:
+        # The payload often lists no pull requests even when the commit has one.
+        issue_number, pr_branch = _lookup_pr(repo, sha)
 
     state = {
         "run_id": target_run_id,

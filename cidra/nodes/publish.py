@@ -110,17 +110,20 @@ def _open_pr(state: DebugState, body: str) -> Optional[str]:
     """Build the fix branch and open a draft PR. Returns its URL, or None on error."""
     from cidra.config import GITHUB_API, GITHUB_TOKEN
     from cidra.integrations.github_write import open_draft_pr
-    from cidra.nodes.pr import build_fix_branch, fix_branch_name
+    from cidra.nodes.pr import build_fix_branch
 
     run_id = state["run_id"]
     repo = state["repo"]
+    # Keyed by the failing commit, not the CI run: a commit usually has two runs
+    # (push and pull_request), and both must land on one branch and one PR.
+    key = (state.get("commit_sha") or run_id)[:12]
     try:
         branch = build_fix_branch(
-            run_id, _repo_dir(state), state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
+            key, _repo_dir(state), state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
             base_sha=state.get("commit_sha"),
         )
         return open_draft_pr(
-            repo, fix_branch_name(run_id),
+            repo, branch,
             title=f"CIDRA: verified fix for {state.get('commit_sha', run_id)[:12]}",
             body=body,
             # Target the branch whose CI failed. Against the default branch the PR

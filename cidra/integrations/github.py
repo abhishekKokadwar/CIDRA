@@ -44,6 +44,25 @@ def get_run(repo: str, run_id: int | str) -> dict:
         return r.json()
 
 
+def open_pr_for_commit(repo: str, sha: str) -> tuple[int, str] | None:
+    """(number, head branch) of an open pull request that contains `sha`.
+
+    The workflow_run payload often lists no pull requests even when one exists,
+    so the caller asks here. Only a PR whose branch lives in `repo` counts: a
+    fork's branch cannot be pushed to. The PR's head may have moved past `sha`
+    (a second CI run of the same commit, after a fix was pushed): it is still
+    the right thread to report on, and the non-forced push will be refused.
+    """
+    with _client() as c:
+        r = c.get(f"/repos/{repo}/commits/{sha}/pulls")
+        r.raise_for_status()
+        for pr in r.json():
+            head = pr.get("head") or {}
+            if pr.get("state") == "open" and (head.get("repo") or {}).get("full_name") == repo:
+                return pr["number"], head["ref"]
+    return None
+
+
 def failed_steps(repo: str, run_id: int | str) -> list[tuple[str, str]]:
     """(job_name, step_name) for every failed step, in run order.
 

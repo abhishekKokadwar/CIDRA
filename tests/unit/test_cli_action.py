@@ -42,3 +42,20 @@ def test_other_events_fall_back_to_github_sha(monkeypatch, tmp_path):
 def test_source_dir_override(monkeypatch, tmp_path):
     state = _run(monkeypatch, tmp_path, {}, CIDRA_SOURCE_DIR="/ws/cidra-target")
     assert state["source_dir"] == "/ws/cidra-target"
+
+
+def test_workflow_run_without_listed_prs_looks_the_pr_up(monkeypatch, tmp_path):
+    # GitHub often sends pull_requests: [] even when the commit has an open PR.
+    monkeypatch.setattr("cidra.integrations.github.open_pr_for_commit",
+                        lambda repo, sha: (12, "feature") if (repo, sha) == ("o/r", "failing-sha") else None)
+    state = _run(monkeypatch, tmp_path, {"workflow_run": {
+        "id": 999, "head_sha": "failing-sha", "head_branch": "feature", "pull_requests": []}})
+    assert state["issue_number"] == 12 and state["pr_branch"] == "feature"
+
+
+def test_pr_lookup_failure_means_no_pr(monkeypatch, tmp_path):
+    def boom(repo, sha):
+        raise RuntimeError("api down")
+    monkeypatch.setattr("cidra.integrations.github.open_pr_for_commit", boom)
+    state = _run(monkeypatch, tmp_path, {"workflow_run": {"id": 1, "head_sha": "s", "pull_requests": []}})
+    assert state["issue_number"] is None and state["pr_branch"] is None
