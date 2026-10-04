@@ -30,6 +30,10 @@ def _run_graph(state: dict) -> dict:
         final_state = build_graph().invoke(state)
         outcome = final_state.get("outcome")
         log.info(f"Execution complete. Outcome: {outcome}")
+        from cidra.integrations.llm import usage_summary
+        used = usage_summary()
+        log.info("LLM usage this run: %d requests, %d prompt + %d completion tokens",
+                 used["requests"], used["prompt_tokens"], used["completion_tokens"])
         if outcome == "failed" and final_state.get("analysis_error"):
             log.error(f"Internal Error: {final_state.get('analysis_error')}")
         if final_state.get("comment_url"):

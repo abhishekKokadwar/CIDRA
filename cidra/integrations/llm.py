@@ -38,12 +38,42 @@ _glm_client: OpenAI | None = None
 _groq_client: OpenAI | None = None
 
 _latest_telemetry: list[dict] = []
+_requests_sent = 0  # every request this run, including ones that failed
+
+
+class BudgetExceeded(RuntimeError):
+    """The run hit its LLM spend cap (CIDRA_MAX_LLM_CALLS / CIDRA_MAX_LLM_TOKENS)."""
+
 
 def get_latest_telemetry() -> list[dict]:
     return list(_latest_telemetry)
 
 def clear_latest_telemetry():
+    global _requests_sent
     _latest_telemetry.clear()
+    _requests_sent = 0
+
+
+def usage_summary() -> dict:
+    """What this run has spent so far: requests sent and tokens billed."""
+    return {
+        "requests": _requests_sent,
+        "prompt_tokens": sum(c["tokens"]["prompt"] for c in _latest_telemetry),
+        "completion_tokens": sum(c["tokens"]["completion"] for c in _latest_telemetry),
+        "total_tokens": sum(c["tokens"]["total"] for c in _latest_telemetry),
+    }
+
+
+def _check_budget() -> None:
+    """Refuse the next request once the run's cap is reached. The caps are per
+    run (reset by clear_latest_telemetry) and bound the worst case: retries,
+    fallbacks and fix attempts all draw from the same allowance."""
+    from cidra import config  # read at call time, like the model settings
+    used = usage_summary()
+    if used["requests"] >= config.MAX_LLM_CALLS:
+        raise BudgetExceeded(f"LLM request cap reached ({config.MAX_LLM_CALLS} per run)")
+    if used["total_tokens"] >= config.MAX_LLM_TOKENS:
+        raise BudgetExceeded(f"LLM token cap reached ({config.MAX_LLM_TOKENS} per run)")
 
 def client() -> OpenAI:
     global _client
@@ -128,7 +158,10 @@ def structured(
     for attempt_model, get_client in models_to_try:
         max_retries = 3
         for retry in range(max_retries):
+            _check_budget()  # outside the try: a spent budget is not retried
             try:
+                global _requests_sent
+                _requests_sent += 1
                 log.info("Attempting inference with %s (try %d/%d)", attempt_model, retry + 1, max_retries)
                 start_time = time.time()
                 resp = get_client().chat.completions.create(
@@ -152,10 +185,9 @@ def structured(
                 )
                 elapsed = time.time() - start_time
                 calls = resp.choices[0].message.tool_calls
-                if not calls:
-                    raise ValueError(f"{attempt_model} returned no tool call: {resp.choices[0].message.content!r}")
-                
-                # Record real telemetry for dashboard transparency
+
+                # Record real telemetry for dashboard transparency. Recorded before
+                # the shape check: a reply with no tool call was still billed.
                 usage = getattr(resp, "usage", None)
                 prompt_tokens = getattr(usage, "prompt_tokens", 0) if usage else 0
                 completion_tokens = getattr(usage, "completion_tokens", 0) if usage else 0
@@ -170,12 +202,14 @@ def structured(
                         "total": total_tokens,
                     },
                     "tool_name": "report",
-                    "tool_args": calls[0].function.arguments,
+                    "tool_args": calls[0].function.arguments if calls else None,
                     "system_prompt": system,
                     "user_prompt": user,
                     "timestamp": round(time.time(), 2)
                 })
 
+                if not calls:
+                    raise ValueError(f"{attempt_model} returned no tool call: {resp.choices[0].message.content!r}")
                 return schema.model_validate_json(calls[0].function.arguments)
             except Exception as e:
                 log.warning("Model %s failed (attempt %d/%d): %s",

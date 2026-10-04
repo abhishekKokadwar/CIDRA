@@ -38,6 +38,12 @@ GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 # See docs/5_fixtures.md §6: record which model produced each eval row.
 # Defaults match the default BASE_URL (Gemini). `or`, not a get() default: the
 # GitHub Action passes an empty string when the input is unset.
+# Per-run spend caps. One run normally makes 2 requests (analyze, fix) and at most
+# 5 (2 analyses + 3 fix attempts); retries and fallbacks draw from the same
+# allowance. Past either cap the run stops asking and reports what it has.
+MAX_LLM_CALLS = int(os.environ.get("CIDRA_MAX_LLM_CALLS") or 8)
+MAX_LLM_TOKENS = int(os.environ.get("CIDRA_MAX_LLM_TOKENS") or 40000)
+
 MODEL_ANALYZE = os.environ.get("CIDRA_MODEL_ANALYZE") or "gemini-3.5-flash"
 MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX") or "gemini-3.5-flash"
 
