@@ -96,6 +96,7 @@ class DebugState(TypedDict, total=False):
     patch_audit_reasons: list[str]  # SR-13/14/15 violations, if rejected
     patch_surfaced: list[str]  # dependency-pin changes to show the reviewer
     patch_applied: bool
+    apply_error: Optional[str]  # why the last diff did not apply; fed to the next attempt
     verified: bool  # written by verify_fix ONLY
     verify_results: list[SandboxResult]
 

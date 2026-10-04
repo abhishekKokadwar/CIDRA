@@ -7,6 +7,7 @@ verify_fix is the sole writer of `verified` — the one field the final report i
 allowed to make a claim from.
 """
 
+import re
 import shlex
 from typing import Optional
 
@@ -81,11 +82,42 @@ def select_strategy(state: DebugState) -> dict:
     return out
 
 
+_PY_PATH = re.compile(r"[\w./-]+\.py")
+_IMPORT = re.compile(r"^\s*(?:from|import)\s+([\w.]+)", re.MULTILINE)
+MAX_CONTEXT_FILES = 6
+
+
+def _candidate_files(state: DebugState, session) -> list[str]:
+    """Files worth showing the model, most relevant first.
+
+    The diagnosis often names no file (the analysis prompt forbids guessing one),
+    and a model that cannot see the source invents it and writes a diff that
+    cannot apply. So also take the failing test, the modules that test imports,
+    and any relative .py path the log names. Paths that do not exist in the
+    sandbox simply fail to `cat` and are dropped by the caller.
+    """
+    analysis = state.get("analysis")
+    found: list[str] = []
+    if analysis and analysis.file:
+        found.append(analysis.file)
+    test_file = None
+    if analysis and analysis.failing_test:
+        test_file = analysis.failing_test.split("::")[0]
+        found.append(test_file)
+        if session is not None:
+            shown = session.run("test", f"cat -- {shlex.quote(test_file)}", timeout_s=30)
+            if shown.passed:
+                found += [m.replace(".", "/") + ".py" for m in _IMPORT.findall(shown.stdout_tail)]
+    found += [p for p in _PY_PATH.findall(state.get("error_region", "")) if not p.startswith("/")]
+    files = list(dict.fromkeys(found))[:MAX_CONTEXT_FILES]
+    return [*files, "requirements.txt"]
+
+
 def _context(state: DebugState) -> str:
     """What the model sees: the error region plus the files it may edit."""
     session = session_for(state["run_id"])
     analysis = state.get("analysis")
-    wanted = [f for f in (analysis.file if analysis else None, "requirements.txt") if f]
+    wanted = _candidate_files(state, session)
 
     parts = [f"<error>\n{state.get('error_region', '')}\n</error>"]
     # SBFL evidence (Phase 8): a mathematical suspiciousness ranking, so the model
@@ -110,7 +142,15 @@ def generate_fix(state: DebugState) -> dict:
     attempts = state.get("fix_attempts", 0) + 1
     previous = state.get("verify_results", [])
     retry_note = ""
-    if previous:
+    if state.get("fix_diff") and state.get("patch_applied") is False:
+        # The last diff never applied: say so, or the model sends it again.
+        retry_note = (
+            "\n\nYour previous diff did not apply. Do not repeat it. Copy the context "
+            "lines exactly from the <file> contents above.\n"
+            f"<previous_diff>\n{state['fix_diff'][-2000:]}\n</previous_diff>\n"
+            f"<apply_error>\n{(state.get('apply_error') or '')[-1000:]}\n</apply_error>"
+        )
+    elif previous:
         last = previous[-1]
         retry_note = (
             "\n\nA previous attempt did not work. Do not repeat it.\n"
@@ -136,7 +176,8 @@ def apply_patch(state: DebugState) -> dict:
     if session is None or not diff:
         return {"patch_applied": False}
     result = session.apply_patch(diff)
-    return {"patch_applied": result.passed}
+    error = None if result.passed else (result.stdout_tail or result.stderr_tail).strip()[-1000:]
+    return {"patch_applied": result.passed, "apply_error": error}
 
 
 def verify_fix(state: DebugState) -> dict:
