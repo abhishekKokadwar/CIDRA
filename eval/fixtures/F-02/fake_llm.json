@@ -1,0 +1,15 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.95,
+    "evidence": "assert 4 == 5 in test_add: add(2, 2) is 4.",
+    "proposed_action": "Correct the expected value in the test.",
+    "failing_test": "tests/test_calc.py::test_add",
+    "file": "tests/test_calc.py"
+  },
+  "Patch": {
+    "diff": "--- a/tests/test_calc.py\n+++ b/tests/test_calc.py\n@@ -2,5 +2,5 @@\n \n \n def test_add():\n-    assert add(2, 2) == 5\n+    assert add(2, 2) == 4\n \n",
+    "target_file": "tests/test_calc.py",
+    "rationale": "2 + 2 is 4; the test expected 5."
+  }
+}

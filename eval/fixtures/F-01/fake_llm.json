@@ -1,0 +1,15 @@
+{
+  "Analysis": {
+    "category": "missing_dependency",
+    "confidence": 0.95,
+    "evidence": "ModuleNotFoundError: No module named 'requests'",
+    "proposed_action": "Declare requests.",
+    "missing_package": "requests",
+    "failing_test": "tests/test_api.py"
+  },
+  "Patch": {
+    "diff": "--- a/requirements.txt\n+++ b/requirements.txt\n@@ -1 +1,2 @@\n pytest\n+requests\n",
+    "target_file": "requirements.txt",
+    "rationale": "requests is imported but not declared."
+  }
+}

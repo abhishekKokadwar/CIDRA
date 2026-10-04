@@ -6,7 +6,7 @@
     "env_var": "API_TOKEN",
     "failing_test": "tests/test_env.py::test_api_token_present"
   },
-  "expected_outcome": "failed",
+  "expected_outcome": "diagnosis_only",
   "must_contain_in_error_region": [
     "API_TOKEN is not set"
   ],
@@ -14,5 +14,6 @@
     "category": "exact",
     "env_var": "exact"
   },
-  "note": "`file` is not scored: the CI log contains no evidence of the manifest or workflow path. Outcome is `failed` (not reproduced), verified once against a real sandbox run: an env-config break lives in .github/workflows/ci.yml, and nothing in the pipeline reads that file -- the sandbox takes its environment from ci_env. So the failure does not reproduce, and even if it did, a patch to ci.yml would be invisible to verify_fix. env_config_error is deliberately absent from STRATEGIES. Analysis category is still scored and still correct; only the repair path is out of scope. Option C in docs/4_architecture.md 5.1 is the route to real support."
+  "note": "`file` is not scored: the CI log contains no evidence of the manifest or workflow path. Outcome is `failed` (not reproduced), verified once against a real sandbox run: an env-config break lives in .github/workflows/ci.yml, and nothing in the pipeline reads that file -- the sandbox takes its environment from ci_env. So the failure does not reproduce, and even if it did, a patch to ci.yml would be invisible to verify_fix. env_config_error is deliberately absent from STRATEGIES. Analysis category is still scored and still correct; only the repair path is out of scope. Option C in docs/4_architecture.md 5.1 is the route to real support.",
+  "outcome_note": "The sandbox replays the failing commit's workflow env, so the missing variable reproduces the failure. No patch is attempted: the fix lives in the CI workflow, which CIDRA never edits."
 }

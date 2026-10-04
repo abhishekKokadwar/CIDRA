@@ -1,0 +1,9 @@
+{
+  "Analysis": {
+    "category": "flaky_test",
+    "confidence": 0.95,
+    "evidence": "worker did not finish before the deadline; the test uses random.random().",
+    "proposed_action": "None: the test is non-deterministic.",
+    "failing_test": "tests/test_timing.py::test_race_condition"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "Analysis": {
+    "category": "env_config_error",
+    "confidence": 0.95,
+    "evidence": "AssertionError: API_TOKEN is not set",
+    "proposed_action": "Restore API_TOKEN in the workflow env.",
+    "env_var": "API_TOKEN",
+    "failing_test": "tests/test_env.py::test_api_token_present"
+  }
+}

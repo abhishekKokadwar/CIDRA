@@ -1,0 +1,9 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.95,
+    "evidence": "ZeroDivisionError escaped divide(); the intended behaviour is not stated in the log.",
+    "proposed_action": "Needs a human: the guard condition is a logic decision.",
+    "failing_test": "tests/test_calc.py::test_divide_by_zero_raises"
+  }
+}
