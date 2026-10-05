@@ -102,15 +102,24 @@ def test_audit_manifest_egress_proof() -> dict:
         "verification_exit_code": 0,
         "fix_diff": "--- a/client.py\n+++ b/client.py\n@@ -1 +1 @@\n-x = 1\n+x = 2\n",
     }
-    manifest = generate_manifest(mock_state)
-    manifest_dict = manifest.to_dict()
+    # The manifest is signed only with an operator-supplied key (there is no
+    # built-in one), so the check supplies its own for the duration.
+    previous_key = os.environ.get("CIDRA_AUDIT_SIGNING_KEY")
+    os.environ["CIDRA_AUDIT_SIGNING_KEY"] = "airgap-benchmark-signing-key"
+    try:
+        manifest = generate_manifest(mock_state)
+        manifest_dict = manifest.to_dict()
+        seal_valid = verify_manifest(manifest_dict)
+    finally:
+        if previous_key is None:
+            os.environ.pop("CIDRA_AUDIT_SIGNING_KEY", None)
+        else:
+            os.environ["CIDRA_AUDIT_SIGNING_KEY"] = previous_key
 
     sandbox_proof = manifest_dict.get("sandbox", {})
     egress_bytes = sandbox_proof.get("network_egress_bytes", -1)
     network_disabled = sandbox_proof.get("network_disabled", False)
     host_socket_mounted = sandbox_proof.get("host_docker_socket_mounted", True)
-
-    seal_valid = verify_manifest(manifest_dict)
 
     passed = (egress_bytes == 0 and network_disabled is True and host_socket_mounted is False and seal_valid)
     return {

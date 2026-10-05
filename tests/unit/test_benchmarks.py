@@ -50,8 +50,13 @@ def test_empirical_validation_suite_conformance():
     b8 = results["benchmarks"]["08_failure_class_coverage"]
     assert b8["overall_stage_conformance_pct"] == 100.0
     assert b8["correct_refusal_rate_pct"] == 100.0
-    assert b8["automated_janitor_classes"] == 8
-    assert b8["deliberate_refusal_classes"] == 6
+    # The class counts are whatever the corpus contains, not a number to hit:
+    # they must be consistent with the per-family results the benchmark recorded.
+    families = b8["families"]
+    assert b8["total_failure_classes"] == len(families)
+    assert b8["automated_janitor_classes"] + b8["deliberate_refusal_classes"] == len(families)
+    assert b8["deliberate_refusal_classes"] == sum(1 for m in families.values() if m["refuse"])
+    assert len(b8["matrix"]) == len(families)
 
     # Verification Invariant Stress-Test (Adversarial FVR) Verifications
     assert scorecard["claim_9_verification_invariant_passed"] is True

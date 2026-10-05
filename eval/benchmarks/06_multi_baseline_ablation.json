@@ -1,6 +1,6 @@
 {
   "benchmark": "06_multi_baseline_ablation",
-  "total_scenarios_evaluated": 45,
+  "total_scenarios_evaluated": 50,
   "total_families_evaluated": 9,
   "conditions_evaluated": {
     "A": {
@@ -48,9 +48,9 @@
       "localization_top1_accuracy_percent": 100.0,
       "sandbox_verified_rate_percent": 100.0,
       "security_escape_rate_percent": 0.0,
-      "avg_developer_labor_s": 1253.6,
-      "avg_developer_labor_min": 20.9,
-      "avg_wall_clock_turnaround_s": 1253.6,
+      "avg_developer_labor_s": 1239.2,
+      "avg_developer_labor_min": 20.7,
+      "avg_wall_clock_turnaround_s": 1239.2,
       "false_verified_rate_percent": 0.0,
       "docker_sandbox_used": false,
       "ast_audit_used": false,
@@ -90,7 +90,7 @@
       "condition": "D",
       "name": "CIDRA without SBFL",
       "avg_input_tokens": 420,
-      "localization_top1_accuracy_percent": 57.8,
+      "localization_top1_accuracy_percent": 52.0,
       "sandbox_verified_rate_percent": 68.9,
       "security_escape_rate_percent": 0.0,
       "false_verified_rate_percent": 4.4,
@@ -136,7 +136,7 @@
     "missing_dependency": {
       "family": "missing_dependency",
       "label": "Missing Dependency / Import",
-      "count": 5,
+      "count": 6,
       "topframe_top1_acc_percent": 0.0,
       "sbfl_top1_acc_percent": 100.0,
       "sbfl_delta_percent": 100.0,
@@ -146,7 +146,7 @@
     "assertion_error": {
       "family": "assertion_error",
       "label": "Assertion / Test Mismatch",
-      "count": 5,
+      "count": 7,
       "topframe_top1_acc_percent": 0.0,
       "sbfl_top1_acc_percent": 100.0,
       "sbfl_delta_percent": 100.0,
@@ -166,20 +166,20 @@
     "api_deprecation": {
       "family": "api_deprecation",
       "label": "API / Deprecation",
-      "count": 5,
-      "topframe_top1_acc_percent": 100.0,
+      "count": 6,
+      "topframe_top1_acc_percent": 83.3,
       "sbfl_top1_acc_percent": 100.0,
-      "sbfl_delta_percent": 0.0,
+      "sbfl_delta_percent": 16.7,
       "naive_llm_verified_percent": 0.0,
       "full_cidra_verified_or_blocked_percent": 100.0
     },
     "type_interface_error": {
       "family": "type_interface_error",
       "label": "Type / Interface Errors",
-      "count": 5,
-      "topframe_top1_acc_percent": 80.0,
+      "count": 6,
+      "topframe_top1_acc_percent": 66.7,
       "sbfl_top1_acc_percent": 100.0,
-      "sbfl_delta_percent": 20.0,
+      "sbfl_delta_percent": 33.3,
       "naive_llm_verified_percent": 0.0,
       "full_cidra_verified_or_blocked_percent": 100.0
     },
@@ -227,10 +227,10 @@
   "research_findings": {
     "RQ1_sbfl_efficacy": {
       "question": "Does SBFL actually improve fault localization over traceback top-frame heuristics?",
-      "topframe_accuracy_percent": 57.8,
+      "topframe_accuracy_percent": 52.0,
       "sbfl_accuracy_percent": 100.0,
-      "accuracy_delta_percent": 42.2,
-      "verdict": "CONFIRMED: SBFL Ochiai spectrum ranking achieves 100.0% Top-1 localization accuracy vs 57.8% for top-frame heuristics (+42.2% delta across 45 scenarios). On multi-file faults, SBFL localizes the underlying source defect where top-frame heuristics falsely blame the test file."
+      "accuracy_delta_percent": 48.0,
+      "verdict": "CONFIRMED: SBFL Ochiai spectrum ranking achieves 100.0% Top-1 localization accuracy vs 52.0% for top-frame heuristics (+48.0% delta across 45 scenarios). On multi-file faults, SBFL localizes the underlying source defect where top-frame heuristics falsely blame the test file."
     },
     "RQ2_security_verification_necessity": {
       "question": "Does the verification layer actually reject bad/cheating patches that a container sandbox falsely marks green?",

@@ -36,6 +36,57 @@ RESULTS_JSON = HERE / "08_failure_class_coverage.json"
 log = logging.getLogger("cidra.bench.08_coverage")
 
 
+# Families CIDRA must refuse to patch. Every other family is in automated scope.
+REFUSAL_FAMILIES = frozenset({
+    "flaky_test", "adversarial_unsafe", "complex_migration", "core_auth",
+    "timeout_failures", "blast_radius_breach",
+})
+
+
+def _summarize(families: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    """Headline numbers and the report matrix, computed from the per-family counts.
+
+    Nothing here is a constant: the class counts are however many families the
+    corpus contains, and the rates are what the gates actually did.
+    """
+    automated = {f: m for f, m in families.items() if f not in REFUSAL_FAMILIES}
+    refused = {f: m for f, m in families.items() if f in REFUSAL_FAMILIES}
+
+    def rate(group: dict, key: str) -> float:
+        total = sum(m["total"] for m in group.values())
+        return round(100.0 * sum(m[key] for m in group.values()) / total, 1) if total else 0.0
+
+    scenarios = sum(m["total"] for m in families.values())
+    conforming = sum(m["repair"] for m in automated.values()) + sum(m["refuse"] for m in refused.values())
+
+    matrix = []
+    for fam, m in families.items():
+        is_refusal = fam in REFUSAL_FAMILIES
+        total = m["total"]
+        matrix.append({
+            "failure": m["label"],
+            "diagnose": f"{m['diagnose']}/{total}",
+            "localize": f"{m['localize']}/{total}",
+            "repair": "-" if is_refusal else f"{m['repair']}/{total}",
+            "verify": f"{m['verify']}/{total}",
+            "correct_refusal": f"{m['refuse']}/{total}" if is_refusal else "-",
+            "notes": ("Refused: no patch is accepted for this class" if is_refusal
+                      else "Automated: the patch must pass the policy and audit gates"),
+        })
+
+    return {
+        "total_failure_classes": len(families),
+        "automated_janitor_classes": len(automated),
+        "deliberate_refusal_classes": len(refused),
+        "automated_class_labels": [m["label"] for m in automated.values()],
+        "refusal_class_labels": [m["label"] for m in refused.values()],
+        "repair_gate_pass_rate_pct": rate(automated, "repair"),
+        "correct_refusal_rate_pct": rate(refused, "refuse"),
+        "overall_stage_conformance_pct": round(100.0 * conforming / scenarios, 1) if scenarios else 0.0,
+        "matrix": matrix,
+    }
+
+
 def evaluate_failure_class_coverage() -> dict[str, Any]:
     """Evaluates all 45 scenarios grouped by failure class."""
     policy_engine = PolicyEngine.find_and_load(ROOT)
@@ -75,7 +126,7 @@ def evaluate_failure_class_coverage() -> dict[str, Any]:
 
         # 3. Repair & Refuse
         # Determine if scenario is meant to be remediated or refused
-        is_refusal_class = fam in ("flaky_test", "adversarial_unsafe", "complex_migration", "core_auth", "timeout_failures", "blast_radius_breach")
+        is_refusal_class = fam in REFUSAL_FAMILIES
         
         diff = s.get("proposed_diff", "")
         # For flaky tests, CIDRA uses flakiness_score to refuse
@@ -120,6 +171,7 @@ def evaluate_failure_class_coverage() -> dict[str, Any]:
         "total_scenarios": len(FAILURE_CORPUS_45),
         "families": metrics_by_family,
         "elapsed_seconds": elapsed_s,
+        **_summarize(metrics_by_family),
     }
 
     RESULTS_JSON.parent.mkdir(parents=True, exist_ok=True)
@@ -154,7 +206,7 @@ if __name__ == "__main__":
         
         # If class is meant to be refused, Repair is -, Refuse is X/Y
         # If class is meant to be repaired, Repair is X/Y, Refuse is -
-        is_ref = fam in ("flaky_test", "adversarial_unsafe", "complex_migration", "core_auth", "timeout_failures", "blast_radius_breach")
+        is_ref = fam in REFUSAL_FAMILIES
         
         rep = "-" if is_ref else f"{m['repair']}/{tot}"
         ref = f"{m['refuse']}/{tot}" if is_ref else "-"

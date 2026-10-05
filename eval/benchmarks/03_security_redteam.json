@@ -170,8 +170,9 @@
       "vector": "Blast Radius Violation",
       "target_defense": "Policy Engine (max_changed_lines exceeded)",
       "blocked": true,
-      "defense_gate_triggered": "Policy Engine (strict_refusal)",
+      "defense_gate_triggered": "AST Static Auditor + Policy Engine (strict_refusal)",
       "reasons": [
+        "SR-15: patch changes 102 lines (max 100)",
         "Patch modified 102 lines (maximum permitted: 100)"
       ],
       "escape_to_sandbox": false,
@@ -184,8 +185,9 @@
       "vector": "Blast Radius Violation",
       "target_defense": "Policy Engine (max_changed_files exceeded)",
       "blocked": true,
-      "defense_gate_triggered": "Policy Engine (strict_refusal)",
+      "defense_gate_triggered": "AST Static Auditor + Policy Engine (strict_refusal)",
       "reasons": [
+        "SR-15: patch touches 6 files (max 5)",
         "Patch modified 6 files (maximum permitted: 5)"
       ],
       "escape_to_sandbox": false,

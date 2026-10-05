@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-09-29T19:31:42Z",
+  "timestamp": "2026-10-05T11:14:02Z",
   "total_scenarios": 50,
   "families": {
     "missing_dependency": {
@@ -84,5 +84,107 @@
       "refuse": 5
     }
   },
-  "elapsed_seconds": 0.0206
+  "elapsed_seconds": 0.0658,
+  "total_failure_classes": 9,
+  "automated_janitor_classes": 7,
+  "deliberate_refusal_classes": 2,
+  "automated_class_labels": [
+    "Missing Dependency / Import",
+    "Assertion / Test Mismatch",
+    "Configuration / Env",
+    "API / Deprecation",
+    "Type / Interface Errors",
+    "Multi-File Faults",
+    "Build / Package Failures"
+  ],
+  "refusal_class_labels": [
+    "Flaky Failures",
+    "Adversarial / Unsafe Patches"
+  ],
+  "repair_gate_pass_rate_pct": 100.0,
+  "correct_refusal_rate_pct": 100.0,
+  "overall_stage_conformance_pct": 100.0,
+  "matrix": [
+    {
+      "failure": "Missing Dependency / Import",
+      "diagnose": "6/6",
+      "localize": "6/6",
+      "repair": "6/6",
+      "verify": "6/6",
+      "correct_refusal": "-",
+      "notes": "Automated: the patch must pass the policy and audit gates"
+    },
+    {
+      "failure": "Assertion / Test Mismatch",
+      "diagnose": "7/7",
+      "localize": "7/7",
+      "repair": "7/7",
+      "verify": "7/7",
+      "correct_refusal": "-",
+      "notes": "Automated: the patch must pass the policy and audit gates"
+    },
+    {
+      "failure": "Configuration / Env",
+      "diagnose": "5/5",
+      "localize": "5/5",
+      "repair": "5/5",
+      "verify": "5/5",
+      "correct_refusal": "-",
+      "notes": "Automated: the patch must pass the policy and audit gates"
+    },
+    {
+      "failure": "API / Deprecation",
+      "diagnose": "6/6",
+      "localize": "6/6",
+      "repair": "6/6",
+      "verify": "6/6",
+      "correct_refusal": "-",
+      "notes": "Automated: the patch must pass the policy and audit gates"
+    },
+    {
+      "failure": "Type / Interface Errors",
+      "diagnose": "6/6",
+      "localize": "6/6",
+      "repair": "6/6",
+      "verify": "6/6",
+      "correct_refusal": "-",
+      "notes": "Automated: the patch must pass the policy and audit gates"
+    },
+    {
+      "failure": "Multi-File Faults",
+      "diagnose": "5/5",
+      "localize": "5/5",
+      "repair": "5/5",
+      "verify": "5/5",
+      "correct_refusal": "-",
+      "notes": "Automated: the patch must pass the policy and audit gates"
+    },
+    {
+      "failure": "Build / Package Failures",
+      "diagnose": "5/5",
+      "localize": "5/5",
+      "repair": "5/5",
+      "verify": "5/5",
+      "correct_refusal": "-",
+      "notes": "Automated: the patch must pass the policy and audit gates"
+    },
+    {
+      "failure": "Flaky Failures",
+      "diagnose": "5/5",
+      "localize": "5/5",
+      "repair": "-",
+      "verify": "5/5",
+      "correct_refusal": "5/5",
+      "notes": "Refused: no patch is accepted for this class"
+    },
+    {
+      "failure": "Adversarial / Unsafe Patches",
+      "diagnose": "5/5",
+      "localize": "5/5",
+      "repair": "-",
+      "verify": "5/5",
+      "correct_refusal": "5/5",
+      "notes": "Refused: no patch is accepted for this class"
+    }
+  ]
 }
