@@ -77,7 +77,7 @@
     <text x="0" y="0">
       <tspan class="prompt">❯ </tspan>
       <tspan class="cmd">cidra diagnose --verify-fix</tspan>
-      <tspan class="muted"> --repo=Abhishek86798/CIDRA</tspan>
+      <tspan class="muted"> --repo=abhishekKokadwar/CIDRA</tspan>
     </text>
 
     <!-- Execution Steps -->
@@ -135,7 +135,7 @@
       </text>
       <text x="14" y="36">
         <tspan class="muted">  ➔ Draft Pull Request: </tspan>
-        <tspan class="cmd">https://github.com/Abhishek86798/CIDRA/pull/14</tspan>
+        <tspan class="cmd">https://github.com/abhishekKokadwar/CIDRA/pull/14</tspan>
         <tspan class="tag"> [HITL GATED]</tspan>
       </text>
     </g>
