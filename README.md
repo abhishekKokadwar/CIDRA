@@ -196,6 +196,10 @@ docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
 # From a pip install (the Dockerfile ships inside the package):
 docker build -t cidra-sandbox:base "$(python -c 'import cidra, os; print(os.path.join(os.path.dirname(cidra.__file__), "sandbox"))')"
 
+# That image runs Python 3.11. If the repository's workflow asks actions/setup-python
+# for 3.7-3.10, 3.12 or 3.13 (or has a .python-version file), CIDRA builds a matching
+# image the first time it is needed, which takes about a minute.
+
 # Run CIDRA against your local repository
 cidra fix
 ```

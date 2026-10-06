@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Optional
 
 import docker
-from docker.errors import DockerException, NotFound
+from docker.errors import DockerException, ImageNotFound, NotFound
 
 from cidra.sandbox import limits
 from cidra.state import SandboxResult, Step
@@ -35,13 +35,32 @@ def client() -> docker.DockerClient:
     return _client
 
 
-def _create(network: str):
+def ensure_image(python: Optional[str] = None) -> str:
+    """The image tag for this Python version, building it on first use.
+
+    The default image is still built by setup (README, action.yml). The others
+    come from the same Dockerfile on that version's digest-pinned base.
+    """
+    tag = limits.image_for(python)
+    if tag == limits.IMAGE:
+        return tag
+    try:
+        client().images.get(tag)
+    except ImageNotFound:
+        args = {"PYTHON_IMAGE": limits.PYTHON_IMAGES[python]}
+        if python in limits.TEST_TOOLS:
+            args["TEST_TOOLS"] = limits.TEST_TOOLS[python]
+        client().images.build(path=str(Path(__file__).parent), tag=tag, rm=True, buildargs=args)
+    return tag
+
+
+def _create(network: str, image: str = limits.IMAGE):
     """Every container in this module is created here, so the caps cannot be
     forgotten or overridden at a call site. No volumes, no binds, no privileged,
     no cap_add, no host env passthrough.
     """
     return client().containers.create(
-        image=limits.IMAGE,
+        image=image,
         command="sleep infinity",
         network_mode=network,
         mem_limit=limits.MEM_LIMIT,
@@ -216,12 +235,15 @@ class Session:
     Use as a context manager so the container is always destroyed.
     """
 
-    def __init__(self, source_dir: Path):
+    def __init__(self, source_dir: Path, python: Optional[str] = None):
         self.source_dir = source_dir
+        self.python = python  # a version in limits.PYTHON_IMAGES, else the default image
+        self.image = limits.IMAGE
         self.container = None
 
     def __enter__(self) -> "Session":
-        self.container = _create("none")
+        self.image = ensure_image(self.python)
+        self.container = _create("none", self.image)
         self.container.start()
         self.container.put_archive(limits.WORKDIR, _tar_bytes(self.source_dir))
         return self
@@ -262,7 +284,7 @@ class Session:
         started = time.monotonic()
         installer = None
         try:
-            installer = _create(network="bridge")
+            installer = _create(network="bridge", image=self.image)
             installer.start()
             # Seed from the SESSION, not the host: after apply_patch the session
             # holds the patched manifest and the host copy is stale.

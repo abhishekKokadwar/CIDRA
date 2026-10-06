@@ -12,6 +12,7 @@ import shlex
 import yaml
 
 from cidra.config import PRACTICE_REPO_DIR
+from cidra.sandbox import limits
 from cidra.sandbox.runner import Session
 from cidra.state import DebugState
 
@@ -52,10 +53,67 @@ def checkout_commit(state: DebugState) -> dict:
     out = {"source_dir": str(tree), "repo_dir": str(raw_source)}
     if "ci_env" not in state:  # a caller-supplied env (tests, eval) wins
         out["ci_env"] = workflow_env(tree, state.get("workflow_file"))
+    if "python_version" not in state:
+        out["python_version"] = workflow_python(tree, state.get("workflow_file"))
     return out
 
 
 _ENV_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_MATRIX_REF = re.compile(r"^\$\{\{\s*matrix\.([\w-]+)\s*\}\}$")
+
+
+def _workflow_files(tree: pathlib.Path, workflow_file: str | None) -> list[pathlib.Path]:
+    root = pathlib.Path(tree)
+    if workflow_file and (root / workflow_file).is_file():
+        return [root / workflow_file]
+    folder = root / ".github" / "workflows"
+    return sorted([*folder.glob("*.yml"), *folder.glob("*.yaml")])
+
+
+def _python_minor(value) -> str | None:
+    """'3.8.10' -> '3.8'. An unquoted YAML 3.10 arrives as the float 3.1."""
+    text = "3.10" if value == 3.1 and isinstance(value, float) else str(value).strip()
+    m = re.match(r"^(3\.\d+)(\.\d+)?$", text)
+    return m.group(1) if m else None
+
+
+def workflow_python(tree: pathlib.Path, workflow_file: str | None = None) -> str:
+    """The Python version the repo's CI runs on, so the sandbox matches it.
+
+    Read from `actions/setup-python` in the workflow at the failing commit, then
+    from a `.python-version` file. Anything unreadable or without a sandbox image
+    falls back to the default.
+    """
+    # ponytail: for a version matrix the first entry is used, not the one whose
+    # job failed. Pick it from the failing job's name if that ever misdiagnoses.
+    found: list = []
+    for path in _workflow_files(tree, workflow_file):
+        try:
+            doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        jobs = doc.get("jobs") if isinstance(doc, dict) else None
+        for job in (jobs.values() if isinstance(jobs, dict) else []):
+            if not isinstance(job, dict):
+                continue
+            strategy = job.get("strategy")
+            matrix = strategy.get("matrix") if isinstance(strategy, dict) else None
+            for step in job.get("steps") or []:
+                if not (isinstance(step, dict) and str(step.get("uses", "")).startswith("actions/setup-python")):
+                    continue
+                value = (step.get("with") or {}).get("python-version")
+                ref = _MATRIX_REF.match(str(value))
+                if ref and isinstance(matrix, dict):
+                    value = matrix.get(ref.group(1))
+                found.extend(value if isinstance(value, list) else [value])
+    pin = pathlib.Path(tree) / ".python-version"
+    if pin.is_file():
+        found.append(pin.read_text(encoding="utf-8", errors="replace").strip())
+    for value in found:
+        minor = _python_minor(value)
+        if minor == limits.DEFAULT_PYTHON or minor in limits.PYTHON_IMAGES:
+            return minor
+    return limits.DEFAULT_PYTHON
 
 
 def workflow_env(tree: pathlib.Path, workflow_file: str | None = None) -> dict[str, str]:
@@ -68,12 +126,7 @@ def workflow_env(tree: pathlib.Path, workflow_file: str | None = None) -> dict[s
     """
     # ponytail: with no workflow_file, every workflow's env is merged (sorted,
     # later wins). Narrow to the failing workflow's path if that ever misfires.
-    root = pathlib.Path(tree)
-    if workflow_file and (root / workflow_file).is_file():
-        files = [root / workflow_file]
-    else:
-        folder = root / ".github" / "workflows"
-        files = sorted([*folder.glob("*.yml"), *folder.glob("*.yaml")])
+    files = _workflow_files(tree, workflow_file)
 
     env: dict[str, str] = {}
 
@@ -130,7 +183,7 @@ def prepare_sandbox(state: DebugState) -> dict:
     if not source.exists():
         return {"env_ready": False, "analysis_error": f"source not found: {source}"}
     try:
-        _SESSIONS[run_id] = Session(source).__enter__()
+        _SESSIONS[run_id] = Session(source, state.get("python_version")).__enter__()
     except Exception as e:
         return {"env_ready": False, "analysis_error": f"sandbox unavailable: {e}"[:500]}
     return {"image_tag": None}

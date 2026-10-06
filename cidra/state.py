@@ -62,6 +62,7 @@ class DebugState(TypedDict, total=False):
     base_branch: Optional[str]  # branch whose CI failed; a new fix PR targets it
     pr_branch: Optional[str]  # head branch of the existing PR the failure is on, if any
     ci_env: dict  # env the workflow sets; replicated in the sandbox
+    python_version: str  # the Python the repo's CI uses; picks the sandbox image
 
     # Ingestion
     raw_log: str  # never sent to the LLM

@@ -77,7 +77,7 @@ from cidra import config  # noqa: E402
 from cidra.graph import build_graph  # noqa: E402
 from cidra.integrations import llm  # noqa: E402
 from cidra.nodes.checkout import prepare_checkout, remove_checkout  # noqa: E402
-from cidra.nodes.environment import env_prefix, workflow_env  # noqa: E402
+from cidra.nodes.environment import env_prefix, workflow_env, workflow_python  # noqa: E402
 from cidra.sandbox import limits  # noqa: E402
 from cidra.sandbox.runner import Session  # noqa: E402
 
@@ -107,7 +107,7 @@ def held_out_check(practice: str, sha: str, diff: str | None, fid: str, referenc
     run_id = f"heldout-{fid}"
     try:
         tree = prepare_checkout(run_id, practice, sha)
-        with Session(tree) as session:
+        with Session(tree, workflow_python(tree)) as session:
             if ci_env is None:
                 ci_env = workflow_env(tree)
             if diff and not session.apply_patch(diff).passed:
