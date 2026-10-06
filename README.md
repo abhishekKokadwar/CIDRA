@@ -279,7 +279,8 @@ jobs:
 ### Repository setup for pull requests
 
 - **Allow Actions to open pull requests.** In the repository: Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests". Without it GitHub returns 403: the fix branch is pushed but no PR is opened.
-- **CI on CIDRA's pull requests.** GitHub does not start workflows for a PR opened with the built-in `GITHUB_TOKEN`. To get checks on the fix PR, pass a personal access token or a GitHub App token as `CIDRA_GITHUB_TOKEN`.
+- **Who opens the pull request.** With the built-in `GITHUB_TOKEN` (the default, no setup) the fix PR is opened by `github-actions[bot]` and the fix commit is authored by `CIDRA`. This is the recommended setup: no personal credential is involved.
+- **CI on CIDRA's pull requests.** GitHub does not start workflows for a PR opened with the built-in `GITHUB_TOKEN`, so the fix PR shows no checks until a person pushes to it or re-opens it. The fix has already been verified in the sandbox. To get checks automatically, pass a GitHub App installation token as `github_token`; the PR is then opened by that app's bot. A personal access token also works, but the PR then appears to come from that person, so it is not recommended.
 - **Where the PR goes.** A fix for a failure on a branch push is opened as a draft PR against that branch. A fix for a failure on an existing pull request is pushed to that PR's branch, and is never force-pushed.
 - **Every run leaves a job summary** on the Actions run page with the diagnosis, whatever the outcome. The job fails only when CIDRA itself could not run (no log, no model, no sandbox).
 
