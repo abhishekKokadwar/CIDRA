@@ -55,6 +55,9 @@ def _args() -> argparse.Namespace:
     parser.add_argument("--label", help="name for this run's model in the results (default: the model id)")
     parser.add_argument("--price-in", type=float, default=0.0, help="$ per million prompt tokens")
     parser.add_argument("--price-out", type=float, default=0.0, help="$ per million completion tokens")
+    parser.add_argument("--validate", action="store_true",
+                        help="check the held-out tests themselves (no model call): they must pass on "
+                             "the reference and fail on each fixture's cheat_llm.json patch")
     parser.add_argument("--out", help="results JSON path (default: eval/results/<label>.json)")
     return parser.parse_args()
 
@@ -74,7 +77,7 @@ from cidra import config  # noqa: E402
 from cidra.graph import build_graph  # noqa: E402
 from cidra.integrations import llm  # noqa: E402
 from cidra.nodes.checkout import prepare_checkout, remove_checkout  # noqa: E402
-from cidra.nodes.environment import env_prefix  # noqa: E402
+from cidra.nodes.environment import env_prefix, workflow_env  # noqa: E402
 from cidra.sandbox import limits  # noqa: E402
 from cidra.sandbox.runner import Session  # noqa: E402
 
@@ -95,14 +98,19 @@ def _held_out_tar(practice: str, reference_ref: str, fid: str) -> bytes:
     return buf.getvalue()
 
 
-def held_out_check(practice: str, sha: str, diff: str, fid: str, reference_ref: str, ci_env: dict) -> dict:
-    """Judge CIDRA's diff by tests it never saw. Returns {"passed": bool, "detail": str}."""
+def held_out_check(practice: str, sha: str, diff: str | None, fid: str, reference_ref: str,
+                   ci_env: dict | None = None) -> dict:
+    """Judge a diff (or the bare commit) by tests the model never saw.
+
+    Returns {"passed": bool, "detail": str}; "ran" is set only when the tests ran.
+    """
     run_id = f"heldout-{fid}"
     try:
         tree = prepare_checkout(run_id, practice, sha)
         with Session(tree) as session:
-            applied = session.apply_patch(diff)
-            if not applied.passed:
+            if ci_env is None:
+                ci_env = workflow_env(tree)
+            if diff and not session.apply_patch(diff).passed:
                 return {"passed": False, "detail": "the verified diff did not apply to a clean checkout"}
             session.container.put_archive(limits.WORKDIR, _held_out_tar(practice, reference_ref, fid))
             installed = session.install("pip install --quiet -r requirements.txt")
@@ -110,7 +118,7 @@ def held_out_check(practice: str, sha: str, diff: str, fid: str, reference_ref: 
                 return {"passed": False, "detail": "dependency install failed after the fix"}
             result = session.run("verify", env_prefix({"ci_env": ci_env}) + config.TEST_COMMAND)
         tail = (result.stdout_tail or "").strip().splitlines()[-1:] or [""]
-        return {"passed": result.passed, "detail": tail[0][:160]}
+        return {"passed": result.passed, "detail": tail[0][:160], "ran": True}
     finally:
         remove_checkout(run_id)
 
@@ -201,6 +209,35 @@ def summarize(records: list[dict]) -> dict:
     }
 
 
+def validate(wanted: list[str]) -> int:
+    """The held-out tests must pass on the reference and catch the cheat patch."""
+    practice, bad = config.PRACTICE_REPO_DIR, 0
+
+    def sha_of(ref: str) -> str:
+        return subprocess.check_output(["git", "-C", practice, "rev-parse", ref], text=True).strip()
+
+    for fid in wanted:
+        folder = FIXTURES / fid
+        if not list((folder / "held_out").glob("test_*.py")):
+            continue
+        meta = json.loads((folder / "meta.json").read_text(encoding="utf-8"))
+        reference_ref = meta.get("reference_ref", "origin/main")
+        ref = held_out_check(practice, sha_of(reference_ref), None, fid, reference_ref)
+        line = f"{fid:<6} reference={'pass' if ref['passed'] else 'FAIL'}"
+        ok = ref["passed"]
+        if (folder / "cheat_llm.json").exists():
+            diff = json.loads((folder / "cheat_llm.json").read_text(encoding="utf-8"))["Patch"]["diff"]
+            cheat = held_out_check(practice, sha_of(f"origin/{meta['gh_branch']}"), diff, fid, reference_ref)
+            caught = bool(cheat.get("ran")) and not cheat["passed"]
+            ok = ok and caught
+            line += f" cheat={'caught' if caught else 'NOT CAUGHT'} ({cheat['detail']})"
+        else:
+            line += " cheat=none"
+        print(line + ("" if ok else "  <-- invalid held-out set"), flush=True)
+        bad += not ok
+    return 1 if bad else 0
+
+
 def _preflight() -> str | None:
     """Why the run cannot start, or None. Checked before any model call is made."""
     try:
@@ -210,6 +247,10 @@ def _preflight() -> str | None:
         return f"Docker is not reachable: {str(e)[:120]}"
     if not (pathlib.Path(config.PRACTICE_REPO_DIR) / ".git").exists():
         return f"practice repo not found at {config.PRACTICE_REPO_DIR} (set CIDRA_PRACTICE_REPO)"
+    if ARGS.validate:
+        return None
+    if not (os.environ.get("CIDRA_GITHUB_TOKEN_RO") or os.environ.get("CIDRA_GITHUB_TOKEN")):
+        return "no GitHub token to fetch CI logs (set CIDRA_GITHUB_TOKEN_RO)"
     return None
 
 
@@ -219,6 +260,8 @@ def main() -> int:
         print(f"not started: {problem}", file=sys.stderr)
         return 2
     wanted = ARGS.fixtures or sorted(p.name for p in FIXTURES.iterdir() if p.is_dir())
+    if ARGS.validate:
+        return validate(wanted)
     label = ARGS.label or ("stub" if ARGS.stub else config.MODEL_FIX)
     print(f"model: {label} | endpoint: {config.BASE_URL} | fixtures: {len(wanted)}", flush=True)
 

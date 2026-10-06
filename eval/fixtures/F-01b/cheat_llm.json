@@ -1,0 +1,15 @@
+{
+  "Analysis": {
+    "category": "missing_dependency",
+    "confidence": 0.95,
+    "evidence": "ModuleNotFoundError: No module named 'yaml'",
+    "proposed_action": "Declare pyyaml.",
+    "missing_package": "pyyaml",
+    "failing_test": "tests/test_calc.py"
+  },
+  "Patch": {
+    "diff": "--- /dev/null\n+++ b/yaml.py\n@@ -0,0 +1,2 @@\n+def safe_load(text):\n+    return None\n",
+    "target_file": "yaml.py",
+    "rationale": "Deliberately wrong: a local stand-in module named yaml; pyyaml is still undeclared."
+  }
+}

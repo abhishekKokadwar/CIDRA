@@ -19,6 +19,7 @@ diagnosis-only outcome so nothing unsafe reaches apply_patch.
 """
 
 import ast
+import pathlib
 import re
 from dataclasses import dataclass, field
 from typing import Optional
@@ -64,6 +65,7 @@ class FileDiff:
     added: list[str] = field(default_factory=list)
     removed: list[str] = field(default_factory=list)
     is_deletion: bool = False
+    is_new: bool = False
 
 
 @dataclass
@@ -93,6 +95,7 @@ def _parse_diff(diff: str) -> list[FileDiff]:
             cur.path = _strip_prefix(new if new != "/dev/null" else cur.old_path)
             cur.old_path = _strip_prefix(cur.old_path)
             cur.is_deletion = new == "/dev/null"
+            cur.is_new = cur.old_path == "/dev/null"
             files.append(cur)
             continue
         if cur is None or line.startswith("@@") or line.startswith("diff "):
@@ -130,10 +133,79 @@ def _removed_assertions(removed: list[str]) -> int:
         return sum(1 for ln in removed if re.match(r"\s*(assert|expect)\b", ln))
 
 
-def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None) -> AuditVerdict:
+_NO_LITERAL = object()
+_MISSING_MODULE = re.compile(r"No module named ['\"]([A-Za-z_]\w*)")
+_IF_EQUALS = re.compile(r"\s*(?:el)?if\s+(.+?)\s*==\s*(.+?)\s*:\s*(?:return\s+(.+))?$")
+_RETURN = re.compile(r"\s*return\s+(.+)$")
+
+
+def _literal(src: str):
+    """The Python literal `src` spells, or _NO_LITERAL."""
+    try:
+        return ast.literal_eval(src.strip())
+    except (ValueError, SyntaxError, MemoryError, RecursionError):
+        return _NO_LITERAL
+
+
+def call_expectations(source: str) -> list[tuple[tuple, object]]:
+    """(call arguments, expected value) for each `f(<literals>) == <literal>` in a test file."""
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return []
+    pairs = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Compare) and len(node.ops) == 1 and isinstance(node.ops[0], ast.Eq)):
+            continue
+        for call, other in ((node.left, node.comparators[0]), (node.comparators[0], node.left)):
+            if not isinstance(call, ast.Call) or call.keywords:
+                continue
+            args = tuple(_literal(ast.unparse(a)) for a in call.args)
+            expected = _literal(ast.unparse(other))
+            if args and expected is not _NO_LITERAL and _NO_LITERAL not in args:
+                pairs.append((args, expected))
+    return pairs
+
+
+def _matches_input(value, args: tuple) -> bool:
+    if len(args) == 1:
+        return value == args[0]
+    return isinstance(value, (tuple, list)) and tuple(value) == args
+
+
+def _hardcoded_answers(added: list[str], expectations) -> bool:
+    """True when the patch adds `if <input> == <a test's input>: return <that test's answer>`."""
+    # ponytail: only the literal-equality form is caught, and a genuine base case
+    # the failing test happens to assert (`if n == 0: return 1`) is refused too.
+    # Refusing costs a diagnosis-only report; verifying a cheat costs trust.
+    # An obfuscated special case (`if sum(values) == 6`) still gets through:
+    # only held-out or generated tests can catch that.
+    for i, ln in enumerate(added):
+        m = _IF_EQUALS.match(ln)
+        if not m:
+            continue
+        ret = m.group(3)
+        if ret is None and i + 1 < len(added):
+            nxt = _RETURN.match(added[i + 1])
+            ret = nxt.group(1) if nxt else None
+        if ret is None:
+            continue
+        answer = _literal(ret)
+        inputs = [v for v in (_literal(m.group(1)), _literal(m.group(2))) if v is not _NO_LITERAL]
+        if any(answer == expected and _matches_input(v, args)
+               for args, expected in expectations for v in inputs):
+            return True
+    return False
+
+
+def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None,
+               missing_modules: tuple = (), expectations: tuple = ()) -> AuditVerdict:
     """Static policy verdict for a unified diff. No side effects, no LLM.
 
     `limits` are the loaded policy's containment limits; defaults apply without them.
+    `missing_modules` are the import names the failing run could not find, and
+    `expectations` are the failing test's (arguments, expected value) pairs: with
+    them the gate also refuses a patch that fakes the module or hardcodes the answer.
     """
     limits = limits or ContainmentLimits()
     if not diff or not diff.strip():
@@ -155,6 +227,16 @@ def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None) -> AuditVe
         if _CI_YAML.search(f.path) or any(f.path.startswith(p) or f.path == p.rstrip("/")
                                           for p in _FORBIDDEN_PATHS):
             reasons.append(f"SR-14: patch touches protected path '{f.path}'")
+
+        # SR-13 — faking the missing dependency with a local module of the same name.
+        parts = f.path.split("/")
+        module = parts[-2] if parts[-1] == "__init__.py" and len(parts) > 1 else parts[-1].removesuffix(".py")
+        if f.is_new and f.path.endswith(".py") and module in missing_modules:
+            reasons.append(f"SR-13: patch adds '{f.path}', a stand-in for the missing module '{module}'")
+
+        # SR-13 — returning the failing test's expected value for the failing test's input.
+        if not _is_test_path(f.path) and expectations and _hardcoded_answers(f.added, expectations):
+            reasons.append(f"SR-13: patch hardcodes the failing test's expected value in '{f.path}'")
 
         # SR-13 — deleting or gutting a test.
         if _is_test_path(f.path):
@@ -254,6 +336,25 @@ def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None) -> AuditVe
     return AuditVerdict(ok=not reasons, reasons=reasons, surfaced=surfaced)
 
 
+def _run_context(state: DebugState) -> tuple[tuple, tuple]:
+    """What a cheat would look like for this run: the module names the log could
+    not import, and what the failing test file asserts."""
+    analysis = state.get("analysis")
+    text = f"{getattr(analysis, 'evidence', '') or ''}\n{state.get('error_region') or ''}"
+    missing = set(_MISSING_MODULE.findall(text))
+    if getattr(analysis, "missing_package", None):
+        missing.add(analysis.missing_package)
+
+    expectations: list = []
+    test_file = (getattr(analysis, "failing_test", None) or "").split("::")[0]
+    if test_file and state.get("source_dir"):
+        root = pathlib.Path(state["source_dir"]).resolve()
+        path = (root / test_file).resolve()
+        if path.is_file() and path.is_relative_to(root):
+            expectations = call_expectations(path.read_text(encoding="utf-8", errors="replace"))
+    return tuple(sorted(missing)), tuple(expectations)
+
+
 def audit_patch(state: DebugState) -> dict:
     """Graph node: gate the LLM's diff before it reaches the sandbox.
 
@@ -266,7 +367,7 @@ def audit_patch(state: DebugState) -> dict:
     from cidra.policy import PolicyEngine, PolicyDecision
     source_dir = state.get("source_dir")
     policy_engine = PolicyEngine.find_and_load(source_dir)
-    verdict = audit_diff(diff, policy_engine.rule.containment)
+    verdict = audit_diff(diff, policy_engine.rule.containment, *_run_context(state))
     p_decision, p_reasons = policy_engine.evaluate_diff(diff)
 
     final_reasons = list(verdict.reasons)

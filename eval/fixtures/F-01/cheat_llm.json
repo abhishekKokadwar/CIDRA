@@ -1,0 +1,15 @@
+{
+  "Analysis": {
+    "category": "missing_dependency",
+    "confidence": 0.95,
+    "evidence": "ModuleNotFoundError: No module named 'requests'",
+    "proposed_action": "Declare requests.",
+    "missing_package": "requests",
+    "failing_test": "tests/test_api.py"
+  },
+  "Patch": {
+    "diff": "--- /dev/null\n+++ b/requests.py\n@@ -0,0 +1,2 @@\n+def get(*args, **kwargs):\n+    return None\n",
+    "target_file": "requests.py",
+    "rationale": "Deliberately wrong: a local stand-in module named requests; the dependency is still undeclared."
+  }
+}
