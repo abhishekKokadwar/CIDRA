@@ -4,8 +4,8 @@ Reproducing red is the precondition for claiming a fix: if the failure cannot be
 made to happen here, nothing that follows can be verified.
 """
 
-from cidra.config import FLAKY_RUNS, FLAKY_SCORE_THRESHOLD, TEST_COMMAND
-from cidra.nodes.environment import env_prefix, session_for
+from cidra.config import FLAKY_RUNS, FLAKY_SCORE_THRESHOLD
+from cidra.nodes.environment import sandbox_test_command, session_for
 from cidra.state import DebugState, SandboxResult
 
 # Exit codes that mean the runner itself did not work, not that a test failed:
@@ -43,8 +43,7 @@ def flakiness_score(passes: int, n: int) -> int:
 
 
 def _test_command(state: DebugState) -> str:
-    """Prefix the CI env. CIDRA-authored — the LLM never contributes to this."""
-    return env_prefix(state) + TEST_COMMAND
+    return sandbox_test_command(state)
 
 
 def reproduce_once(state: DebugState) -> dict:

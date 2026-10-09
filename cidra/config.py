@@ -83,8 +83,11 @@ FIX_CACHE_PATH = os.environ.get("CIDRA_FIX_CACHE", "cidra_fix_cache.json")
 # the Fleet TUI / dashboard can show what CIDRA has done.
 RUN_HISTORY_PATH = os.environ.get("CIDRA_RUN_HISTORY", "cidra_run_history.jsonl")
 
-# Test command. CIDRA-authored and fixed — never assembled from LLM output.
-TEST_COMMAND = "pytest -q 2>&1"
+# Install and test commands. Set by whoever operates CIDRA (these variables, or
+# per run through the state); never assembled from LLM output or repo content.
+# The install command must be a `pip install ...`: the sandbox appends --target.
+INSTALL_COMMAND = os.environ.get("CIDRA_INSTALL_COMMAND") or "pip install --quiet -r requirements.txt"
+TEST_COMMAND = os.environ.get("CIDRA_TEST_COMMAND") or "pytest -q 2>&1"
 
 # Log isolation windows (lines around an error marker)
 LOG_LINES_BEFORE = 30

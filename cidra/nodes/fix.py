@@ -14,9 +14,8 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from cidra import config
-from cidra.config import TEST_COMMAND
 from cidra.integrations.llm import structured
-from cidra.nodes.environment import env_prefix, session_for
+from cidra.nodes.environment import sandbox_install_command, sandbox_test_command, session_for
 from cidra.state import DebugState
 
 # Which file each category is allowed to touch. Deterministic, no LLM.
@@ -192,11 +191,11 @@ def verify_fix(state: DebugState) -> dict:
 
     results = []
     if state.get("fix_strategy") == "append_requirement":
-        results.append(session.install("pip install --quiet -r requirements.txt"))
+        results.append(session.install(sandbox_install_command(state)))
         if not results[-1].passed:
             return {"verified": False, "verify_results": [*state.get("verify_results", []), *results]}
 
-    verified_run = session.run("verify", env_prefix(state) + TEST_COMMAND)
+    verified_run = session.run("verify", sandbox_test_command(state))
     results.append(verified_run)
 
     # Phase 11: cache a freshly verified fix (only on a genuine verify, and not

@@ -11,6 +11,7 @@ import shlex
 
 import yaml
 
+from cidra import config
 from cidra.config import PRACTICE_REPO_DIR
 from cidra.sandbox import limits
 from cidra.sandbox.runner import Session
@@ -168,6 +169,15 @@ def env_prefix(state: DebugState) -> str:
     )
 
 
+def sandbox_install_command(state: DebugState) -> str:
+    return state.get("install_command") or config.INSTALL_COMMAND
+
+
+def sandbox_test_command(state: DebugState) -> str:
+    """The run's test command behind its CI env. Operator-set; the LLM never contributes."""
+    return env_prefix(state) + (state.get("test_command") or config.TEST_COMMAND)
+
+
 def prepare_sandbox(state: DebugState) -> dict:
     """Create the container from the run's isolated checkout (Phase 9).
 
@@ -194,7 +204,7 @@ def install_deps(state: DebugState) -> dict:
     session = session_for(state["run_id"])
     if session is None:
         return {"env_ready": False}
-    result = session.install("pip install --quiet -r requirements.txt")
+    result = session.install(sandbox_install_command(state))
     return {
         "env_ready": result.passed,
         "repro_results": [*state.get("repro_results", []), result],

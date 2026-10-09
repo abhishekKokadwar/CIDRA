@@ -97,3 +97,16 @@ def test_python_version_falls_back_to_the_default(tmp_path):
     assert workflow_python(tmp_path) == "3.12"
     assert limits.image_for("3.12") == "cidra-sandbox:py3.12"
     assert limits.image_for("3.11") == limits.image_for(None) == limits.image_for("9.9") == limits.IMAGE
+
+
+# --- the install and test commands the sandbox runs ---
+
+def test_install_and_test_commands_default_and_per_run_override():
+    from cidra import config
+    from cidra.nodes.environment import sandbox_install_command, sandbox_test_command
+    assert sandbox_install_command({}) == config.INSTALL_COMMAND
+    assert sandbox_test_command({}) == config.TEST_COMMAND
+    state = {"install_command": "pip install --quiet .", "test_command": "pytest -q tests/unit 2>&1",
+             "ci_env": {"API_TOKEN": "tok value"}}
+    assert sandbox_install_command(state) == "pip install --quiet ."
+    assert sandbox_test_command(state) == "API_TOKEN='tok value' pytest -q tests/unit 2>&1"
