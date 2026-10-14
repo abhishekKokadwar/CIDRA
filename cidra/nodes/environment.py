@@ -41,11 +41,15 @@ def checkout_commit(state: DebugState) -> dict:
     tree has no .git (SR-17), so a poisoned repo can neither run a hook on the
     host nor smuggle a .git into the container.
     """
-    from cidra.nodes.checkout import prepare_checkout
+    from cidra.nodes.checkout import fetch_commit, prepare_checkout
 
     run_id = state["run_id"]
-    raw_source = state.get("source_dir") or PRACTICE_REPO_DIR
+    raw_source = state.get("source_dir")
     try:
+        if not raw_source:
+            # Webhook mode: nothing local holds the failing commit, so fetch it
+            # with the read-only token.
+            raw_source = fetch_commit(run_id, state["repo"], state["commit_sha"], config.GITHUB_TOKEN_RO)
         tree = prepare_checkout(run_id, raw_source, state.get("commit_sha"))
     except Exception as e:
         return {"env_ready": False, "analysis_error": f"checkout failed: {e}"[:500]}
