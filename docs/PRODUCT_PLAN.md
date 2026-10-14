@@ -1,7 +1,9 @@
 # CIDRA Product Plan: Self-Hosted Enterprise CI Remediation Engine
 
+> **Superseded for planning (2026-10-15):** the working plan is [ROADMAP.md](ROADMAP.md). This document is kept as background on the enterprise positioning.
+
 > **Document Version:** 2.0.0  
-> **Status:** Approved Architectural Roadmap  
+> **Status:** Background (see ROADMAP.md)  
 > **Target Audience:** Engineering Leadership, DevSecOps, Platform Engineering Teams, Enterprise Architects  
 > **Core Proposition:** *Self-hosted, air-gapped autonomous CI remediation engine with zero-trust container containment, mathematical fault localization, and deterministic patch verification.*
 
