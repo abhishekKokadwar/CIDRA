@@ -46,6 +46,18 @@ inputs:
   source_dir:
     description: 'Path to the checkout of the commit whose CI failed. Defaults to the workspace root.'
     required: false
+  install_command:
+    description: >-
+      One pip command that installs the dependencies in the sandbox, for example
+      "pip install --quiet -r requirements-dev.txt" or "pip install --quiet pytest httpx".
+      CIDRA appends --target, so it must be a single pip install. The project itself is
+      imported from the source tree. Defaults to "pip install --quiet -r requirements.txt".
+    required: false
+  test_command:
+    description: >-
+      Command that runs the tests in the sandbox, with no network, for example
+      "PYTHONPATH=src pytest -q 2>&1". Defaults to "pytest -q 2>&1".
+    required: false
 
 runs:
   using: "composite"
@@ -84,5 +96,7 @@ runs:
         OPENROUTER_API_KEY_2: ${{ inputs.openrouter_api_key_2 }}
         CIDRA_ENABLE_PR_CREATION: ${{ inputs.enable_pr_creation }}
         CIDRA_SOURCE_DIR: ${{ inputs.source_dir }}
+        CIDRA_INSTALL_COMMAND: ${{ inputs.install_command }}
+        CIDRA_TEST_COMMAND: ${{ inputs.test_command }}
       run: |
         cidra action
