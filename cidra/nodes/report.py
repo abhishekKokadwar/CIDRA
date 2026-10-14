@@ -78,7 +78,8 @@ def render_comment(state: DebugState) -> str:
             parts += [f"- {s}" for s in surfaced[:10]]
     elif outcome == "flaky_detected":
         passes = state.get("flaky_pass_count")
-        runs = len(state.get("repro_results", [])) or None
+        # The dependency install is recorded alongside the test runs; it is not one.
+        runs = sum(getattr(r, "step", "test") == "test" for r in state.get("repro_results", [])) or None
         score = state.get("flaky_score")
         detail = f" ({passes}/{runs} runs passed)" if passes is not None and runs else ""
         score_line = f" Flakiness score **{score}/100**." if score is not None else ""
