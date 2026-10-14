@@ -172,5 +172,7 @@ def cleanup(state: DebugState) -> dict:
     run_id = state.get("run_id", "")
     close_session(run_id)
     remove_checkout(run_id)  # Phase 9: drop the per-run isolated checkout dir
+    from cidra.nodes.checkout import source_run_id
+    remove_checkout(source_run_id(run_id))  # the fetched source, in webhook mode
     record(state)  # Phase 13: append this run to the history (best-effort)
     return {}

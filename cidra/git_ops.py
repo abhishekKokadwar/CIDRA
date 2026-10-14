@@ -62,7 +62,8 @@ def _flags(allow_file: bool) -> list[str]:
 
 
 def git(*args: str, cwd: str | Path | None = None, timeout: int = 120,
-        check: bool = True, allow_file: bool = False) -> subprocess.CompletedProcess:
+        check: bool = True, allow_file: bool = False,
+        env: dict[str, str] | None = None) -> subprocess.CompletedProcess:
     """Run one git command under the hardened configuration.
 
     argv only — never a shell string, so no external value is ever interpolated
@@ -71,13 +72,16 @@ def git(*args: str, cwd: str | Path | None = None, timeout: int = 120,
     `allow_file=True` permits the file transport for THIS call only — used solely
     by the top-level local clone in checkout.py. It never enables submodule
     recursion, so it cannot be leveraged to fetch attacker-chosen file:// repos.
+
+    `env` adds variables for this call only (a credential for one fetch); the
+    hardened settings above always win over it.
     """
     import os
 
-    env = {**os.environ, **_HARDENED_ENV}
+    child_env = {**os.environ, **(env or {}), **_HARDENED_ENV}
     cmd = ["git", *_flags(allow_file), *args]
     return subprocess.run(
-        cmd, cwd=str(cwd) if cwd else None, env=env,
+        cmd, cwd=str(cwd) if cwd else None, env=child_env,
         capture_output=True, text=True, timeout=timeout, check=check,
     )
 

@@ -47,6 +47,47 @@ def _run_dir(run_id: str) -> Path:
     return Path(config.WORKTREE_ROOT).resolve() / f"cidra-patch-{safe}"
 
 
+def source_run_id(run_id: str) -> str:
+    """Where fetch_commit puts a run's source; remove_checkout(source_run_id(...)) drops it."""
+    return f"{run_id}-src"
+
+
+def remote_url(repo: str) -> str:
+    """The repository's https URL on the configured GitHub host. `repo` is validated
+    as owner/name by the first node, so nothing else can be spliced in here."""
+    api = config.GITHUB_API
+    host = "github.com" if "api.github.com" in api else api.split("://")[-1].split("/")[0]
+    return f"https://{host}/{repo}.git"
+
+
+def fetch_commit(run_id: str, repo: str, sha: str, token: str = "") -> Path:
+    """Fetch one commit of a GitHub repository, for a run with no local checkout.
+
+    Webhook mode needs this: the event names a repository and a commit, and
+    nothing on this machine holds them. The token is given to the single fetch
+    through git's GIT_CONFIG_* environment, so it is never written to
+    .git/config, never on a command line, and never in the tree prepare_checkout
+    later hands to the sandbox. Shallow: only the failing commit is needed.
+    """
+    import base64
+
+    dest = _run_dir(source_run_id(run_id))
+    remove_checkout(source_run_id(run_id))
+    dest.mkdir(parents=True)
+    url = remote_url(repo)
+    env = {}
+    if token:
+        basic = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+        env = {"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "http.extraHeader",
+               "GIT_CONFIG_VALUE_0": f"AUTHORIZATION: basic {basic}"}
+    git("init", "--quiet", cwd=dest)
+    # A local path stands in for GitHub in tests; a real run always fetches https.
+    git("fetch", "--quiet", "--depth=1", "--no-recurse-submodules", url, sha,
+        cwd=dest, timeout=300, env=env, allow_file=not url.startswith("https://"))
+    git("checkout", "--quiet", "FETCH_HEAD", cwd=dest)
+    return dest
+
+
 def prepare_checkout(run_id: str, source: str | Path,
                      commit_sha: Optional[str] = None,
                      keep_git: bool = False) -> Path:
