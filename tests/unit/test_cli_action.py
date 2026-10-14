@@ -72,3 +72,34 @@ def test_every_initial_state_key_is_declared(monkeypatch, tmp_path):
         "pull_requests": [{"number": 7, "head": {"ref": "feature"}}],
     }})
     assert set(state) <= set(DebugState.__annotations__), set(state) - set(DebugState.__annotations__)
+
+
+def test_install_and_test_command_inputs_reach_the_engine(monkeypatch):
+    import importlib
+    import pathlib
+
+    import yaml
+
+    from cidra import config
+
+    action = yaml.safe_load((pathlib.Path(__file__).parents[2] / "action.yml").read_text(encoding="utf-8"))
+    env = next(s for s in action["runs"]["steps"] if s.get("name") == "Run CIDRA")["env"]
+    assert env["CIDRA_INSTALL_COMMAND"] == "${{ inputs.install_command }}"
+    assert env["CIDRA_TEST_COMMAND"] == "${{ inputs.test_command }}"
+    assert {"install_command", "test_command"} <= set(action["inputs"])
+
+    try:
+        monkeypatch.setenv("CIDRA_INSTALL_COMMAND", "pip install --quiet -r requirements-dev.txt")
+        monkeypatch.setenv("CIDRA_TEST_COMMAND", "PYTHONPATH=src pytest -q 2>&1")
+        importlib.reload(config)
+        assert config.INSTALL_COMMAND == "pip install --quiet -r requirements-dev.txt"
+        assert config.TEST_COMMAND == "PYTHONPATH=src pytest -q 2>&1"
+        # an unset Action input arrives as an empty string: the default applies
+        monkeypatch.setenv("CIDRA_INSTALL_COMMAND", "")
+        monkeypatch.setenv("CIDRA_TEST_COMMAND", "")
+        importlib.reload(config)
+        assert config.INSTALL_COMMAND == "pip install --quiet -r requirements.txt"
+        assert config.TEST_COMMAND == "pytest -q 2>&1"
+    finally:
+        monkeypatch.undo()
+        importlib.reload(config)

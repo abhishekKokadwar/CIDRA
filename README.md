@@ -270,6 +270,9 @@ jobs:
           CIDRA_GITHUB_TOKEN: ${{ secrets.CIDRA_GITHUB_TOKEN }}
           CIDRA_GITHUB_TOKEN_RO: ${{ secrets.CIDRA_GITHUB_TOKEN_RO }}
           CIDRA_ENABLE_PR_CREATION: "true"
+          # How the sandbox installs and tests this repository (see "Install and test commands")
+          # CIDRA_INSTALL_COMMAND: "pip install --quiet -r requirements-dev.txt"
+          # CIDRA_TEST_COMMAND: "PYTHONPATH=src pytest -q 2>&1"
         run: cidra action
 
       - name: Trigger Live Dashboard Rebuild (Vercel)
@@ -279,6 +282,13 @@ jobs:
             curl -s -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
           fi
 ```
+
+### Install and test commands
+
+The sandbox installs dependencies with `pip install --quiet -r requirements.txt` and runs `pytest -q`. If your repository does it differently, set both. With the composite action they are the `install_command` and `test_command` inputs; with `cidra action` they are `CIDRA_INSTALL_COMMAND` and `CIDRA_TEST_COMMAND`.
+
+- **Install** runs with network, in a throwaway container, and must be a single `pip install` of the dependencies: CIDRA appends `--target` to it. The project itself is not installed; tests import it from the source tree. Examples: `pip install --quiet -r requirements-dev.txt`, `pip install --quiet pytest httpx`.
+- **Test** runs with no network. Put `2>&1` at the end so the log CIDRA reads includes errors. For a `src/` layout: `PYTHONPATH=src pytest -q 2>&1`.
 
 ### Repository setup for pull requests
 
@@ -330,6 +340,8 @@ Copy [.env.example](.env.example) to `.env` to configure your environment:
 | `CIDRA_GITHUB_TOKEN` | GitHub token with branch and PR write permissions | *Optional (for PRs)* |
 | `CIDRA_GITHUB_TOKEN_RO` | Read-only GitHub token for CI logs | *Optional (falls back to the write token)* |
 | `CIDRA_ENABLE_PR_CREATION` | Open a draft PR for a verified fix | `false` |
+| `CIDRA_INSTALL_COMMAND` | One `pip install` of the dependencies, run in the sandbox (`--target` is appended) | `pip install --quiet -r requirements.txt` |
+| `CIDRA_TEST_COMMAND` | Test command, run in the sandbox with no network | `pytest -q 2>&1` |
 | `CIDRA_WEBHOOK_SECRET` | HMAC SHA256 secret for webhook validation | *Optional (for webhook)* |
 | `CIDRA_DASHBOARD_TOKEN` | Token for the dashboard API; required to serve it on a non-loopback host | *Optional* |
 | `CIDRA_AUDIT_SIGNING_KEY` | Key that signs the audit manifest; without it the manifest is unsigned | *Optional* |
