@@ -1,24 +1,23 @@
 """Sandbox safety checks. See docs/6_sandbox_spec.md §8 (ADV-01..ADV-08).
 
-Needs Docker. These assert the isolation properties hold, not just that commands run.
-Run: python test_sandbox.py
+Needs Docker and the sandbox image (CI builds both). These assert the isolation
+properties hold, not just that commands run.
 """
 
 import pathlib
 import tempfile
 
+import pytest
+
 from cidra.sandbox import limits
 from cidra.sandbox.runner import client, run_in_sandbox
 
-import pytest
-
-from cidra.config import PRACTICE_REPO_DIR
-
-# These drive real fixture branches of the practice repo in a real sandbox.
-# Point CIDRA_PRACTICE_REPO at a clone; without one (e.g. in CI) they skip.
-REPO = pathlib.Path(PRACTICE_REPO_DIR)
-if not (REPO / ".git").exists():
-    pytest.skip(f"practice repo not found at {REPO}", allow_module_level=True)
+# Every test builds its own source tree, so only Docker is needed. They used to
+# skip whenever the practice repo was absent, which meant never in CI.
+try:
+    client().ping()
+except Exception:  # noqa: BLE001 - no daemon: nothing to test here
+    pytest.skip("Docker is not available", allow_module_level=True)
 
 
 def _tmp_source() -> pathlib.Path:
