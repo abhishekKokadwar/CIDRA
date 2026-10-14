@@ -69,22 +69,41 @@ def fetch_log(state: DebugState) -> dict:
     return out
 
 
+_FAILURE_LINE = re.compile(r"^(?:FAILED|ERROR) (\S+)")
+
+
+def failing_tests(log: str) -> list[str]:
+    """The test ids pytest's summary reports as failed or errored, in order.
+
+    Read straight from the log, never from the model: they are what a
+    reproduction has to show failing. A collection error names only the file
+    (`ERROR tests/test_api.py`), which is kept as is.
+    """
+    found: dict[str, None] = {}
+    for line in log.splitlines():
+        m = _FAILURE_LINE.match(_TIMESTAMP.sub("", _ANSI.sub("", line)).strip())
+        if m:
+            found[m.group(1)] = None
+    return list(found)
+
+
 def isolate_error(state: DebugState) -> dict:
     """Use the Language Adapter to parse and normalize the raw log."""
     from cidra.adapters.dispatcher import dispatcher
     
     raw_log = state.get("raw_log", "")
     if not raw_log:
-        return {"error_region": "", "log_markers": []}
+        return {"error_region": "", "log_markers": [], "ci_failing_tests": []}
         
     failure = dispatcher.parse_log(raw_log)
+    ci_failing = failing_tests(raw_log)
     
     # No adapter recognised the log: still hand the model something to read.
     # _extract_region falls back to the tail of the log when no marker hits.
     if failure.language == "unknown":
         from cidra.adapters.implementations import _extract_region
         region, markers = _extract_region(raw_log, ERROR_MARKERS)
-        return {"error_region": region, "log_markers": markers}
+        return {"error_region": region, "log_markers": markers, "ci_failing_tests": ci_failing}
 
     # Return both the full FailureEvent object mapping and the legacy keys
     # so we don't break existing graph operations (Tier 1 vs Tier 2, etc.)
@@ -93,5 +112,6 @@ def isolate_error(state: DebugState) -> dict:
     # Backwards compatibility for CIDRA Core
     out["error_region"] = failure.stack_trace
     out["log_markers"] = failure.log_markers
+    out["ci_failing_tests"] = ci_failing
     
     return out

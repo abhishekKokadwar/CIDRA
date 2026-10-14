@@ -46,8 +46,42 @@ def _test_command(state: DebugState) -> str:
     return sandbox_test_command(state)
 
 
+def _same_test(a: str, b: str) -> bool:
+    """Two pytest ids name the same test, allowing for a different rootdir prefix."""
+    return a == b or a.endswith("/" + b) or b.endswith("/" + a)
+
+
+def _targets(state: DebugState, sandbox_failed: list[str]) -> tuple[list[str], str, str | None]:
+    """Which of the failures the CI saw also fail here: (targets, evidence, reason if none).
+
+    The CI log's own failing tests decide, read without the model. Only when the
+    log names none does the diagnosis's failing_test stand in; with neither, a red
+    run is all there is, and the evidence says so.
+    """
+    ci = state.get("ci_failing_tests") or []
+    analysis = state.get("analysis")
+    claimed = getattr(analysis, "failing_test", None)
+    expected, evidence = (ci, "ci_log") if ci else (([claimed], "diagnosis") if claimed else ([], "exit_code"))
+    if not expected:
+        return sandbox_failed, evidence, None
+    targets = [t for t in expected if any(_same_test(t, s) for s in sandbox_failed)]
+    if targets:
+        return targets, evidence, None
+    reason = f"not the CI failure: {', '.join(expected[:5])} did not fail in the sandbox"
+    if sandbox_failed:
+        reason += f"; {', '.join(sandbox_failed[:5])} failed instead"
+    return [], evidence, reason
+
+
 def reproduce_once(state: DebugState) -> dict:
-    """One run. Red is the expected, desired outcome."""
+    """One run. The failure the CI reported must fail here too.
+
+    Any red run used to count, so a different failure (an environment the
+    sandbox lacks, an unrelated broken test) passed as a reproduction, and a
+    later green run passed as its fix (KNOWN_GAPS G-17).
+    """
+    from cidra.nodes.ingest import failing_tests
+
     session = session_for(state["run_id"])
     if session is None:
         return {"reproduced": False}
@@ -57,7 +91,15 @@ def reproduce_once(state: DebugState) -> dict:
     if error:
         # A runner that never ran proves nothing: not reproduced, and say why.
         return {"reproduced": False, "repro_results": results, "analysis_error": error}
-    return {"reproduced": not result.passed, "repro_results": results}
+    if result.passed:
+        return {"reproduced": False, "repro_results": results,
+                "analysis_error": "not reproduced: the tests pass in the sandbox"}
+    targets, evidence, reason = _targets(state, failing_tests(result.stdout_tail + "\n" + result.stderr_tail))
+    out = {"reproduced": not reason, "repro_results": results,
+           "target_tests": targets, "repro_evidence": evidence}
+    if reason:
+        out["analysis_error"] = reason
+    return out
 
 
 def reproduce_n_times(state: DebugState) -> dict:

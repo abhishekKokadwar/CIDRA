@@ -83,8 +83,11 @@ class DebugState(TypedDict, total=False):
     env_ready: bool
 
     # Reproduction
+    ci_failing_tests: list[str]  # pytest ids the CI log reports failing, read without the model
     reproduced: bool
     repro_results: list[SandboxResult]
+    target_tests: list[str]  # the CI's failing tests that also fail in the sandbox
+    repro_evidence: str  # how reproduction was judged: ci_log | diagnosis | exit_code
     flaky_pass_count: Optional[int]
     flaky_score: Optional[int]  # 0-100 Deterministic Flakiness Score (Phase 8)
 
