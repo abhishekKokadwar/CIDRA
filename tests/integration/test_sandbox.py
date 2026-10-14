@@ -72,11 +72,16 @@ def test_docker_socket_absent():
     assert "ABSENT" in r.stdout_tail
 
 
-def test_no_host_secrets_in_env():
-    # ADV-07: the API key must never be visible inside the container.
+def test_no_host_secrets_in_env(monkeypatch):
+    # ADV-07: the API key must never be visible inside the container. Plant known
+    # values on the host first, or the check passes on a machine with no secrets.
+    planted = {"CIDRA_API_KEY": "sk-planted-api-key", "GITHUB_TOKEN": "ghs_planted_token"}
+    for name, value in planted.items():
+        monkeypatch.setenv(name, value)
     r = run_in_sandbox("test", _tmp_source(), "env")
-    for leaked in ("CIDRA_API_KEY", "ANTHROPIC", "GITHUB_TOKEN", "sk-or-v1"):
-        assert leaked not in r.stdout_tail, f"{leaked} leaked into the container"
+    assert r.passed, r.stderr_tail
+    for name, value in planted.items():
+        assert name not in r.stdout_tail and value not in r.stdout_tail, f"{name} leaked into the container"
 
 
 def test_pids_limit_blocks_fork_bomb():
