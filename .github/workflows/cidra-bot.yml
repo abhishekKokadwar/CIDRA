@@ -44,14 +44,16 @@ jobs:
         enable_pr_creation: 'true'
         github_token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Commit & Push Run Telemetry
+    # Kept with the run, not committed: it holds full prompts and log excerpts,
+    # and a commit per run buried main's history.
+    - name: Upload run telemetry
       if: always()
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git add dashboard/public/telemetry.json cidra/static/telemetry.json || true
-        git commit -m "chore(telemetry): update CIDRA run telemetry [skip ci]" || true
-        git push origin HEAD:main || true
+      uses: actions/upload-artifact@v4
+      with:
+        name: cidra-telemetry-${{ github.event.workflow_run.id }}
+        path: dashboard/public/telemetry.json
+        if-no-files-found: ignore
+        retention-days: 30
 
     - name: Trigger Vercel Live Dashboard Rebuild
       if: always()
