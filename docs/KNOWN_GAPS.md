@@ -7,7 +7,7 @@
 > **Blocker legend:** 🐳 needs a running Docker daemon · 🔑 needs LLM credits (OpenRouter)
 > · 🌐 needs a write token / live GitHub · 🛠 real code work (not just an environment)
 >
-> Last reviewed: 2026-10-05.
+> Last reviewed: 2026-10-15, against the code (not the earlier docs).
 
 ---
 
@@ -19,19 +19,25 @@ pytest plugin, builds the spectrum, and feeds the SBFL ranking into the fix prom
 plugin parser, clean degradation (no coverage/pytest → no-evidence), and evidence injection
 are unit-tested (`tests/unit/test_localize.py` 5/5). What is **not** yet run end-to-end is the
 actual coverage collection in a live sandbox on a real fixture.
-**Why open:** Docker was down when Phase 8 was built; the base image also lacks
-coverage+pytest, so collection only fires after a repo installs them (best-effort by design).
-**Unblock / fix:** bring Docker up, run a fixture that installs pytest, confirm
-`CIDRA_SBFL_JSON=` is emitted and a non-empty `sbfl_evidence` reaches the fix context.
+**Why open (2026-10-15):** the sandbox image now ships pytest and coverage, so the tools
+are there. The likely cause is in the plumbing: the plugin prints the whole spectrum as ONE
+`CIDRA_SBFL_JSON=` line at the end of the run, and the sandbox keeps only the last 16,000
+bytes of output (`limits.TAIL_BYTES`). Any real suite's spectrum is longer, so the line
+loses its prefix and `_parse_blob` finds nothing ("no spectrum collected"). `localize` also
+runs `python -m pytest` rather than the configured test command, so a repo that needs
+`PYTHONPATH=src` or a test path collects nothing.
+**Unblock / fix:** write the spectrum to a file in the container and read it back with
+`get_archive`, or `cat` it in a separate step; run it with the configured test command.
 **Done when:** an integration test under `tests/integration/` drives `localize` on a real
 session and asserts a non-empty ranking whose #1 is the known-buggy element.
 **Note:** the SBFL *math* and *order-independence* (the phase's actual claim) are fully proven
 offline — this gap is only the live plumbing.
 
-### G-02 · Full engine live run via webhook (Phase 7) — 🐳 🔑 🌐
+### G-02 · Full engine live run via webhook (Phase 7) — 🐳 🔑 🌐 🛠
 **Status 2026-10-05:** the full engine has now run live through the GitHub Action and the
 local runner with a real model. The webhook entry point itself is still unproven, and it has
-no source checkout: it works only where the failing repo is already cloned.
+no source checkout: [worker.py](../cidra/server/worker.py) sets no `source_dir`, so the run
+falls back to `CIDRA_PRACTICE_REPO` and works only where the failing repo is already cloned.
 **What:** the webhook path is proven end-to-end *except* the final analysis→sandbox→comment
 leg. A real replayed delivery got as far as fetching the CI log, then the LLM call returned
 OpenRouter `402: insufficient credits` (correctly handled as `outcome=failed`).
@@ -49,6 +55,56 @@ recorded on specific dates, not in CI. They must be re-run after any change to `
 `eval/adversarial/run_adversarial.py` and `eval/security_fixtures/run_benchmark.py` with
 Docker up.
 **Done when:** these run automatically and gate merges to the sandbox/git modules.
+
+### G-15 · A fix verified on a later attempt may not be the fix that is published — 🛠 (high)
+`Session.apply_patch` never reverts an earlier diff. When attempt 1's diff applies but the
+tests stay red, attempt 2's diff is applied on top of it, and `verify_fix` tests the two
+together. The report and the PR carry only the last diff, applied to a clean checkout. The
+published change can then differ from what went green, or fail to apply when the PR branch is
+built. The PR step's failure is logged, and the outcome stays `verified_fix`.
+**Fix:** reverse the previous applied diff (`git apply -R`) before applying the next, or
+re-seed `/work` from the checkout; also drop packages a reverted dependency fix installed.
+**Done when:** a test with two applying attempts shows the verified tree equals the failing
+commit plus the published diff, and the measurement harness's held-out check agrees.
+
+### G-16 · Flakiness is checked only when the model says "flaky" — 🛠
+`route_category` sends a run to the 5-run check only for `analysis.category == "flaky_test"`.
+Every other category runs the tests once, so a flaky failure the model calls
+`assertion_error` goes down the fix path.
+**Fix:** run the reproduction at least twice for every category, or always on a fixable one.
+
+### G-17 · Reproduction accepts any red run — 🛠
+`reproduce_once` sets `reproduced` when the test command fails at all. It does not check that
+the test the CI log names is the one failing in the sandbox, so a different failure (an
+environment difference) counts as a reproduction, and a later green run counts as the fix.
+**Fix:** when the analysis names `failing_test`, require it among the sandbox's failures.
+
+### G-18 · Install failure and non-reproduction are reported as "could not diagnose" — 🛠 (small)
+`install_deps` returns `env_ready: False` with no message, and a run that does not reproduce
+has a diagnosis but ends `failed`. The report then says "CIDRA could not produce a usable
+diagnosis" with no reason. These are the most likely first-run failures on a new repository.
+**Fix:** set `analysis_error` from the install output tail, and give `failed`-with-analysis
+its own wording that points at `install_command` / `test_command`.
+
+### G-19 · Dead or ignored settings — 🛠 (small)
+- Dashboard "Flakiness & Sandbox" fields are saved to `.env` and `config`, but `reproduce.py`
+  and `routers.py` imported the constants at load time, so the engine never sees them.
+- `CIDRA_ENABLE_RATE_LIMIT_BACKOFF` (set by `action.yml`), `limits.AUTO_REMOVE`,
+  `OPENROUTER_API_KEY` / `openrouter_client_1` and the `model` input of `action.yml` are
+  read by nothing.
+- The fallback model IDs in `llm.py` have not been checked since 2026-10-03.
+**Fix:** remove them, or read them at call time.
+
+### G-20 · Public telemetry carries full prompts — 🛠 🌐
+`llm.structured` records the full system and user prompt (CI log excerpts and source files)
+in the telemetry, and `cidra-bot.yml` commits `telemetry.json` to `main` of a public repo on
+every run. **Fix:** upload it as a workflow artifact instead, and stop the commit step.
+
+### G-21 · Release — 🛠 (small)
+The 0.2.0 wheel on PyPI has no `sandbox/Dockerfile` (checked 2026-10-15), so a pip install
+cannot build its own sandbox; `pyproject.toml` already includes it for the next release.
+There is no `LICENSE` file although MIT is declared. The v0.2.0 release title says "Node.js
+Support"; Node.js is log parsing only.
 
 ---
 
@@ -133,11 +189,11 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 1. **Distributed Deadlocks & Complex Concurrency (Out of Scope)**:
    - Single-job and localized test failures are auto-remediated; multi-service distributed race conditions require distributed tracing and are outside single-pipeline scope.
 2. **Database Migrations with Data Loss Risk (Human Approval Mandate)**:
-   - Changes touching `migrations/**` or `.sql` files are strictly routed to `require_human_approval` by policy rather than auto-merged, preventing automated loss of production data.
-3. **Flaky Test Quenching vs Rewriting (Quarantine by Design)**:
-   - Flaky tests are detected via repeated execution and quarantined via policy strict refusal; CIDRA intentionally does not attempt to rewrite non-deterministic external network calls without human instruction.
+   - Changes touching `migrations/**` or `.sql` files get the `require_human_approval` policy decision, which is shown in the report. CIDRA never merges anything, so every fix already waits for a person; the decision does not change what is published.
+3. **Flaky tests are reported, not quarantined**:
+   - A flaky test is detected by running the tests 5 times, and only when the diagnosis already says `flaky_test` (G-16). CIDRA then reports it and attempts no fix. It does not quarantine, skip or mark the test.
 4. **Static AST Analysis Boundaries (Dual-Gate Defense)**:
    - Static AST parsing reliably detects structural patterns (assertions, imports, skip decorators, system calls).
-   - Highly obfuscated runtime dynamic metaprogramming (e.g. nested string decoders) is contained by the Docker sandbox runner (`network="none"`, read-only rootfs).
+   - Highly obfuscated runtime dynamic metaprogramming (e.g. nested string decoders) is contained by the Docker sandbox runner: no network outside the install step, non-root user, `no-new-privileges`, memory, CPU and PID caps. The root filesystem is NOT read-only and capabilities are not dropped (`runner._create`).
 5. **Air-Gapped LLM Inference Latency (Hardware Bound)**:
-   - Local LLMs (Ollama / vLLM) ensure zero external network egress, but inference turnaround is dependent on local GPU compute (2s–15s vs 1s–3s on cloud APIs).
+   - Local LLMs (Ollama / vLLM) behind an OpenAI-compatible URL keep prompts off external networks. No local model has been measured; turnaround depends on the hardware.
