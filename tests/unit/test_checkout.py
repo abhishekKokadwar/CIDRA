@@ -75,3 +75,18 @@ def test_remove_checkout(src_repo):
     dest = checkout.prepare_checkout("run1", r)
     checkout.remove_checkout("run1")
     assert not Path(dest).exists()
+
+
+def test_remove_checkout_deletes_read_only_git_objects(tmp_path, monkeypatch):
+    # git writes its objects read-only; on Windows ignore_errors=True left them behind.
+    import os
+    import stat
+
+    monkeypatch.setattr(config, "WORKTREE_ROOT", str(tmp_path / "wt"))
+    run_dir = checkout._run_dir("ro")
+    pack = run_dir / ".git" / "objects" / "pack" / "pack-1.pack"
+    pack.parent.mkdir(parents=True)
+    pack.write_text("x")
+    os.chmod(pack, stat.S_IREAD)
+    checkout.remove_checkout("ro")
+    assert not run_dir.exists()

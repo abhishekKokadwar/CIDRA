@@ -15,12 +15,29 @@ filesystem path, not the file:// transport that flag blocks.
 """
 
 import logging
+import os
 import shutil
+import stat
 from pathlib import Path
 from typing import Optional
 
 from cidra import config
 from cidra.git_ops import git
+
+
+def _rmtree(path: Path) -> None:
+    """Delete a directory tree, read-only files included.
+
+    git marks its object files read-only, and on Windows shutil.rmtree cannot
+    delete those, so `ignore_errors=True` used to leave .git behind without a word.
+    Raises if something still cannot be removed.
+    """
+    def unlock(func, target, _exc):
+        os.chmod(target, stat.S_IWRITE)
+        func(target)
+
+    if path.exists():
+        shutil.rmtree(path, onerror=unlock)
 
 
 def _run_dir(run_id: str) -> Path:
@@ -67,10 +84,13 @@ def prepare_checkout(run_id: str, source: str | Path,
         # and no .git reaches the container. shutil, not git — it is now inert data.
         git_dir = dest / ".git"
         if git_dir.exists():
-            shutil.rmtree(git_dir, ignore_errors=True)
+            _rmtree(git_dir)  # raises if .git cannot be removed: never hand it on
     return dest
 
 
 def remove_checkout(run_id: str) -> None:
     """Delete a run's checkout dir. Safe to call when it doesn't exist."""
-    shutil.rmtree(_run_dir(run_id), ignore_errors=True)
+    try:
+        _rmtree(_run_dir(run_id))
+    except OSError:
+        logging.getLogger("cidra.checkout").warning("could not fully remove %s", _run_dir(run_id))
