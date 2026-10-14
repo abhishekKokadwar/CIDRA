@@ -73,56 +73,52 @@ CIDRA orchestrates a 20-node cyclic state graph built on **LangGraph**. The work
   <img src="https://raw.githubusercontent.com/abhishekKokadwar/CIDRA/main/docs/assets/cidra-runtime-architecture.png" alt="CIDRA runtime architecture: GitHub webhook, repair engine, BYOK LLM gateway, patch audit gate, and the Docker sandbox across three trust zones" width="920" />
 </p>
 
-A signed `workflow_run` failure reaches the webhook receiver, which verifies the HMAC, claims an idempotency key, and runs the repair engine in the background. The engine calls your own LLM provider (**BYOK**: any OpenAI-compatible endpoint via `CIDRA_API_KEY` + `CIDRA_BASE_URL`), gates every diff through the patch audit, and executes repo code only inside network-off Docker containers. `cidra action` and `cidra fix` invoke the same engine without the webhook. Full detail: [docs/4_architecture.md](docs/4_architecture.md).
+The main way to run CIDRA is the GitHub Action (`cidra action`): a failed `workflow_run` starts it on the runner, with the failing commit checked out. `cidra fix` runs the same engine on a local checkout. The engine calls your own LLM provider (**BYOK**: any OpenAI-compatible endpoint via `CIDRA_API_KEY` + `CIDRA_BASE_URL`), gates every diff through the patch audit, and executes repo code only inside Docker containers (network on only for the dependency install). The webhook receiver (`cidra dashboard` / the FastAPI server) verifies the HMAC and claims an idempotency key, but it does not clone the failing repository: it only works where that repository is already checked out (`CIDRA_PRACTICE_REPO`). Full detail: [docs/4_architecture.md](docs/4_architecture.md).
 
 ### Repair workflow
 
 ```mermaid
 flowchart TD
-    A(["CI Failure Webhook / CLI"]) --> B["ingest_log"]
-    B --> C["fingerprint_error"]
-    C --> D{"Fix in Cache?"}
-    
-    D -- "Yes (Cache Hit)" --> E["apply_cached_fix"]
-    D -- "No (Cache Miss)" --> F["localize_fault_sbfl"]
-    
-    F --> G["reproduce_failure_red"]
-    G --> H{"Flakiness Check (SR-08)"}
-    
-    H -- "Flaky (Intermittent)" --> I(["Terminal: flaky_detected"])
-    H -- "Deterministic Red" --> J["analyze_root_cause"]
-    
-    J --> K["synthesize_patch"]
-    K --> L{"AST Security Audit"}
-    
-    L -- "Violates Policy (ADV-07)" --> M["retry_patch_or_fail"]
-    L -- "Clean AST" --> N["verify_patch_green"]
-    
-    N -- "Still Red (Failed)" --> O{"Attempt below Max Retries?"}
-    O -- "Yes" --> K
-    O -- "No" --> P(["Terminal: repair_exhausted"])
-    
-    N -- "Green (Verified)" --> Q["update_fix_cache"]
-    Q --> R["publish_report"]
-    R --> S["create_draft_pr / HITL"]
-    S --> T(["Terminal: verified_fix"])
-    
+    A(["CI failure: Action / CLI / webhook"]) --> B["fetch_log + isolate_error"]
+    B --> C["analyze (LLM): category + evidence"]
+    C --> D{"Usable diagnosis?<br/>Policy allows it?"}
+    D -- "No (2 tries) / refused" --> R
+    D -- "Yes" --> E["checkout_commit → sandbox → install_deps"]
+    E --> F{"Diagnosis says flaky?"}
+    F -- "Yes" --> G["run tests 5 times"]
+    G -- "mixed pass/fail" --> I(["flaky_detected"])
+    G -- "all fail" --> H
+    F -- "No" --> H["reproduce_once: is it red?"]
+    H -- "not red / runner error" --> R
+    H -- "red" --> J["localize (SBFL, best-effort)"]
+    J --> K{"Fixable category?<br/>missing_dependency / assertion_error"}
+    K -- "No" --> R
+    K -- "Yes, fix cached" --> L
+    K -- "Yes" --> M["generate_fix (LLM): unified diff"]
+    M --> L{"Patch audit gate"}
+    L -- "Rejected" --> R
+    L -- "Passed" --> N["apply_patch + verify_fix"]
+    N -- "Still red, attempts < 3" --> M
+    N -- "Still red, 3 attempts" --> R
+    N -- "Green" --> R["compose_report → publish"]
+    R --> T(["verified_fix / diagnosis_only / failed:<br/>job summary, draft PR or PR comment"])
+
     style A fill:#161b22,stroke:#58a6ff,stroke-width:2px,color:#e6edf3
     style D fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
-    style H fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
+    style F fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
+    style K fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
     style L fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
-    style O fill:#161b22,stroke:#d29922,stroke-width:2px,color:#e6edf3
     style I fill:#21262d,stroke:#f85149,stroke-width:2px,color:#f85149
-    style P fill:#21262d,stroke:#f85149,stroke-width:2px,color:#f85149
     style T fill:#21262d,stroke:#2ea043,stroke-width:2px,color:#3fb950
 ```
 
 ### Key Engineering Innovations
 
-- **Spectrum-Based Fault Localization (SBFL)**: In [cidra/nodes/sbfl.py](cidra/nodes/sbfl.py), CIDRA computes **Ochiai** and **Tarantula** suspiciousness coefficients from execution spectra. It scores source code lines based on their ratio of execution in failing vs. passing test runs, ensuring the LLM fix prompt focuses exclusively on high-probability fault locations.
-- **Statistical Flakiness Detection (SR-08)**: Non-deterministic tests break autonomous repair loops. CIDRA re-runs the suite 5 times in the sandbox. If an identical commit produces mixed pass/fail outcomes, the run is flagged as `flaky_detected` and halts immediately, preventing token waste on phantom bugs.
-- **Static Patch Audit Gate**: Every patch is checked before it reaches the sandbox ([cidra/nodes/audit.py](cidra/nodes/audit.py)). The gate matches patterns on the added lines and uses Python's `ast` only to count assertions. It rejects `os.system`/`os.popen`, `subprocess`, `socket`, `eval`/`exec`, dynamic imports, unsafe deserialization, and any change that deletes, skips or weakens a test, or touches CI config. It does not block a plain `import os`; the no-network, non-root sandbox is what contains code the gate does not catch.
-- **Persistent Fix Cache**: Hashes of error signatures and verified diffs are cached in `cidra_fix_cache.json`. Repeated CI breakages across different branches hit the cache for **instant, 0-token repairs**.
+- **Verified or nothing**: only two failure classes are patched, `missing_dependency` and `assertion_error` (an assert whose log prints both values). Everything else (`env_config_error`, `unknown`, flaky) ends as a diagnosis with no patch. A patch is reported as a fix only after the failure reproduced red in the sandbox and the same test command ran green with the patch applied.
+- **Spectrum-Based Fault Localization (SBFL)**: In [cidra/nodes/sbfl.py](cidra/nodes/sbfl.py), CIDRA computes **Ochiai** and **Tarantula** suspiciousness scores from per-test coverage and adds the ranking to the fix prompt. It is best-effort: when no spectrum is collected the fix runs without it, and no live run has collected one yet ([KNOWN_GAPS G-01](docs/KNOWN_GAPS.md)).
+- **Flakiness Detection (SR-08)**: when the diagnosis says `flaky_test`, CIDRA runs the tests 5 times in the sandbox. Mixed pass/fail ends the run as `flaky_detected` with no fix attempted; all-fail continues as an ordinary failure. Other categories are run once, so a flaky test the model does not recognise is not caught by this check.
+- **Static Patch Audit Gate**: Every patch is checked before it reaches the sandbox ([cidra/nodes/audit.py](cidra/nodes/audit.py)). The gate matches patterns on the added lines and uses Python's `ast` to count assertions and to read the failing test's expected values. It rejects `os.system`/`os.popen`, `subprocess`, `socket`, `eval`/`exec`, dynamic imports, unsafe deserialization, any change that deletes, skips or weakens a test or touches CI config, a new module named after the missing dependency (a stand-in), and `if <test input>: return <expected value>` special cases. A rejected patch ends the run as `diagnosis_only`; it is not retried. It does not block a plain `import os`; the no-network, non-root sandbox is what contains code the gate does not catch.
+- **Fix Cache**: a verified diff is stored in `cidra_fix_cache.json` under a fingerprint of the error. The same failure again skips the fix-generation call (the diagnosis call still runs), and the cached diff is still audited and re-verified in the sandbox. The cache is a local file: in GitHub Actions it is lost with the runner unless you persist it yourself.
 
 ---
 
@@ -137,20 +133,6 @@ CIDRA includes a reactive web dashboard built with React, Vite, and custom CSS d
 cidra dashboard
 ```
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│  ⚡ CIDRA Command Center           [System: OPERATIONAL]  [● LIVE]     │
-├────────────────────────────────────────────────────────────────────────┤
-│  Total Interventions    Success Rate    Avg Time to Fix    Tokens Used │
-│  42                     94.8%           38s                1.2M        │
-├────────────────────────────────────────────────────────────────────────┤
-│  Active Runs & Execution Timeline                                      │
-│  [run-9821]  org/repo#142  missing_dependency   VERIFIED GREEN  [Diff] │
-│  [run-9820]  org/repo#139  flaky_network        FLAKY DETECTED  [Logs] │
-│  [run-9819]  org/repo#135  assertion_error      PENDING APPROVAL [HITL]│
-└────────────────────────────────────────────────────────────────────────┘
-```
-
 ### Dashboard Capabilities
 
 1. **Command Center**: Real-time KPI counters tracking mean time to recovery (MTTR), repair success rate, token consumption, and system health status.
@@ -159,7 +141,7 @@ cidra dashboard
 4. **4-Tab Configuration Manager**:
    - **API Keys**: Configure OpenRouter, Groq, NVIDIA NIM, and GitHub PAT credentials with **one-click live round-trip latency probes**.
    - **Model Chain**: Configure analysis models, fix models, and base URLs.
-   - **Flakiness & Sandbox**: Shows the flaky-run count, container timeouts and retry limits the engine is using. These are fixed in code and read-only here.
+   - **Flakiness & Sandbox**: Flaky-run count, container timeout and retry limit. The fields can be edited and are saved to `.env`, but the engine does not read them: it uses the constants in `cidra/config.py` and `cidra/sandbox/limits.py` (5 runs, 3 fix attempts, 300 s per test run).
    - **Runtime Status**: View active paths, worktree directories, and SQLite database connectivity.
 5. **HITL (Human-in-the-Loop) Review**: Inspect candidate diffs and the verification result, and record an approval. CIDRA never merges: merging the draft pull request is done by a person on GitHub.
 
@@ -193,7 +175,8 @@ To diagnose and repair a failing codebase locally without pushing to GitHub:
 # Ensure local Docker daemon is running, then build the sandbox container.
 # From a clone:
 docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
-# From a pip install (the Dockerfile ships inside the package):
+# From a pip install (the Dockerfile ships inside the package from the next release;
+# the 0.2.0 wheel on PyPI does not contain it, so build from a clone for now):
 docker build -t cidra-sandbox:base "$(python -c 'import cidra, os; print(os.path.join(os.path.dirname(cidra.__file__), "sandbox"))')"
 
 # That image runs Python 3.11. If the repository's workflow asks actions/setup-python
@@ -203,6 +186,8 @@ docker build -t cidra-sandbox:base "$(python -c 'import cidra, os; print(os.path
 # Run CIDRA against your local repository
 cidra fix
 ```
+
+`cidra fix` first runs `CIDRA_TEST_COMMAND` (default `pytest -q`) **on your machine**, outside the sandbox, to get the failure log; only the reproduction, patch and verification run in Docker. Use it on code you would run yourself anyway. It never pushes or comments.
 
 ### Option C: Terminal User Interface (Rich TUI)
 
@@ -258,7 +243,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install CIDRA
-        run: pip install cidra
+        # From the repository until a release newer than 0.2.0 is on PyPI:
+        # the 0.2.0 wheel does not contain the sandbox Dockerfile used below.
+        run: pip install "git+https://github.com/abhishekKokadwar/CIDRA.git"
 
       - name: Build Sandbox Image
         # The Dockerfile ships inside the installed package
@@ -296,7 +283,8 @@ The sandbox installs dependencies with `pip install --quiet -r requirements.txt`
 - **Who opens the pull request.** With the built-in `GITHUB_TOKEN` (the default, no setup) the fix PR is opened by `github-actions[bot]` and the fix commit is authored by `CIDRA`. This is the recommended setup: no personal credential is involved.
 - **CI on CIDRA's pull requests.** GitHub does not start workflows for a PR opened with the built-in `GITHUB_TOKEN`, so the fix PR shows no checks until a person pushes to it or re-opens it. The fix has already been verified in the sandbox. To get checks automatically, pass a GitHub App installation token as `github_token`; the PR is then opened by that app's bot. A personal access token also works, but the PR then appears to come from that person, so it is not recommended.
 - **Where the PR goes.** A fix for a failure on a branch push is opened as a draft PR against that branch. A fix for a failure on an existing pull request is pushed to that PR's branch, and is never force-pushed.
-- **Every run leaves a job summary** on the Actions run page with the diagnosis, whatever the outcome. The job fails only when CIDRA itself could not run (no log, no model, no sandbox).
+- **Every run leaves a job summary** on the Actions run page with the diagnosis, whatever the outcome. The job fails when the outcome is `failed`: no log, no usable diagnosis, no sandbox, dependencies that did not install, or a failure that did not reproduce in the sandbox. In the last two cases the summary currently says "could not produce a usable diagnosis" even though a diagnosis was made; check the install and test commands first.
+- **Without a pull request** (a failure on a branch push with PR creation off, or a run that ends without a fix) the job summary is the only output: CIDRA does not comment on the commit.
 
 ---
 
@@ -340,6 +328,8 @@ Copy [.env.example](.env.example) to `.env` to configure your environment:
 | `CIDRA_GITHUB_TOKEN` | GitHub token with branch and PR write permissions | *Optional (for PRs)* |
 | `CIDRA_GITHUB_TOKEN_RO` | Read-only GitHub token for CI logs | *Optional (falls back to the write token)* |
 | `CIDRA_ENABLE_PR_CREATION` | Open a draft PR for a verified fix | `false` |
+| `CIDRA_MAX_LLM_CALLS` | Most model requests one run may make (retries and fallbacks included) | `8` |
+| `CIDRA_MAX_LLM_TOKENS` | Most tokens one run may spend | `40000` |
 | `CIDRA_INSTALL_COMMAND` | One `pip install` of the dependencies, run in the sandbox (`--target` is appended) | `pip install --quiet -r requirements.txt` |
 | `CIDRA_TEST_COMMAND` | Test command, run in the sandbox with no network | `pytest -q 2>&1` |
 | `CIDRA_WEBHOOK_SECRET` | HMAC SHA256 secret for webhook validation | *Optional (for webhook)* |
@@ -388,11 +378,11 @@ CIDRA maintains high test coverage with automated unit and integration verificat
 # 1. Run the server and API tests (47 tests)
 pytest tests/server -v
 
-# 2. Run the core unit tests (168 tests: SBFL, patch audit, git ops, LangGraph routing)
+# 2. Run the core unit tests (184 tests: SBFL, patch audit, git ops, LangGraph routing)
 #    No Docker, network or API key needed
 pytest tests/unit -v
 
-# 3. Run the Docker integration tests against a clone of the practice repo (21 tests)
+# 3. Run the Docker integration tests against a clone of the practice repo (23 tests)
 CIDRA_PRACTICE_REPO=/path/to/cidra-practice pytest tests/integration -v
 
 # 4. Run the Dashboard-to-Backend live wiring test suite
@@ -403,8 +393,8 @@ npm run test:wiring
 ### Test Suite Summary
 
 - **Server Test Suite (`tests/server/`)**: 47 tests (FastAPI endpoints, HMAC signatures, settings persistence, replay safety).
-- **Core Unit Suite (`tests/unit/`)**: 168 tests (Ochiai/Tarantula SBFL ranking, patch audit guards, git isolation, flaky detection).
-- **Integration Suite (`tests/integration/`)**: 21 tests (real sandbox runs on fixture branches; skipped when `CIDRA_PRACTICE_REPO` is not set).
+- **Core Unit Suite (`tests/unit/`)**: 184 tests (Ochiai/Tarantula SBFL ranking, patch audit guards, git isolation, flaky detection).
+- **Integration Suite (`tests/integration/`)**: 23 tests (real sandbox runs on fixture branches and corpus repositories; skipped when `CIDRA_PRACTICE_REPO` is not set).
 - **Key-free end-to-end run**: `scripts/fake_llm.py` stands in for the model so the whole pipeline can run without an API key.
 - **Wiring Verification (`test-backend-wiring.js`)**: 5 checks (Live latency probes to OpenRouter and Groq, settings round-trip, telemetry parsing).
 
@@ -417,10 +407,9 @@ The repository is organized cleanly into source, dashboard, documentation, and t
 ```text
 cidra/
 ├── .github/workflows/    # CI and PyPI publishing automation
-├── .vscode/              # Editor settings (filters internal caches)
 ├── cidra/                # Python Core Engine
 │   ├── integrations/     # LLM multi-tier clients & GitHub REST API
-│   ├── nodes/            # 18 LangGraph nodes (SBFL, fix, audit, report, etc.)
+│   ├── nodes/            # Graph node functions (20 nodes are wired in graph.py)
 │   ├── sandbox/          # Hardened Docker sandbox (runner.py, limits.py)
 │   ├── server/           # FastAPI backend & settings API
 │   ├── static/           # Production web dashboard bundle (embedded in wheel)

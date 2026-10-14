@@ -554,7 +554,7 @@ In accordance with honest empirical disclosure, the following operational bounda
    - Flaky tests are detected via repeated execution and quarantined via policy strict refusal; CIDRA intentionally does not attempt to rewrite non-deterministic external network calls without human instruction.
 4. **Static AST Analysis Boundaries**:
    - Static AST parsing reliably detects structural patterns (assertions, imports, skip decorators, system calls).
-   - Highly obfuscated runtime dynamic metaprogramming (e.g. nested string decoders) is contained by the Docker sandbox runner (`network="none"`, read-only rootfs).
+   - Highly obfuscated runtime dynamic metaprogramming (e.g. nested string decoders) is contained by the Docker sandbox runner (`network="none"` outside the install step, non-root, `no-new-privileges`, resource caps; the root filesystem is not read-only).
 5. **Air-Gapped LLM Inference Latency**:
    - Local LLMs (Ollama / vLLM) ensure zero external network egress, but inference turnaround is dependent on local GPU compute (2s–15s vs 1s–3s on cloud APIs).
 
