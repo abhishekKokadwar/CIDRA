@@ -70,12 +70,6 @@ fixture F-02); refuse any other edit to that file. Or re-run the ORIGINAL failin
 file against the patched source as part of `verify_fix`.
 **Done when:** fastapi-5 ends `diagnosis_only` (or a source fix), and F-02 still verifies.
 
-### G-16 · Flakiness is checked only when the model says "flaky" — 🛠
-`route_category` sends a run to the 5-run check only for `analysis.category == "flaky_test"`.
-Every other category runs the tests once, so a flaky failure the model calls
-`assertion_error` goes down the fix path.
-**Fix:** run the reproduction at least twice for every category, or always on a fixable one.
-
 ### G-18 · Install failure and non-reproduction are reported as "could not diagnose" — 🛠 (small)
 `install_deps` returns `env_ready: False` with no message, and a run that does not reproduce
 has a diagnosis but ends `failed`. The report then says "CIDRA could not produce a usable
@@ -154,6 +148,11 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-16 · Flakiness was checked only on a "flaky" diagnosis** — Closed 2026-10-15. A failure
+  in a category CIDRA patches is now reproduced twice; a green second run, or targets that
+  stop failing, end the run as `flaky_detected` with no patch. The 5-run check stays for a
+  "flaky" diagnosis. Two runs catch a test that fails half the time only one time in two.
+  `tests/unit/test_flaky_every_fixable.py`.
 - **G-17 · Reproduction accepted any red run** — Closed 2026-10-15. The failing tests are
   read from the CI log itself (pytest's FAILED / ERROR lines, no model involved) and must fail
   in the sandbox; a different failure ends the run as not reproduced, saying which tests were
