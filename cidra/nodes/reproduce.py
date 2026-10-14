@@ -99,7 +99,29 @@ def reproduce_once(state: DebugState) -> dict:
            "target_tests": targets, "repro_evidence": evidence}
     if reason:
         out["analysis_error"] = reason
+        return out
+    if _fixable(state):
+        # A failure CIDRA would patch is run again: a test that flips between
+        # runs would make any patch look verified (KNOWN_GAPS G-16). The full
+        # 5-run check stays for a "flaky" diagnosis.
+        # ponytail: two runs catch a test that fails half the time 1 in 2; raise
+        # to FLAKY_RUNS if a flaky test is ever patched in the corpus.
+        again = session.run("test", _test_command(state))
+        results.append(again)
+        again_failed = [] if again.passed else failing_tests(again.stdout_tail + "\n" + again.stderr_tail)
+        still = [t for t in targets if any(_same_test(t, s) for s in again_failed)]
+        if again.passed or still != targets:
+            return {"reproduced": False, "repro_results": results, "target_tests": targets,
+                    "repro_evidence": evidence, "outcome": "flaky_detected",
+                    "flaky_pass_count": 1 if again.passed else 0, "flaky_score": flakiness_score(1, 2)}
     return out
+
+
+def _fixable(state: DebugState) -> bool:
+    from cidra.nodes.fix import STRATEGIES
+
+    analysis = state.get("analysis")
+    return analysis is not None and analysis.category in STRATEGIES
 
 
 def reproduce_n_times(state: DebugState) -> dict:
