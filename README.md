@@ -236,6 +236,8 @@ jobs:
           # The commit whose CI failed, not the default branch's tip
           ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
+          # Do not leave the job's token in the checkout of untrusted code
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -279,6 +281,7 @@ The sandbox installs dependencies with `pip install --quiet -r requirements.txt`
 
 ### Repository setup for pull requests
 
+- **Never run the failing commit's code on the runner.** A `workflow_run` job has the repository's secrets, even when the failure came from a fork's pull request. CIDRA only copies that code into the sandbox, which has no secrets and no network outside the install step. Do not add steps that install or test it on the runner.
 - **Allow Actions to open pull requests.** In the repository: Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests". Without it GitHub returns 403: the fix branch is pushed but no PR is opened.
 - **Who opens the pull request.** With the built-in `GITHUB_TOKEN` (the default, no setup) the fix PR is opened by `github-actions[bot]` and the fix commit is authored by `CIDRA`. This is the recommended setup: no personal credential is involved.
 - **CI on CIDRA's pull requests.** GitHub does not start workflows for a PR opened with the built-in `GITHUB_TOKEN`, so the fix PR shows no checks until a person pushes to it or re-opens it. The fix has already been verified in the sandbox. To get checks automatically, pass a GitHub App installation token as `github_token`; the PR is then opened by that app's bot. A personal access token also works, but the PR then appears to come from that person, so it is not recommended.
