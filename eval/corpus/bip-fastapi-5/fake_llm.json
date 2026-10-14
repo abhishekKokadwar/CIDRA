@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: assert {'description...model-a-name'} == {'description...model-a-name'}",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_filter_pydantic_sub_model.py::test_filter_sub_model"
+  },
+  "Patch": {
+    "diff": "diff --git a/fastapi/utils.py b/fastapi/utils.py\nindex a068cc582..6a0c1bfd7 100644\n--- a/fastapi/utils.py\n+++ b/fastapi/utils.py\n@@ -97,7 +97,7 @@ def create_cloned_field(field: ModelField) -> ModelField:\n             original_type.__name__, __config__=original_type.__config__\n         )\n         for f in original_type.__fields__.values():\n-            use_type.__fields__[f.name] = f\n+            use_type.__fields__[f.name] = create_cloned_field(f)\n         use_type.__validators__ = original_type.__validators__\n     if PYDANTIC_1:\n         new_field = ModelField(\n",
+    "target_file": "fastapi/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

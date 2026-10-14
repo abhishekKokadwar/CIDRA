@@ -1,0 +1,24 @@
+{
+  "group": "bugsinpy",
+  "source": "BugsInPy tornado/3",
+  "class": "assertion_error",
+  "known_fix": true,
+  "repo_url": "https://github.com/tornadoweb/tornado",
+  "failing_ref": "940fd87fe9145d1154c8457221f86d56ea063c65",
+  "fix_ref": "aa622e724f80e0f7fcee369f75d69d1db13d72f2",
+  "failing_tests_from_fix": [
+    "tornado/test/httpclient_test.py"
+  ],
+  "held_out_paths": [
+    "tornado/test/httpclient_test.py"
+  ],
+  "install_command": "pip install --quiet pytest",
+  "test_command": "python -m pytest -q tornado/test/httpclient_test.py 2>&1",
+  "python_version": "3.7",
+  "log_origin": "pytest output of the failing state in the sandbox, not a CI log",
+  "fix_size": {
+    "files": 2,
+    "lines": 13
+  },
+  "dependencies": "pinned"
+}

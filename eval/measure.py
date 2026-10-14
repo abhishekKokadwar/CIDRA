@@ -92,6 +92,7 @@ from cidra.nodes.environment import (  # noqa: E402
     sandbox_install_command, sandbox_test_command, workflow_env, workflow_python)
 from cidra.sandbox import limits  # noqa: E402
 from cidra.sandbox.runner import Session  # noqa: E402
+from eval import corpus_repo  # noqa: E402
 
 # Per-fixture overrides the pipeline takes as run input.
 _RUN_OVERRIDES = ("install_command", "test_command", "python_version")
@@ -99,42 +100,20 @@ _RUN_OVERRIDES = ("install_command", "test_command", "python_version")
 _FAILED_TEST = re.compile(r"^(?:FAILED|ERROR) (\S+)", re.MULTILINE)
 
 
-def _git(repo: str, *args: str) -> str:
-    return subprocess.check_output(["git", "-C", repo, *args], text=True, stderr=subprocess.DEVNULL).strip()
-
-
-def _corpus_clone(url: str) -> str:
-    """A local clone of a fixture's repository, made once and reused."""
-    name = re.sub(r"[^A-Za-z0-9_.-]+", "_", url.split("://")[-1].removesuffix(".git")).strip("_")
-    dest = pathlib.Path(config.WORKTREE_ROOT).resolve() / "corpus" / name
-    if not (dest / ".git").exists():
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.check_call(["git", "clone", "--quiet", url, str(dest)])
-    return str(dest)
-
-
-def _commit(repo: str, ref: str, pin: bool) -> str:
-    """Resolve `ref` in the clone, fetching it if it is not there yet.
-
-    `pin` tags the commit: the pipeline clones this clone, and a commit that no
-    branch or tag reaches (a pull request head, a deleted branch) would not come along.
-    """
-    try:
-        sha = _git(repo, "rev-parse", "--verify", f"{ref}^{{commit}}")
-    except subprocess.CalledProcessError:
-        _git(repo, "fetch", "--quiet", "origin", ref)
-        sha = _git(repo, "rev-parse", "--verify", "FETCH_HEAD^{commit}")
-    if pin:
-        _git(repo, "tag", "--force", f"cidra-pin-{sha[:12]}", sha)
-    return sha
-
-
 def load_fixture(fid: str) -> dict:
     """One fixture, with its repository on disk and both commits resolved."""
     folder = FIXTURES / fid
     meta = json.loads((folder / "meta.json").read_text(encoding="utf-8"))
     url = meta.get("repo_url")
-    repo = _corpus_clone(url) if url else config.PRACTICE_REPO_DIR
+    repo = corpus_repo.corpus_clone(url) if url else config.PRACTICE_REPO_DIR
+    failing = corpus_repo.resolve(repo, meta.get("failing_ref") or f"origin/{meta['gh_branch']}")
+    fix = corpus_repo.resolve(repo, meta.get("fix_ref") or "origin/main")
+    if meta.get("failing_tests_from_fix"):
+        # the failing state is the buggy code with the fix commit's test
+        failing = corpus_repo.with_files_from(repo, failing, fix, meta["failing_tests_from_fix"])
+    if url:
+        corpus_repo.pin(repo, failing)
+        corpus_repo.pin(repo, fix)
     log = folder / meta.get("log", "raw.log")
     held_out_paths = meta.get("held_out_paths") or ["tests"]
     first = pathlib.PurePosixPath(held_out_paths[0])
@@ -144,8 +123,8 @@ def load_fixture(fid: str) -> dict:
         "meta": meta,
         "expected": json.loads((folder / "expected.json").read_text(encoding="utf-8")),
         "repo": repo,
-        "failing_sha": _commit(repo, meta.get("failing_ref") or f"origin/{meta['gh_branch']}", pin=bool(url)),
-        "fix_sha": _commit(repo, meta.get("fix_ref") or "origin/main", pin=bool(url)),
+        "failing_sha": failing,
+        "fix_sha": fix,
         "log": log.read_text(encoding="utf-8", errors="replace") if log.is_file() else None,
         "held_out_paths": held_out_paths,
         # where the fixture's own extra held-out files are dropped

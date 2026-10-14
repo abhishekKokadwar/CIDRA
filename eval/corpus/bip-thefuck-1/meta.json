@@ -1,0 +1,24 @@
+{
+  "group": "bugsinpy",
+  "source": "BugsInPy thefuck/1",
+  "class": "unknown",
+  "known_fix": true,
+  "repo_url": "https://github.com/nvbn/thefuck",
+  "failing_ref": "2ced7a7f33ae0bec3ffc7a43ce95330bdf6cfcb9",
+  "fix_ref": "444908ce1c17767ef4aaf9e0b4950497914f7f63",
+  "failing_tests_from_fix": [
+    "tests/rules/test_pip_unknown_command.py"
+  ],
+  "held_out_paths": [
+    "tests/rules/test_pip_unknown_command.py"
+  ],
+  "install_command": "pip install --quiet atomicwrites attrs bleach certifi chardet colorama decorator docutils flake8 idna importlib-metadata keyring mccabe mock more-itertools packaging pexpect pkginfo pluggy psutil ptyprocess py py-cpuinfo pycodestyle pyflakes Pygments pypandoc pyparsing pyte pytest pytest-benchmark pytest-docker-pexpect pytest-mock pywin32-ctypes readme-renderer requests requests-toolbelt six tqdm twine urllib3 wcwidth webencodings win-unicode-console zipp",
+  "test_command": "python -m pytest -q tests/rules/test_pip_unknown_command.py 2>&1",
+  "python_version": "3.7",
+  "dependencies": "unpinned",
+  "log_origin": "pytest output of the failing state in the sandbox, not a CI log",
+  "fix_size": {
+    "files": 1,
+    "lines": 4
+  }
+}

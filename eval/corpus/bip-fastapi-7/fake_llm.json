@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "TypeError: Object of type Decimal is not JSON serializable",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_multi_body_errors.py::test_jsonable_encoder_requiring_error"
+  },
+  "Patch": {
+    "diff": "diff --git a/fastapi/exception_handlers.py b/fastapi/exception_handlers.py\nindex cda2f8c78..2b286d71c 100644\n--- a/fastapi/exception_handlers.py\n+++ b/fastapi/exception_handlers.py\n@@ -1,3 +1,4 @@\n+from fastapi.encoders import jsonable_encoder\n from fastapi.exceptions import RequestValidationError\n from starlette.exceptions import HTTPException\n from starlette.requests import Request\n@@ -19,5 +20,6 @@ async def request_validation_exception_handler(\n     request: Request, exc: RequestValidationError\n ) -> JSONResponse:\n     return JSONResponse(\n-        status_code=HTTP_422_UNPROCESSABLE_ENTITY, content={\"detail\": exc.errors()}\n+        status_code=HTTP_422_UNPROCESSABLE_ENTITY,\n+        content={\"detail\": jsonable_encoder(exc.errors())},\n     )\n",
+    "target_file": "fastapi/exception_handlers.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

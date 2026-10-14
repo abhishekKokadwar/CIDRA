@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "AttributeError: 'tuple' object has no attribute 'timetuple'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "test/test_utils.py::TestUtil::test_unified_timestamps"
+  },
+  "Patch": {
+    "diff": "diff --git a/youtube_dl/utils.py b/youtube_dl/utils.py\nindex f5cd6819b..97ddd9883 100644\n--- a/youtube_dl/utils.py\n+++ b/youtube_dl/utils.py\n@@ -1101,7 +1101,7 @@ def unified_timestamp(date_str, day_first=True):\n \n     date_str = date_str.replace(',', ' ')\n \n-    pm_delta = datetime.timedelta(hours=12 if re.search(r'(?i)PM', date_str) else 0)\n+    pm_delta = 12 if re.search(r'(?i)PM', date_str) else 0\n     timezone, date_str = extract_timezone(date_str)\n \n     # Remove AM/PM + timezone\n@@ -1109,13 +1109,13 @@ def unified_timestamp(date_str, day_first=True):\n \n     for expression in date_formats(day_first):\n         try:\n-            dt = datetime.datetime.strptime(date_str, expression) - timezone + pm_delta\n+            dt = datetime.datetime.strptime(date_str, expression) - timezone + datetime.timedelta(hours=pm_delta)\n             return calendar.timegm(dt.timetuple())\n         except ValueError:\n             pass\n     timetuple = email.utils.parsedate_tz(date_str)\n     if timetuple:\n-        return calendar.timegm(timetuple.timetuple())\n+        return calendar.timegm(timetuple) + pm_delta * 3600\n \n \n def determine_ext(url, default_ext='unknown_video'):\n",
+    "target_file": "youtube_dl/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

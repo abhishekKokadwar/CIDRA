@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "tornado.util.TimeoutError: Operation timed out after 5 seconds",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/httpclient_test.py::HTTPClientCommonTestCase::test_redirect_put_without_body"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/http1connection.py b/tornado/http1connection.py\nindex 30f2a172..fd63be62 100644\n--- a/tornado/http1connection.py\n+++ b/tornado/http1connection.py\n@@ -390,7 +390,10 @@ class HTTP1Connection(httputil.HTTPConnection):\n             self._chunking_output = (\n                 start_line.method in (\"POST\", \"PUT\", \"PATCH\")\n                 and \"Content-Length\" not in headers\n-                and \"Transfer-Encoding\" not in headers\n+                and (\n+                    \"Transfer-Encoding\" not in headers\n+                    or headers[\"Transfer-Encoding\"] == \"chunked\"\n+                )\n             )\n         else:\n             assert isinstance(start_line, httputil.ResponseStartLine)\n",
+    "target_file": "tornado/http1connection.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: subprocess produced unexpected output",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/httpclient_test.py::SyncHTTPClientSubprocessTest::test_destructor_log"
+  },
+  "Patch": {
+    "diff": "diff --git a/.travis.yml b/.travis.yml\nindex e093a8d7..f39bb765 100644\n--- a/.travis.yml\n+++ b/.travis.yml\n@@ -84,8 +84,8 @@ script:\n     # run it with nightly cpython. Coverage is very slow on pypy.\n     - if [[ $TRAVIS_PYTHON_VERSION != nightly && $TRAVIS_PYTHON_VERSION != 'pypy'* ]]; then export RUN_COVERAGE=1; fi\n     - if [[ \"$RUN_COVERAGE\" == 1 ]]; then export TARGET=\"-m coverage run $TARGET\"; fi\n-    # See comments in tox.ini\n-    - export PYTHONWARNINGS=error,ignore:::site\n+    # See comments in tox.ini. Disabled on py35 because ResourceWarnings are too noisy there.\n+    - if [[ $TRAVIS_PYTHON_VERSION != '3.5' ]]; then export PYTHONWARNINGS=error,ignore:::site; fi\n     - python -bb $TARGET\n     - python -O $TARGET\n     - LANG=C python $TARGET\ndiff --git a/tornado/httpclient.py b/tornado/httpclient.py\nindex d1c92a49..b6344cff 100644\n--- a/tornado/httpclient.py\n+++ b/tornado/httpclient.py\n@@ -233,9 +233,14 @@ class AsyncHTTPClient(Configurable):\n             return\n         self._closed = True\n         if self._instance_cache is not None:\n-            if self._instance_cache.get(self.io_loop) is not self:\n+            cached_val = self._instance_cache.pop(self.io_loop, None)\n+            # If there's an object other than self in the instance\n+            # cache for our IOLoop, something has gotten mixed up. A\n+            # value of None appears to be possible when this is called\n+            # from a destructor (HTTPClient.__del__) as the weakref\n+            # gets cleared before the destructor runs.\n+            if cached_val is not None and cached_val is not self:\n                 raise RuntimeError(\"inconsistent AsyncHTTPClient cache\")\n-            del self._instance_cache[self.io_loop]\n \n     def fetch(\n         self,\n",
+    "target_file": ".travis.yml",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "IndexError: list index out of range",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/rules/test_pip_unknown_command.py::test_get_new_command[pip"
+  },
+  "Patch": {
+    "diff": "diff --git a/thefuck/rules/pip_unknown_command.py b/thefuck/rules/pip_unknown_command.py\nindex 75fcc7c..2720cda 100644\n--- a/thefuck/rules/pip_unknown_command.py\n+++ b/thefuck/rules/pip_unknown_command.py\n@@ -12,8 +12,8 @@ def match(command):\n \n \n def get_new_command(command):\n-    broken_cmd = re.findall(r'ERROR: unknown command \\\"([a-z]+)\\\"',\n+    broken_cmd = re.findall(r'ERROR: unknown command \"([^\"]+)\"',\n                             command.output)[0]\n-    new_cmd = re.findall(r'maybe you meant \\\"([a-z]+)\\\"', command.output)[0]\n+    new_cmd = re.findall(r'maybe you meant \"([^\"]+)\"', command.output)[0]\n \n     return replace_argument(command.script, broken_cmd, new_cmd)\n",
+    "target_file": "thefuck/rules/pip_unknown_command.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

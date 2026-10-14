@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_redirects.py::TestRedirects::test_max_redirects"
+  },
+  "Patch": {
+    "diff": "diff --git a/README.rst b/README.rst\nindex 5b201aa..1380308 100644\n--- a/README.rst\n+++ b/README.rst\n@@ -631,13 +631,18 @@ By default, HTTP redirects are not followed and only the first\n response is shown. To instruct HTTPie to follow the ``Location`` header of\n ``30x`` responses and show the final response instead, use the ``--follow, -F`` option.\n \n-If you additionally wish to see the intermediary requests/responses as well,\n-use the ``--show-redirects, -R`` option as well.\n+If you additionally wish to see the intermediary requests/responses,\n+then use the ``--show-redirects, -R`` option as well.\n \n To change the default limit of maximum 30 redirects, use the\n ``--max-redirects=<limit>`` option.\n \n \n+.. code-block:: bash\n+\n+    $ http --follow --show-redirects --max-redirects=5 httpbin.org/redirect/3\n+\n+\n =======\n Proxies\n =======\ndiff --git a/httpie/client.py b/httpie/client.py\nindex 1115f4d..482f9dc 100644\n--- a/httpie/client.py\n+++ b/httpie/client.py\n@@ -40,6 +40,7 @@ def get_response(args, config_dir):\n     \"\"\"Send the request and return a `request.Response`.\"\"\"\n \n     requests_session = get_requests_session()\n+    requests_session.max_redirects = args.max_redirects\n \n     if not args.session and not args.session_read_only:\n         kwargs = get_requests_kwargs(args)\ndiff --git a/httpie/core.py b/httpie/core.py\nindex c0014ce..3dbe7f2 100644\n--- a/httpie/core.py\n+++ b/httpie/core.py\n@@ -192,7 +192,6 @@ def main(args=sys.argv[1:], env=Environment(), error=None):\n         error('Too many redirects (--max-redirects=%s).', args.max_redirects)\n     except Exception as e:\n         # TODO: Better distinction between expected and unexpected errors.\n-        #       Network errors vs. bugs, etc.\n         if traceback:\n             raise\n         msg = str(e)\n",
+    "target_file": "README.rst",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

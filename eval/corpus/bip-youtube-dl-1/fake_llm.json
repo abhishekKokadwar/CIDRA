@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: True is not false",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "test/test_utils.py::TestUtil::test_match_str"
+  },
+  "Patch": {
+    "diff": "diff --git a/youtube_dl/utils.py b/youtube_dl/utils.py\nindex 027d12785..574284e94 100644\n--- a/youtube_dl/utils.py\n+++ b/youtube_dl/utils.py\n@@ -2574,8 +2574,8 @@ def _match_one(filter_part, dct):\n         return op(actual_value, comparison_value)\n \n     UNARY_OPERATORS = {\n-        '': lambda v: v is not None,\n-        '!': lambda v: v is None,\n+        '': lambda v: (v is True) if isinstance(v, bool) else (v is not None),\n+        '!': lambda v: (v is False) if isinstance(v, bool) else (v is None),\n     }\n     operator_rex = re.compile(r'''(?x)\\s*\n         (?P<op>%s)\\s*(?P<key>[a-z_]+)\n",
+    "target_file": "youtube_dl/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}
