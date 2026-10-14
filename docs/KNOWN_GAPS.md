@@ -35,9 +35,11 @@ offline — this gap is only the live plumbing.
 
 ### G-02 · Full engine live run via webhook (Phase 7) — 🐳 🔑 🌐 🛠
 **Status 2026-10-05:** the full engine has now run live through the GitHub Action and the
-local runner with a real model. The webhook entry point itself is still unproven, and it has
-no source checkout: [worker.py](../cidra/server/worker.py) sets no `source_dir`, so the run
-falls back to `CIDRA_PRACTICE_REPO` and works only where the failing repo is already cloned.
+local runner with a real model. The webhook entry point itself is still unproven.
+**Update 2026-10-15:** webhook runs now fetch the failing commit from GitHub themselves
+(`checkout.fetch_commit`, read-only token passed only through the fetch's environment);
+before, they fell back to `CIDRA_PRACTICE_REPO`. Tested against a local stand-in and against
+github.com, not yet through a live delivery.
 **What:** the webhook path is proven end-to-end *except* the final analysis→sandbox→comment
 leg. A real replayed delivery got as far as fetching the CI log, then the LLM call returned
 OpenRouter `402: insufficient credits` (correctly handled as `outcome=failed`).
