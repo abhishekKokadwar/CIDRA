@@ -1,0 +1,134 @@
+# CIDRA Roadmap
+
+**Written:** 2026-10-15 · **Horizon:** about 12 weeks · **Owner:** Abhishek Kokadwar
+
+This is the working plan. It replaces `PRODUCT_PLAN.md` for deciding what to build next; that
+file stays as background. Progress is tracked in pull requests and in
+[KNOWN_GAPS.md](KNOWN_GAPS.md).
+
+## 1. Direction
+
+CIDRA is a **security-focused CI repair agent**. Its claim:
+
+> When a CI run fails, CIDRA produces a repair a developer can trust without re-checking it:
+> the original failure reproduced, a patch that passed a security and test-integrity gate,
+> verified on a clean copy with no regressions, and published as a draft pull request with
+> the evidence of what was run.
+
+Two rules keep the claim honest:
+
+- **Safety and usefulness are measured together.** A tool that never patches is trivially
+  safe. Every safety number is reported next to the fix rate.
+- **Security features are not a differentiator until measured against another tool.** The
+  comparison in milestone M5 decides what CIDRA can claim.
+
+**Audiences, in order:** real users (developers adding it to a Python repository),
+interviewers, research (optional).
+
+**Out of scope for this plan:** languages other than Python, the dashboard, webhook mode
+beyond what exists, SBFL, the semantic fix cache, and merging without a human.
+
+## 2. Where it stands (2026-10-15)
+
+| Requirement | Status |
+|---|---|
+| 1. Authenticate the incoming event | Done: GitHub triggers the Action; webhook mode checks the HMAC |
+| 2. Get the failing commit without exposing secrets to its code | Action mode done; webhook mode has no checkout; `cidra fix` runs tests on the host |
+| 3. Reproduce the original failure | Partial: any red run counts (G-17); flakiness checked only on a "flaky" diagnosis (G-16) |
+| 4. Generate a patch | Works; 0 of 12 fixable BugsInPy bugs fixed |
+| 5. Reject test-weakening or unsafe patches | Gate works; a test's setup can be edited to pass (G-22) |
+| 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
+| 7. Original failure fixed, no unrelated regressions | Not done: only the test command's exit code is checked |
+| 8. Draft PR with evidence of what was tested | Weak: diff and "suite passed" only |
+
+## 3. Milestones
+
+Each milestone ends when its exit criteria hold **and are checked by tests in CI**.
+
+### M1 · Trustworthy "verified" (weeks 1 to 3)
+
+- [ ] Run the 15 sandbox safety tests in CI (they skip on a practice-repo check they do not need).
+- [ ] Record per-test results (pytest JUnit XML) before and after the patch.
+- [ ] G-17: the test the CI log names must be among the sandbox's failures, or the run is "not reproduced".
+- [ ] No regressions: verified means the target test went red to green **and** no test went green to red. Tests already failing before the patch do not block a verification but are listed.
+- [ ] G-22: on an `assertion_error` fix, the failing test file may change only in assert expected values.
+- [ ] G-16: reproduce at least twice for every fixable category; a disagreement means flaky.
+- [ ] G-18: an install failure or a non-reproduction says why, and points to `install_command` / `test_command`.
+- [ ] A self-contained end-to-end test in CI: a small repository created in the test, the stub model, and the full graph to `verified_fix`, `diagnosis_only` and `flaky_detected`.
+- [ ] The adversarial and security suites run in CI (G-05).
+
+**Exit:** each item above has a CI test that fails on the old behaviour.
+
+### M2 · Evidence in every pull request (weeks 4 to 5)
+
+Each draft PR and job summary carries a short, fixed-format evidence block:
+
+- [ ] Failing commit and base commit, sandbox image digest, Python version.
+- [ ] The install and test commands, exactly as run.
+- [ ] Per-test before/after table: target test(s) red to green, counts for the rest, any test that was already failing.
+- [ ] Audit gate verdict and any surfaced dependency change.
+- [ ] Model, requests, tokens and cost of the run.
+- [ ] One command that reruns the verification locally.
+
+**Exit:** a reviewer can confirm a fix from the PR alone, and the rerun command reproduces it.
+
+### M3 · Fix real bugs (weeks 6 to 8)
+
+- [ ] Study the BugsInPy misses: 7 correct diagnoses with no green patch, 4 fixable bugs diagnosed `unknown`.
+- [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
+- [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
+
+**Exit (targets, revisited after the first round):** at least a quarter of the fixable cases
+genuinely fixed, **zero** false "verified", correct declines unchanged, median cost under
+$0.02 per run.
+
+### M4 · Usable by a stranger (weeks 9 to 10)
+
+- [ ] A default install ladder: `requirements*.txt`, else `pyproject.toml` / `setup.py`.
+- [ ] A comment on the failing commit when there is no PR (G-08); a clear message on a 403.
+- [ ] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing.
+- [ ] README quick start that fits on one screen.
+- [ ] Follow only the README on three Python repositories CIDRA was not built around, one with `pyproject.toml`. Every question needing the source becomes a fix.
+
+**Exit:** all three trial repositories get a verified fix or a clear diagnosis without help.
+
+### M5 · Comparison (weeks 11 to 12)
+
+Same model, same tasks (BugsInPy corpus + `eval/security_fixtures/`), protocol fixed before running:
+
+| System | What it isolates |
+|---|---|
+| CIDRA | the full system |
+| Plain loop: same model, no reproduction check, no audit gate | what CIDRA's safety layers add |
+| One maintained open-source agent (chosen at the time, e.g. SWE-agent, OpenHands or Aider) | how CIDRA compares with what exists |
+
+Reported per system: fix rate, false-fix rate (held-out tests), unsafe actions on the attack
+fixtures, cost and time. Published as results files and a README table, including results
+that do not favour CIDRA.
+
+**Exit:** the README states, with numbers, where CIDRA is better and where it is not.
+
+## 4. Metrics
+
+| Metric | Measured by | Target |
+|---|---|---|
+| False "verified" | held-out tests, `eval/measure.py` | 0, always |
+| Unsafe action on attack fixtures | security fixtures | 0 |
+| Correct declines | corpus out-of-scope cases | all |
+| Fix rate, fixable cases | corpus | M3 target, then improving |
+| Median cost per run | harness | under $0.02 |
+| Trial repositories working from the README alone | M4 | 3 of 3 |
+
+## 5. Budget
+
+Model spend stays under **$20 a month** against a $50 ceiling. A full corpus run costs about
+$0.30 today; M3 iteration is budgeted at two full runs a day at most. M5 baselines spend more
+tokens per task; estimate them on five cases before a full run.
+
+## 6. How we work
+
+- Every change on a branch, through a pull request, CI green, rebase-merged
+  ([CONTRIBUTING.md](../CONTRIBUTING.md)).
+- Every bug fix ships with a test that fails on the old code.
+- A change that affects repair results is measured with `eval/measure.py` and its result file committed.
+- A gap found and not fixed goes into [KNOWN_GAPS.md](KNOWN_GAPS.md) the same day.
