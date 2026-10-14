@@ -187,7 +187,7 @@ docker build -t cidra-sandbox:base "$(python -c 'import cidra, os; print(os.path
 cidra fix
 ```
 
-`cidra fix` first runs `CIDRA_TEST_COMMAND` (default `pytest -q`) **on your machine**, outside the sandbox, to get the failure log; only the reproduction, patch and verification run in Docker. Use it on code you would run yourself anyway. It never pushes or comments.
+`cidra fix` repairs the last commit (`HEAD`), not uncommitted changes; it warns if there are any. Every step runs in Docker, including the first test run that produces the failure log, so the repository's code never runs on your machine. It never pushes or comments.
 
 ### Option C: Terminal User Interface (Rich TUI)
 
