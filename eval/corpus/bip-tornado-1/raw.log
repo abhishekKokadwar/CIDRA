@@ -1,0 +1,34 @@
+...............F..........................s....                          [100%]
+=================================== FAILURES ===================================
+__________________________ WebSocketTest.test_nodelay __________________________
+
+self = <tornado.test.websocket_test.WebSocketTest testMethod=test_nodelay>
+
+    @gen_test
+    def test_nodelay(self):
+        ws = yield self.ws_connect("/nodelay")
+        res = yield ws.read_message()
+>       self.assertEqual(res, "hello")
+E       AssertionError: None != 'hello'
+
+tornado/test/websocket_test.py:576: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    tornado.application:web.py:1788 Uncaught exception GET /nodelay (127.0.0.1)
+HTTPServerRequest(protocol='http', host='127.0.0.1:40373', method='GET', uri='/nodelay', version='HTTP/1.1', remote_ip='127.0.0.1')
+Traceback (most recent call last):
+  File "/work/tornado/websocket.py", line 952, in _accept_connection
+    open_result = handler.open(*handler.open_args, **handler.open_kwargs)
+  File "/work/tornado/test/websocket_test.py", line 203, in open
+    self.set_nodelay(True)
+  File "/work/tornado/websocket.py", line 561, in set_nodelay
+    assert self.stream is not None
+AssertionError
+=============================== warnings summary ===============================
+tornado/test/websocket_test.py:40
+  /work/tornado/test/websocket_test.py:40: PytestCollectionWarning: cannot collect test class 'TestWebSocketHandler' because it has a __init__ constructor (from: tornado/test/websocket_test.py)
+    class TestWebSocketHandler(WebSocketHandler):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tornado/test/websocket_test.py::WebSocketTest::test_nodelay - Assertio...
+1 failed, 45 passed, 1 skipped, 1 warning in 0.58s

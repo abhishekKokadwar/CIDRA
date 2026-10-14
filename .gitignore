@@ -41,6 +41,9 @@ models.json
 payload.json
 *.tmp
 *.log
+# Fixture logs are test data, not run output
+!eval/fixtures/*/*.log
+!eval/corpus/*/raw.log
 
 # Node & Frontend
 **/node_modules/
