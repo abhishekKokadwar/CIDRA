@@ -1,0 +1,24 @@
+{
+  "group": "bugsinpy",
+  "source": "BugsInPy tornado/1",
+  "class": "assertion_error",
+  "known_fix": true,
+  "repo_url": "https://github.com/tornadoweb/tornado",
+  "failing_ref": "6a5a0bfa370b6c0d3dbbf9589a560a98202d2baa",
+  "fix_ref": "4677c54cc18bbfbdf0f4dadf11610fab6203fd63",
+  "failing_tests_from_fix": [
+    "tornado/test/websocket_test.py"
+  ],
+  "held_out_paths": [
+    "tornado/test/websocket_test.py"
+  ],
+  "install_command": "pip install --quiet pytest",
+  "test_command": "python -m pytest -q tornado/test/websocket_test.py 2>&1",
+  "python_version": "3.7",
+  "log_origin": "pytest output of the failing state in the sandbox, not a CI log",
+  "fix_size": {
+    "files": 1,
+    "lines": 11
+  },
+  "dependencies": "pinned"
+}

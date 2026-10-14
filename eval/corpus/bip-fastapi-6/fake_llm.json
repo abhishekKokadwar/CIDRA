@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "assert 422 == 200",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_forms_from_non_typing_sequences.py::test_python_list_param_as_form"
+  },
+  "Patch": {
+    "diff": "diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py\nindex 956fffff4..a1cc0b980 100644\n--- a/fastapi/dependencies/utils.py\n+++ b/fastapi/dependencies/utils.py\n@@ -629,9 +629,9 @@ async def request_body_to_args(\n         for field in required_params:\n             value: Any = None\n             if received_body is not None:\n-                if field.shape in sequence_shapes and isinstance(\n-                    received_body, FormData\n-                ):\n+                if (\n+                    field.shape in sequence_shapes or field.type_ in sequence_types\n+                ) and isinstance(received_body, FormData):\n                     value = received_body.getlist(field.alias)\n                 else:\n                     value = received_body.get(field.alias)\n",
+    "target_file": "fastapi/dependencies/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

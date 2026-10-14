@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: Lists differ: [1010.0, 1010.0, 1010.0, 1010.0, 1010.0] != [1010, 1020, 1030, 1040, 1050]",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/ioloop_test.py::TestPeriodicCallbackMath::test_clock_backwards"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/ioloop.py b/tornado/ioloop.py\nindex 45d2d223..48700139 100644\n--- a/tornado/ioloop.py\n+++ b/tornado/ioloop.py\n@@ -1217,7 +1217,27 @@ class PeriodicCallback(object):\n             self._timeout = self.io_loop.add_timeout(self._next_timeout, self._run)\n \n     def _update_next(self, current_time):\n+        callback_time_sec = self.callback_time / 1000.0\n         if self._next_timeout <= current_time:\n-            callback_time_sec = self.callback_time / 1000.0\n+            # The period should be measured from the start of one call\n+            # to the start of the next. If one call takes too long,\n+            # skip cycles to get back to a multiple of the original\n+            # schedule.\n             self._next_timeout += (math.floor((current_time - self._next_timeout) /\n                                               callback_time_sec) + 1) * callback_time_sec\n+        else:\n+            # If the clock moved backwards, ensure we advance the next\n+            # timeout instead of recomputing the same value again.\n+            # This may result in long gaps between callbacks if the\n+            # clock jumps backwards by a lot, but the far more common\n+            # scenario is a small NTP adjustment that should just be\n+            # ignored.\n+            #\n+            # Note that on some systems if time.time() runs slower\n+            # than time.monotonic() (most common on windows), we\n+            # effectively experience a small backwards time jump on\n+            # every iteration because PeriodicCallback uses\n+            # time.time() while asyncio schedules callbacks using\n+            # time.monotonic().\n+            # https://github.com/tornadoweb/tornado/issues/2333\n+            self._next_timeout += callback_time_sec\n",
+    "target_file": "tornado/ioloop.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

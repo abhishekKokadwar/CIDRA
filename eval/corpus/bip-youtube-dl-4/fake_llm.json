@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "youtube_dl.utils.ExtractorError: Unsupported JS expression 'x()'; please report this issue on https://yt-dl.org/bug . Make sure you are using the latest version; see  https://yt-dl.org/update  on how to update. Be sure to call youtube-dl with the --verbose flag and include its complete output.",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "test/test_jsinterp.py::TestJSInterpreter::test_call"
+  },
+  "Patch": {
+    "diff": "diff --git a/youtube_dl/jsinterp.py b/youtube_dl/jsinterp.py\nindex 9737f7002..a8df4aef0 100644\n--- a/youtube_dl/jsinterp.py\n+++ b/youtube_dl/jsinterp.py\n@@ -198,12 +198,12 @@ class JSInterpreter(object):\n             return opfunc(x, y)\n \n         m = re.match(\n-            r'^(?P<func>%s)\\((?P<args>[a-zA-Z0-9_$,]+)\\)$' % _NAME_RE, expr)\n+            r'^(?P<func>%s)\\((?P<args>[a-zA-Z0-9_$,]*)\\)$' % _NAME_RE, expr)\n         if m:\n             fname = m.group('func')\n             argvals = tuple([\n                 int(v) if v.isdigit() else local_vars[v]\n-                for v in m.group('args').split(',')])\n+                for v in m.group('args').split(',')]) if len(m.group('args')) > 0 else tuple()\n             if fname not in self._functions:\n                 self._functions[fname] = self.extract_function(fname)\n             return self._functions[fname](argvals)\n",
+    "target_file": "youtube_dl/jsinterp.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

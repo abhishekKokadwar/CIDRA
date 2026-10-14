@@ -1,0 +1,24 @@
+{
+  "group": "bugsinpy",
+  "source": "BugsInPy youtube-dl/3",
+  "class": "assertion_error",
+  "known_fix": true,
+  "repo_url": "https://github.com/ytdl-org/youtube-dl",
+  "failing_ref": "f5469da9e6e259c1690c7ef54f1da1c19f65036f",
+  "fix_ref": "95f3f7c20a05e7ac490e768b8470b20538ef8581",
+  "failing_tests_from_fix": [
+    "test/test_utils.py"
+  ],
+  "held_out_paths": [
+    "test/test_utils.py"
+  ],
+  "install_command": "pip install --quiet pytest",
+  "test_command": "python -m pytest -q test/test_utils.py 2>&1",
+  "python_version": "3.7",
+  "dependencies": "pinned",
+  "log_origin": "pytest output of the failing state in the sandbox, not a CI log",
+  "fix_size": {
+    "files": 2,
+    "lines": 8
+  }
+}

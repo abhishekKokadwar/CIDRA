@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: assert {'components'...ead Users'}}}} == {'components'...ead Users'}}}}",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_param_in_path_and_dependency.py::test_reused_param"
+  },
+  "Patch": {
+    "diff": "diff --git a/fastapi/openapi/utils.py b/fastapi/openapi/utils.py\nindex d53ee6b97..91f90ec58 100644\n--- a/fastapi/openapi/utils.py\n+++ b/fastapi/openapi/utils.py\n@@ -180,7 +180,9 @@ def get_openapi_path(\n             operation_parameters = get_openapi_operation_parameters(all_route_params)\n             parameters.extend(operation_parameters)\n             if parameters:\n-                operation[\"parameters\"] = parameters\n+                operation[\"parameters\"] = list(\n+                    {param[\"name\"]: param for param in parameters}.values()\n+                )\n             if method in METHODS_WITH_BODY:\n                 request_body_oai = get_openapi_operation_request_body(\n                     body_field=route.body_field, model_name_map=model_name_map\n",
+    "target_file": "fastapi/openapi/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

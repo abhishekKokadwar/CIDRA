@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: None != 'hello'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/websocket_test.py::WebSocketTest::test_nodelay"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/websocket.py b/tornado/websocket.py\nindex 00d08bab..d991fee5 100644\n--- a/tornado/websocket.py\n+++ b/tornado/websocket.py\n@@ -558,8 +558,8 @@ class WebSocketHandler(tornado.web.RequestHandler):\n \n         .. versionadded:: 3.1\n         \"\"\"\n-        assert self.stream is not None\n-        self.stream.set_nodelay(value)\n+        assert self.ws_connection is not None\n+        self.ws_connection.set_nodelay(value)\n \n     def on_connection_close(self) -> None:\n         if self.ws_connection:\n@@ -714,6 +714,10 @@ class WebSocketProtocol(abc.ABC):\n     async def _receive_frame_loop(self) -> None:\n         raise NotImplementedError()\n \n+    @abc.abstractmethod\n+    def set_nodelay(self, x: bool) -> None:\n+        raise NotImplementedError()\n+\n \n class _PerMessageDeflateCompressor(object):\n     def __init__(\n@@ -1345,6 +1349,9 @@ class WebSocketProtocol13(WebSocketProtocol):\n         self.write_ping(b\"\")\n         self.last_ping = now\n \n+    def set_nodelay(self, x: bool) -> None:\n+        self.stream.set_nodelay(x)\n+\n \n class WebSocketClientConnection(simple_httpclient._HTTPConnection):\n     \"\"\"WebSocket client connection.\n",
+    "target_file": "tornado/websocket.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

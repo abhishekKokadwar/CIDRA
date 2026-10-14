@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: 'bytes 10-3/26' != None : Content-Range differs between GET (bytes 10-3/26) and HEAD (None)",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/web_test.py::StaticFileTest::test_static_unsatisfiable_range_end_less_than_start"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/web.py b/tornado/web.py\nindex 2affd8e3..263f429b 100644\n--- a/tornado/web.py\n+++ b/tornado/web.py\n@@ -2600,16 +2600,24 @@ class StaticFileHandler(RequestHandler):\n         size = self.get_content_size()\n         if request_range:\n             start, end = request_range\n-            if (start is not None and start >= size) or end == 0:\n+            if start is not None and start < 0:\n+                start += size\n+                if start < 0:\n+                    start = 0\n+            if (\n+                start is not None\n+                and (start >= size or (end is not None and start >= end))\n+            ) or end == 0:\n                 # As per RFC 2616 14.35.1, a range is not satisfiable only: if\n                 # the first requested byte is equal to or greater than the\n-                # content, or when a suffix with length 0 is specified\n+                # content, or when a suffix with length 0 is specified.\n+                # https://tools.ietf.org/html/rfc7233#section-2.1\n+                # A byte-range-spec is invalid if the last-byte-pos value is present\n+                # and less than the first-byte-pos.\n                 self.set_status(416)  # Range Not Satisfiable\n                 self.set_header(\"Content-Type\", \"text/plain\")\n                 self.set_header(\"Content-Range\", \"bytes */%s\" % (size,))\n                 return\n-            if start is not None and start < 0:\n-                start += size\n             if end is not None and end > size:\n                 # Clients sometimes blindly use a large range to limit their\n                 # download size; cap the endpoint at the actual file size.\n",
+    "target_file": "tornado/web.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

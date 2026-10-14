@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: 'Path' does not contain all of (call('C:\\\\\\\\foo'), call('C:\\\\\\\\bar'), call('C:\\\\\\\\baz'), call('C:\\\\\\\\foo\\\\\\\\bar')) in its call list, found [call('C'), call().iterdir(), call().iterdir().__iter__(), call().iterdir().__len__(), call('\\\\\\\\foo;C'), call().iterdir(), call().iterdir().__it",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_utils.py::test_get_all_executables_pathsep[C:\\\\\\\\foo;C:\\\\\\\\bar;C:\\\\\\\\baz;C:\\\\\\\\foo\\\\\\\\bar-;]"
+  },
+  "Patch": {
+    "diff": "diff --git a/thefuck/utils.py b/thefuck/utils.py\nindex bd8028e..6112c01 100644\n--- a/thefuck/utils.py\n+++ b/thefuck/utils.py\n@@ -118,7 +118,7 @@ def get_all_executables():\n     tf_entry_points = ['thefuck', 'fuck']\n \n     bins = [exe.name.decode('utf8') if six.PY2 else exe.name\n-            for path in os.environ.get('PATH', '').split(':')\n+            for path in os.environ.get('PATH', '').split(os.pathsep)\n             for exe in _safe(lambda: list(Path(path).iterdir()), [])\n             if not _safe(exe.is_dir, True)\n             and exe.name not in tf_entry_points]\n",
+    "target_file": "thefuck/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}
