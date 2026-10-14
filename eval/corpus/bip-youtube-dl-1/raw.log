@@ -1,0 +1,51 @@
+................................F....................................... [ 91%]
+.......                                                                  [100%]
+=================================== FAILURES ===================================
+___________________________ TestUtil.test_match_str ____________________________
+
+self = <test.test_utils.TestUtil testMethod=test_match_str>
+
+    def test_match_str(self):
+        self.assertRaises(ValueError, match_str, 'xy>foobar', {})
+        self.assertFalse(match_str('xy', {'x': 1200}))
+        self.assertTrue(match_str('!xy', {'x': 1200}))
+        self.assertTrue(match_str('x', {'x': 1200}))
+        self.assertFalse(match_str('!x', {'x': 1200}))
+        self.assertTrue(match_str('x', {'x': 0}))
+        self.assertFalse(match_str('x>0', {'x': 0}))
+        self.assertFalse(match_str('x>0', {}))
+        self.assertTrue(match_str('x>?0', {}))
+        self.assertTrue(match_str('x>1K', {'x': 1200}))
+        self.assertFalse(match_str('x>2K', {'x': 1200}))
+        self.assertTrue(match_str('x>=1200 & x < 1300', {'x': 1200}))
+        self.assertFalse(match_str('x>=1100 & x < 1200', {'x': 1200}))
+        self.assertFalse(match_str('y=a212', {'y': 'foobar42'}))
+        self.assertTrue(match_str('y=foobar42', {'y': 'foobar42'}))
+        self.assertFalse(match_str('y!=foobar42', {'y': 'foobar42'}))
+        self.assertTrue(match_str('y!=foobar2', {'y': 'foobar42'}))
+        self.assertFalse(match_str(
+            'like_count > 100 & dislike_count <? 50 & description',
+            {'like_count': 90, 'description': 'foo'}))
+        self.assertTrue(match_str(
+            'like_count > 100 & dislike_count <? 50 & description',
+            {'like_count': 190, 'description': 'foo'}))
+        self.assertFalse(match_str(
+            'like_count > 100 & dislike_count <? 50 & description',
+            {'like_count': 190, 'dislike_count': 60, 'description': 'foo'}))
+        self.assertFalse(match_str(
+            'like_count > 100 & dislike_count <? 50 & description',
+            {'like_count': 190, 'dislike_count': 10}))
+        self.assertTrue(match_str('is_live', {'is_live': True}))
+>       self.assertFalse(match_str('is_live', {'is_live': False}))
+E       AssertionError: True is not false
+
+test/test_utils.py:1076: AssertionError
+=============================== warnings summary ===============================
+youtube_dl/extractor/motherless.py:123
+  /work/youtube_dl/extractor/motherless.py:123: DeprecationWarning: invalid escape sequence \.
+    _VALID_URL = 'https?://(?:www\.)?motherless\.com/gv?/(?P<id>[a-z0-9_]+)'
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED test/test_utils.py::TestUtil::test_match_str - AssertionError: True is...
+1 failed, 78 passed, 1 warning in 0.62s

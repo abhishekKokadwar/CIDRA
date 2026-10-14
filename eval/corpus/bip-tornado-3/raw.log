@@ -1,0 +1,54 @@
+......................................F.........                         [100%]
+=================================== FAILURES ===================================
+_______________ SyncHTTPClientSubprocessTest.test_destructor_log _______________
+
+self = <tornado.test.httpclient_test.SyncHTTPClientSubprocessTest testMethod=test_destructor_log>
+
+    def test_destructor_log(self):
+        # Regression test for
+        # https://github.com/tornadoweb/tornado/issues/2539
+        #
+        # In the past, the following program would log an
+        # "inconsistent AsyncHTTPClient cache" error from a destructor
+        # when the process is shutting down. The shutdown process is
+        # subtle and I don't fully understand it; the failure does not
+        # manifest if that lambda isn't there or is a simpler object
+        # like an int (nor does it manifest in the tornado test suite
+        # as a whole, which is why we use this subprocess).
+        proc = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "from tornado.httpclient import HTTPClient; f = lambda: None; c = HTTPClient()",
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=True,
+        )
+        if proc.stdout:
+            print("STDOUT:")
+            print(to_unicode(proc.stdout))
+        if proc.stdout:
+>           self.fail("subprocess produced unexpected output")
+E           AssertionError: subprocess produced unexpected output
+
+tornado/test/httpclient_test.py:707: AssertionError
+----------------------------- Captured stdout call -----------------------------
+STDOUT:
+Exception ignored in: <function HTTPClient.__del__ at 0x7626bf9ce4d0>
+Traceback (most recent call last):
+  File "/work/tornado/httpclient.py", line 109, in __del__
+  File "/work/tornado/httpclient.py", line 114, in close
+  File "/work/tornado/simple_httpclient.py", line 160, in close
+  File "/work/tornado/httpclient.py", line 237, in close
+RuntimeError: inconsistent AsyncHTTPClient cache
+
+=============================== warnings summary ===============================
+tornado/test/httpclient_test.py::HTTPClientCommonTestCase::test_header_callback
+  /work/tornado/test/httpclient_test.py:370: DeprecationWarning: Please use assertRegex instead.
+    self.assertRegexpMatches(first_line[0], "HTTP/[0-9]\\.[0-9] 200.*\r\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tornado/test/httpclient_test.py::SyncHTTPClientSubprocessTest::test_destructor_log
+1 failed, 47 passed, 1 warning in 0.37s

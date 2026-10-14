@@ -1,0 +1,117 @@
+..........................F.........................                     [100%]
+=================================== FAILURES ===================================
+___________ HTTPClientCommonTestCase.test_redirect_put_without_body ____________
+
+self = <tornado.test.httpclient_test.HTTPClientCommonTestCase testMethod=test_redirect_put_without_body>
+
+    def test_redirect_put_without_body(self):
+        # This "without body" edge case is similar to what happens with body_producer.
+        response = self.fetch(
+            "/redirect?url=/put&status=307",
+            method="PUT",
+>           allow_nonstandard_methods=True,
+        )
+
+tornado/test/httpclient_test.py:321: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tornado/testing.py:437: in fetch
+    timeout=get_async_test_timeout(),
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <tornado.platform.asyncio.AsyncIOLoop object at 0x7104a183a590>
+func = <function AsyncHTTPTestCase.fetch.<locals>.<lambda> at 0x7104a184d3b0>
+timeout = 5
+
+    def run_sync(self, func: Callable, timeout: float = None) -> Any:
+        """Starts the `IOLoop`, runs the given function, and stops the loop.
+    
+        The function must return either an awaitable object or
+        ``None``. If the function returns an awaitable object, the
+        `IOLoop` will run until the awaitable is resolved (and
+        `run_sync()` will return the awaitable's result). If it raises
+        an exception, the `IOLoop` will stop and the exception will be
+        re-raised to the caller.
+    
+        The keyword-only argument ``timeout`` may be used to set
+        a maximum duration for the function.  If the timeout expires,
+        a `tornado.util.TimeoutError` is raised.
+    
+        This method is useful to allow asynchronous calls in a
+        ``main()`` function::
+    
+            async def main():
+                # do stuff...
+    
+            if __name__ == '__main__':
+                IOLoop.current().run_sync(main)
+    
+        .. versionchanged:: 4.3
+           Returning a non-``None``, non-awaitable value is now an error.
+    
+        .. versionchanged:: 5.0
+           If a timeout occurs, the ``func`` coroutine will be cancelled.
+    
+        """
+        future_cell = [None]  # type: List[Optional[Future]]
+    
+        def run() -> None:
+            try:
+                result = func()
+                if result is not None:
+                    from tornado.gen import convert_yielded
+    
+                    result = convert_yielded(result)
+            except Exception:
+                fut = Future()  # type: Future[Any]
+                future_cell[0] = fut
+                future_set_exc_info(fut, sys.exc_info())
+            else:
+                if is_future(result):
+                    future_cell[0] = result
+                else:
+                    fut = Future()
+                    future_cell[0] = fut
+                    fut.set_result(result)
+            assert future_cell[0] is not None
+            self.add_future(future_cell[0], lambda future: self.stop())
+    
+        self.add_callback(run)
+        if timeout is not None:
+    
+            def timeout_callback() -> None:
+                # If we can cancel the future, do so and wait on it. If not,
+                # Just stop the loop and return with the task still pending.
+                # (If we neither cancel nor wait for the task, a warning
+                # will be logged).
+                assert future_cell[0] is not None
+                if not future_cell[0].cancel():
+                    self.stop()
+    
+            timeout_handle = self.add_timeout(self.time() + timeout, timeout_callback)
+        self.start()
+        if timeout is not None:
+            self.remove_timeout(timeout_handle)
+        assert future_cell[0] is not None
+        if future_cell[0].cancelled() or not future_cell[0].done():
+>           raise TimeoutError("Operation timed out after %s seconds" % timeout)
+E           tornado.util.TimeoutError: Operation timed out after 5 seconds
+
+tornado/ioloop.py:530: TimeoutError
+------------------------------ Captured log call -------------------------------
+ERROR    asyncio:base_events.py:1619 Exception in callback _HTTPConnection.finish.<locals>.<lambda>(<Future finis...Stream closed>) at /work/tornado/simple_httpclient.py:654
+handle: <Handle _HTTPConnection.finish.<locals>.<lambda>(<Future finis...Stream closed>) at /work/tornado/simple_httpclient.py:654>
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.7/asyncio/events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "/work/tornado/simple_httpclient.py", line 654, in <lambda>
+    fut.add_done_callback(lambda f: final_callback(f.result()))
+tornado.simple_httpclient.HTTPStreamClosedError: Stream closed
+=============================== warnings summary ===============================
+tornado/test/httpclient_test.py::HTTPClientCommonTestCase::test_header_callback
+  /work/tornado/test/httpclient_test.py:401: DeprecationWarning: Please use assertRegex instead.
+    self.assertRegexpMatches(first_line[0], "HTTP/[0-9]\\.[0-9] 200.*\r\n")
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tornado/test/httpclient_test.py::HTTPClientCommonTestCase::test_redirect_put_without_body
+1 failed, 51 passed, 1 warning in 5.46s
