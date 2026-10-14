@@ -76,12 +76,6 @@ Every other category runs the tests once, so a flaky failure the model calls
 `assertion_error` goes down the fix path.
 **Fix:** run the reproduction at least twice for every category, or always on a fixable one.
 
-### G-17 · Reproduction accepts any red run — 🛠
-`reproduce_once` sets `reproduced` when the test command fails at all. It does not check that
-the test the CI log names is the one failing in the sandbox, so a different failure (an
-environment difference) counts as a reproduction, and a later green run counts as the fix.
-**Fix:** when the analysis names `failing_test`, require it among the sandbox's failures.
-
 ### G-18 · Install failure and non-reproduction are reported as "could not diagnose" — 🛠 (small)
 `install_deps` returns `env_ready: False` with no message, and a run that does not reproduce
 has a diagnosis but ends `failed`. The report then says "CIDRA could not produce a usable
@@ -160,6 +154,12 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-17 · Reproduction accepted any red run** — Closed 2026-10-15. The failing tests are
+  read from the CI log itself (pytest's FAILED / ERROR lines, no model involved) and must fail
+  in the sandbox; a different failure ends the run as not reproduced, saying which tests were
+  expected and which failed. The diagnosis's `failing_test` stands in only when the log names
+  none, and a run with no test ids at all is marked `repro_evidence: exit_code`.
+  `tests/unit/test_reproduce_target.py`.
 - **G-15 · Fix attempts stacked in the sandbox** — Closed 2026-10-15. `Session` snapshots the
   checkout when it starts and restores it before applying a new diff, and a reinstall replaces
   the installed packages instead of adding to them. What `verify_fix` proves green is now the
