@@ -56,18 +56,17 @@ recorded on specific dates, not in CI. They must be re-run after any change to `
 Docker up.
 **Done when:** these run automatically and gate merges to the sandbox/git modules.
 
-### G-15 · A fix verified on a later attempt may not be the fix that is published — 🛠 (high)
-`Session.apply_patch` never reverts an earlier diff. When attempt 1's diff applies but the
-tests stay red, attempt 2's diff is applied on top of it, and `verify_fix` tests the two
-together. The report and the PR carry only the last diff, applied to a clean checkout. The
-published change can then differ from what went green, or fail to apply when the PR branch is
-built. The PR step's failure is logged, and the outcome stays `verified_fix`.
-**Seen 2026-10-15:** BugsInPy fastapi-5 went `verified_fix` on the third attempt; its diff does
-not apply to a clean checkout (`eval/results/claude-haiku-4-5-bugsinpy.json`).
-**Fix:** reverse the previous applied diff (`git apply -R`) before applying the next, or
-re-seed `/work` from the checkout; also drop packages a reverted dependency fix installed.
-**Done when:** a test with two applying attempts shows the verified tree equals the failing
-commit plus the published diff, and the measurement harness's held-out check agrees.
+### G-22 · A test file's setup can be edited to make the failing test pass — 🛠 (high)
+The audit gate refuses deleted, skipped or weakened assertions, but not a change to the code
+a test runs before it asserts. Seen 2026-10-15 on BugsInPy fastapi-5 after G-15 was fixed:
+the model changed the test's dependency from `return ModelC(...)` to `return ModelB(...)`,
+the test went green, and the held-out copy of the original test failed. The run was
+reported `verified_fix`.
+**Fix:** when the category is `assertion_error` and the failing test file is edited, allow
+only changes to the expected values in assert lines (a genuinely wrong expectation, as in
+fixture F-02); refuse any other edit to that file. Or re-run the ORIGINAL failing test
+file against the patched source as part of `verify_fix`.
+**Done when:** fastapi-5 ends `diagnosis_only` (or a source fix), and F-02 still verifies.
 
 ### G-16 · Flakiness is checked only when the model says "flaky" — 🛠
 `route_category` sends a run to the 5-run check only for `analysis.category == "flaky_test"`.
@@ -159,6 +158,12 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-15 · Fix attempts stacked in the sandbox** — Closed 2026-10-15. `Session` snapshots the
+  checkout when it starts and restores it before applying a new diff, and a reinstall replaces
+  the installed packages instead of adding to them. What `verify_fix` proves green is now the
+  failing commit plus the published diff. `tests/integration/test_session_patches.py` fails on
+  the old code. On the real case (BugsInPy fastapi-5) the diff now applies to a clean checkout;
+  that run then exposed G-22.
 - **G-03 · Draft-PR live POST** — Closed 2026-10-04. A verified fix opened a real draft PR on
   `helpmecode69/cidra-practice` through the GitHub Action, first with a stub model and then
   with a real one (PR #8). A re-run reuses the same PR and refreshes its description; one
