@@ -56,6 +56,8 @@ UID = 1000
 WORKDIR = "/work"
 # pip --target dir, copied from the install container into the session container.
 SITE = "/home/cidra/site"
+# The checkout as it arrived, so each fix attempt starts from it (Session.apply_patch).
+PRISTINE = "/home/cidra/pristine"
 AUTO_REMOVE = True
 
 # Output capture — logs go to the LLM, so they are bounded.

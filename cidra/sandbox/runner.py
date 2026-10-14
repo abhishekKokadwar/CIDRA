@@ -240,12 +240,18 @@ class Session:
         self.python = python  # a version in limits.PYTHON_IMAGES, else the default image
         self.image = limits.IMAGE
         self.container = None
+        self._patched = False  # a diff is applied on top of the pristine tree
 
     def __enter__(self) -> "Session":
         self.image = ensure_image(self.python)
         self.container = _create("none", self.image)
         self.container.start()
         self.container.put_archive(limits.WORKDIR, _tar_bytes(self.source_dir))
+        code, out, err = _exec_with_timeout(
+            self.container, ["cp", "-a", limits.WORKDIR, limits.PRISTINE], 120, limits.WORKDIR
+        )
+        if code != 0:
+            raise RuntimeError(f"could not snapshot the checkout: {_tail(err or out)}")
         return self
 
     def __exit__(self, *exc) -> None:
@@ -312,6 +318,9 @@ class Session:
                 except (DockerException, NotFound):
                     pass
 
+        # Replace, not merge: packages from an earlier install (an earlier fix
+        # attempt's dependency) must not linger and make a later attempt pass.
+        _exec_with_timeout(self.container, ["rm", "-rf", limits.SITE], 60, limits.WORKDIR)
         # get_archive returns the directory itself, so unpack at its parent.
         self.container.put_archive(str(Path(limits.SITE).parent.as_posix()), blob)
         return SandboxResult(
@@ -341,14 +350,32 @@ class Session:
         )
 
     def apply_patch(self, patch: str) -> SandboxResult:
-        """Apply an LLM diff as data. Never evaluated as a command."""
+        """Apply an LLM diff as data. Never evaluated as a command.
+
+        Every attempt starts from the checkout as it arrived: a diff an earlier
+        attempt applied is removed first. Otherwise attempt 2 lands on top of
+        attempt 1, verify_fix proves the two together green, and only attempt 2
+        is published (KNOWN_GAPS G-15).
+        """
+        if self._patched:
+            restore = self.run(
+                "test",
+                f"find {limits.WORKDIR} -mindepth 1 -delete && cp -a {limits.PRISTINE}/. {limits.WORKDIR}/",
+                timeout_s=120,
+            )
+            if not restore.passed:
+                return restore
+            self._patched = False
         self.container.put_archive(limits.WORKDIR, _patch_tar(patch))
-        return self.run(
+        result = self.run(
             "test",
             "git apply --ignore-whitespace --verbose /work/.cidra.patch || "
             "git apply -p0 --ignore-whitespace --verbose /work/.cidra.patch",
             timeout_s=60,
         )
+        # git apply is all-or-nothing, so a failed apply leaves the tree pristine.
+        self._patched = result.passed
+        return result
 
 
 def _patch_tar(patch: str) -> bytes:
