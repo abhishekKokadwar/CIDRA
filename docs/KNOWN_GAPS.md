@@ -62,6 +62,8 @@ tests stay red, attempt 2's diff is applied on top of it, and `verify_fix` tests
 together. The report and the PR carry only the last diff, applied to a clean checkout. The
 published change can then differ from what went green, or fail to apply when the PR branch is
 built. The PR step's failure is logged, and the outcome stays `verified_fix`.
+**Seen 2026-10-15:** BugsInPy fastapi-5 went `verified_fix` on the third attempt; its diff does
+not apply to a clean checkout (`eval/results/claude-haiku-4-5-bugsinpy.json`).
 **Fix:** reverse the previous applied diff (`git apply -R`) before applying the next, or
 re-seed `/work` from the checkout; also drop packages a reverted dependency fix installed.
 **Done when:** a test with two applying attempts shows the verified tree equals the failing

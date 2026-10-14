@@ -398,6 +398,21 @@ npm run test:wiring
 - **Key-free end-to-end run**: `scripts/fake_llm.py` stands in for the model so the whole pipeline can run without an API key.
 - **Wiring Verification (`test-backend-wiring.js`)**: 5 checks (Live latency probes to OpenRouter and Groq, settings round-trip, telemetry parsing).
 
+### Measured results
+
+From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in dry run. One small paid model for both runs (named in the result files), priced at $1 / $5 per million input / output tokens.
+
+| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 18 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy.json)) |
+|---|---|---|
+| Correct diagnosis | 7 / 7 | 13 / 18 |
+| Verified fix, where one exists | 4 / 4 | 1 / 12, and that one is not a real fix (below) |
+| Correctly declined | 3 / 3 | 6 / 6 |
+| "Verified" fix that fails held-out tests | 0 / 4 | not judged (no independent held-out tests) |
+| Median cost per run | $0.008 | $0.005 |
+| Total cost | $0.05 | $0.30 |
+
+The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, thefuck, tornado and youtube-dl, chosen by rules fixed before any model ran ([eval/corpus/README.md](eval/corpus/README.md)). On those, CIDRA declined every case it should, but fixed none of the 12 fixable ones. Four were diagnosed as out of scope, and seven were diagnosed correctly but no patch went green in 3 attempts. The single "verified" case (fastapi-5) went green on the third attempt, but its diff does not apply to a clean checkout and it edits the test file, not the code. That fits earlier attempts' changes still being applied in the sandbox when it was verified, a defect in CIDRA ([KNOWN_GAPS G-15](docs/KNOWN_GAPS.md)). It is not a real fix.
+
 ---
 
 ## 9. Repository Structure & Development
