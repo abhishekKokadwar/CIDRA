@@ -33,7 +33,7 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 | Requirement | Status |
 |---|---|
 | 1. Authenticate the incoming event | Done: GitHub triggers the Action; webhook mode checks the HMAC |
-| 2. Get the failing commit without exposing secrets to its code | Action mode done; webhook mode has no checkout; `cidra fix` runs tests on the host |
+| 2. Get the failing commit without exposing secrets to its code | Action mode and `cidra fix` done; webhook mode has no checkout |
 | 3. Reproduce the original failure | Partial: any red run counts (G-17); flakiness checked only on a "flaky" diagnosis (G-16) |
 | 4. Generate a patch | Works; 0 of 12 fixable BugsInPy bugs fixed |
 | 5. Reject test-weakening or unsafe patches | Gate works; a test's setup can be edited to pass (G-22) |

@@ -131,33 +131,61 @@ def local_run(args):
     repo = args.repo or "local/dev"
     sha = args.sha or "HEAD"
 
-    # For a local run, we execute the tests locally to generate the log.
-    import subprocess
-    from cidra.config import TEST_COMMAND
-    log.info(f"Executing local tests: {TEST_COMMAND}")
-    try:
-        # Run tests and capture output
-        result = subprocess.run(TEST_COMMAND, shell=True, capture_output=True, text=True)
-        raw_log = result.stdout + "\n" + result.stderr
-        if result.returncode == 0:
-            log.info("Tests passed! Nothing to fix.")
-            sys.exit(0)
-        else:
-            log.info("Tests failed. CIDRA is stepping in to debug...")
-    except Exception as e:
-        log.error(f"Failed to run local tests: {e}")
-        sys.exit(1)
+    source = os.getcwd()
+    raw_log = _sandbox_log(run_id, source, sha)
 
     state = {
         "run_id": run_id,
         "repo": repo,
         "commit_sha": sha,
-        "source_dir": str(os.getcwd()), # Map current dir into sandbox
+        "source_dir": source,  # cloned at `sha` into a .git-free tree before any run
         "dry_run": True, # Don't try to post to GitHub
         "raw_log": raw_log, # Inject the local log directly to bypass GitHub API
     }
 
     _run_graph(state)
+
+
+def _sandbox_log(run_id: str, source: str, sha: str) -> str:
+    """The failure log for a local run, produced inside the sandbox.
+
+    The repository's code never runs on this machine: the tests run against the
+    same .git-free copy of `sha` the pipeline repairs, in a network-off container.
+    Exits when there is nothing to fix or the sandbox cannot run.
+    """
+    from cidra.git_ops import git
+    from cidra.nodes.checkout import prepare_checkout, remove_checkout
+    from cidra.nodes.environment import sandbox_install_command, sandbox_test_command, workflow_python
+    from cidra.sandbox.runner import Session
+
+    try:
+        if git("status", "--porcelain", cwd=source).stdout.strip():
+            log.warning("Uncommitted changes are ignored: CIDRA tests the commit %s, not the working tree.", sha)
+    except Exception:  # noqa: BLE001 - not a git checkout: prepare_checkout reports it
+        pass
+    log_run = f"{run_id}-log"
+    try:
+        tree = prepare_checkout(log_run, source, sha)
+        log.info("Running the tests in the sandbox to get the failure log...")
+        with Session(tree, workflow_python(tree)) as session:
+            installed = session.install(sandbox_install_command({}))
+            if not installed.passed:
+                log.error("Installing dependencies failed (set CIDRA_INSTALL_COMMAND):\n%s",
+                          (installed.stdout_tail + installed.stderr_tail)[-2000:])
+                sys.exit(1)
+            result = session.run("test", sandbox_test_command({}))
+    except SystemExit:
+        raise
+    except Exception as e:  # noqa: BLE001 - no Docker, no image, not a git repo
+        log.error("Could not run the tests in the sandbox: %s", e)
+        sys.exit(1)
+    finally:
+        remove_checkout(log_run)
+    if result.passed:
+        log.info("Tests pass in the sandbox. Nothing to fix.")
+        sys.exit(0)
+    log.info("Tests failed. CIDRA is stepping in to debug...")
+    return result.stdout_tail + "\n" + result.stderr_tail
 
 
 def dashboard_run(args):
