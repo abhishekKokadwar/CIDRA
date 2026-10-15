@@ -93,6 +93,7 @@ from cidra.nodes.environment import (  # noqa: E402
 from cidra.sandbox import limits  # noqa: E402
 from cidra.sandbox.runner import Session  # noqa: E402
 from eval import corpus_repo  # noqa: E402
+from eval.attempts import attempts_from_updates, why_not_verified  # noqa: E402
 
 # Per-fixture overrides the pipeline takes as run input.
 _RUN_OVERRIDES = ("install_command", "test_command", "python_version")
@@ -225,7 +226,14 @@ def run_fixture(fid: str) -> dict:
     started = time.time()
     try:
         llm.clear_latest_telemetry()
-        state = build_graph().invoke(run_input)
+        # Streamed, not invoked: each node's update is kept, so every fix
+        # attempt can be recorded, not only the last one.
+        updates, state = [], dict(run_input)
+        for mode, chunk in build_graph().stream(run_input, stream_mode=["updates", "values"]):
+            if mode == "updates":
+                updates.extend(chunk.items())
+            else:
+                state = chunk
     finally:
         if server is not None:
             server.shutdown()
@@ -259,6 +267,9 @@ def run_fixture(fid: str) -> dict:
                           + usage["completion_tokens"] / 1e6 * ARGS.price_out, 5),
         "error": state.get("analysis_error"),
         "diff": state.get("fix_diff") if verified else None,
+        "target_tests": state.get("target_tests") or [],
+        "repro_evidence": state.get("repro_evidence"),
+        "attempts": attempts_from_updates(updates),
     }
     if verified and state.get("fix_diff"):
         record["held_out_valid"] = validate_held_out(fx)["valid"]
@@ -292,6 +303,7 @@ def summarize(records: list[dict]) -> dict:
         "total_completion_tokens": sum(r["completion_tokens"] for r in records),
         "total_cost_usd": round(sum(r["cost_usd"] for r in records), 4),
         "median_cost_usd": round(statistics.median(r["cost_usd"] for r in records), 4) if records else None,
+        "attempt_results": why_not_verified(records),
     }
 
 
@@ -376,6 +388,8 @@ def main() -> int:
     print(f"   diagnosis correct   {summary['diagnosis_correct']}")
     print(f"   verified fixes      {summary['verified_fix_rate']} of the fixable cases")
     print(f"   correct declines    {summary['correct_declines']} of the cases it should not patch")
+    if summary["attempt_results"]:
+        print("   fix attempts        " + ", ".join(f"{k} {v}" for k, v in summary["attempt_results"].items()))
     print("2. Does it ever lie?")
     print(f"   false verified      {summary['false_verified']} of its verified claims failed the held-out check")
     if summary["false_verified_excluded"]:
