@@ -155,6 +155,8 @@ def generate_fix(state: DebugState) -> dict:
             "\n\nA previous attempt did not work. Do not repeat it.\n"
             f"<previous_attempt_output>\n{last.stdout_tail[-2000:]}\n</previous_attempt_output>"
         )
+        if state.get("verify_note"):
+            retry_note += f"\n<why_it_failed>\n{state['verify_note']}\n</why_it_failed>"
     try:
         patch = structured(
             model=config.MODEL_FIX,  # read at call time: the settings API can change it
@@ -197,11 +199,12 @@ def verify_fix(state: DebugState) -> dict:
 
     verified_run = session.run("verify", sandbox_test_command(state))
     results.append(verified_run)
+    verified, still_failing, regressions, note = judge_verification(state, verified_run)
 
     # Phase 11: cache a freshly verified fix (only on a genuine verify, and not
     # when the diff itself came from the cache — nothing new to learn). This is
     # the sole cache writer, so only proven-green diffs are ever stored.
-    if verified_run.passed and not state.get("cache_hit"):
+    if verified and not state.get("cache_hit"):
         fp = state.get("fingerprint")
         diff = state.get("fix_diff")
         if fp and diff:
@@ -211,6 +214,43 @@ def verify_fix(state: DebugState) -> dict:
                           meta={"run_id": state.get("run_id", "")})
 
     return {
-        "verified": verified_run.passed,
+        "verified": verified,
         "verify_results": [*state.get("verify_results", []), *results],
+        "verify_failing_tests": still_failing,
+        "regressions": regressions,
+        "verify_note": note,
     }
+
+
+def judge_verification(state: DebugState, run) -> tuple[bool, list[str], list[str], str | None]:
+    """(verified, still failing, regressions, why not) for the run after the patch.
+
+    Verified means the CI's failing tests no longer fail and nothing fails that
+    did not fail before the patch. Tests that were already failing for another
+    reason may stay red: they no longer make a real fix unverifiable, and they
+    are reported. Only failures are listed in pytest's output, so the run must
+    complete normally (exit 0, or exit 1 with its failure list); anything else
+    proves nothing.
+    """
+    # ponytail: a target test the patch stops collecting would read as passing;
+    # the audit gate refuses deleted tests, and G-22 covers edits to their setup.
+    from cidra.nodes.ingest import failing_tests
+    from cidra.nodes.reproduce import _same_test
+
+    if run.passed:
+        return True, [], [], None
+    after = [] if run.timed_out or run.exit_code != 1 else failing_tests(run.stdout_tail + "\n" + run.stderr_tail)
+    if not after:
+        why = "timed out" if run.timed_out else f"exit {run.exit_code}"
+        return False, [], [], f"the test run after the patch did not complete normally ({why})"
+    targets = state.get("target_tests") or []
+    before = state.get("repro_failing_tests") or []
+    still_red = [t for t in targets if any(_same_test(t, a) for a in after)]
+    regressions = [a for a in after if not any(_same_test(a, b) for b in before)]
+    if not targets:
+        return False, after, regressions, "no target test is known, so only a fully green run verifies"
+    if still_red:
+        return False, after, regressions, f"still failing after the patch: {', '.join(still_red[:5])}"
+    if regressions:
+        return False, after, regressions, f"the patch broke tests that passed before: {', '.join(regressions[:5])}"
+    return True, after, [], None

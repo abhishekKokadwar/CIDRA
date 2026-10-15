@@ -64,13 +64,19 @@ def render_comment(state: DebugState) -> str:
         diff = _clip(state.get("fix_diff"), MAX_DIFF)
         parts += [
             "",
-            "This patch was applied in a network-isolated sandbox and the test "
-            "suite passed. It is a **suggestion** — review before merging.",
+            "This patch was applied in a network-isolated sandbox: the failing "
+            "tests now pass, and no test that passed before it fails. It is a "
+            "**suggestion** — review before merging.",
             "",
             "```diff",
             diff,
             "```",
         ]
+        already = state.get("verify_failing_tests") or []
+        if already:
+            # Not caused by the patch: they failed the same way before it.
+            parts += ["", "These tests were already failing before the patch and still fail:"]
+            parts += [f"- `{t}`" for t in already[:10]]
         surfaced = state.get("patch_surfaced") or []
         if surfaced:
             # SR-14: dependency changes are called out, never folded silently into the diff.
@@ -106,6 +112,8 @@ def render_comment(state: DebugState) -> str:
                 "CIDRA classified the failure but did **not** produce a fix it could "
                 "verify green. No change is suggested. See the analysis below.",
             ]
+            if state.get("verify_note"):
+                parts += ["", f"_Last attempt:_ {_clip(state['verify_note'], 300)}"]
     else:  # failed
         err = state.get("analysis_error")
         parts += ["", "CIDRA could not produce a usable diagnosis for this run."]

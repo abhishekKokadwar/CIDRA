@@ -88,6 +88,7 @@ class DebugState(TypedDict, total=False):
     repro_results: list[SandboxResult]
     target_tests: list[str]  # the CI's failing tests that also fail in the sandbox
     repro_evidence: str  # how reproduction was judged: ci_log | diagnosis | exit_code
+    repro_failing_tests: list[str]  # every test failing in the sandbox before the patch
     flaky_pass_count: Optional[int]
     flaky_score: Optional[int]  # 0-100 Deterministic Flakiness Score (Phase 8)
 
@@ -106,6 +107,9 @@ class DebugState(TypedDict, total=False):
     apply_error: Optional[str]  # why the last diff did not apply; fed to the next attempt
     verified: bool  # written by verify_fix ONLY
     verify_results: list[SandboxResult]
+    verify_failing_tests: list[str]  # still failing after the patch (allowed only if failing before)
+    regressions: list[str]  # failing after the patch, passing before it
+    verify_note: Optional[str]  # why the last verification did not pass
 
     # Output target (set by the webhook in Phase 7; absent for fixture runs)
     issue_number: Optional[int]  # PR/issue to comment on
