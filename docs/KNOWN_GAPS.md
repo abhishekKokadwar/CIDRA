@@ -58,18 +58,6 @@ recorded on specific dates, not in CI. They must be re-run after any change to `
 Docker up.
 **Done when:** these run automatically and gate merges to the sandbox/git modules.
 
-### G-22 · A test file's setup can be edited to make the failing test pass — 🛠 (high)
-The audit gate refuses deleted, skipped or weakened assertions, but not a change to the code
-a test runs before it asserts. Seen 2026-10-15 on BugsInPy fastapi-5 after G-15 was fixed:
-the model changed the test's dependency from `return ModelC(...)` to `return ModelB(...)`,
-the test went green, and the held-out copy of the original test failed. The run was
-reported `verified_fix`.
-**Fix:** when the category is `assertion_error` and the failing test file is edited, allow
-only changes to the expected values in assert lines (a genuinely wrong expectation, as in
-fixture F-02); refuse any other edit to that file. Or re-run the ORIGINAL failing test
-file against the patched source as part of `verify_fix`.
-**Done when:** fastapi-5 ends `diagnosis_only` (or a source fix), and F-02 still verifies.
-
 ### G-18 · Install failure and non-reproduction are reported as "could not diagnose" — 🛠 (small)
 `install_deps` returns `env_ready: False` with no message, and a run that does not reproduce
 has a diagnosis but ends `failed`. The report then says "CIDRA could not produce a usable
@@ -148,6 +136,13 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-22 · A test's setup could be edited to make it pass** — Closed 2026-10-15. A patch may
+  change a test file (or a `conftest.py`) only by correcting the expected values of its
+  asserts; anything else in it is refused by the audit gate. The fastapi-5 patch is in
+  `tests/unit/test_audit_test_edits.py`, which also checks every reference fix in the
+  fixtures and the BugsInPy corpus still passes. Kept strict on purpose: a legitimate test
+  edit such as renaming a removed `assertEquals` is refused too (benchmark scenario API-04,
+  recorded as refused by design); that costs a diagnosis-only report, never a false fix.
 - **G-16 · Flakiness was checked only on a "flaky" diagnosis** — Closed 2026-10-15. A failure
   in a category CIDRA patches is now reproduced twice; a green second run, or targets that
   stop failing, end the run as `flaky_detected` with no patch. The 5-run check stays for a

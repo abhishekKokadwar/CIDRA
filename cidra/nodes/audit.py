@@ -198,6 +198,40 @@ def _hardcoded_answers(added: list[str], expectations) -> bool:
     return False
 
 
+def _assert_shape(line: str):
+    """(what is checked, how it is compared) for a one-line `assert <x> <op> <literal>`, else None."""
+    try:
+        node = ast.parse(line.strip()).body[0]
+    except (SyntaxError, IndexError):
+        return None
+    test = getattr(node, "test", None)
+    if not (isinstance(node, ast.Assert) and isinstance(test, ast.Compare) and len(test.ops) == 1):
+        return None
+    for subject, value in ((test.left, test.comparators[0]), (test.comparators[0], test.left)):
+        if _literal(ast.unparse(value)) is not _NO_LITERAL:
+            return ast.dump(subject), type(test.ops[0]).__name__
+    return None
+
+
+def _expected_values_only(f: FileDiff) -> bool:
+    """True when a test file's change only corrects expected values in its asserts.
+
+    That is the one test edit a CIDRA fix may make: a test that encodes a wrong
+    expectation (`assert add(2, 2) == 5`). Anything else in a test file, its
+    setup, fixtures, helpers or the code an assert calls, can make a failing
+    test pass without fixing the code, so it is refused (KNOWN_GAPS G-22).
+    """
+    # ponytail: a multi-line assert or a reordered hunk is refused too; that
+    # costs a diagnosis-only report, never a false "verified".
+    if f.is_new or f.is_deletion or len(f.removed) != len(f.added):
+        return False
+    for old, new in zip(f.removed, f.added):
+        shape = _assert_shape(old)
+        if shape is None or shape != _assert_shape(new):
+            return False
+    return True
+
+
 def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None,
                missing_modules: tuple = (), expectations: tuple = ()) -> AuditVerdict:
     """Static policy verdict for a unified diff. No side effects, no LLM.
@@ -237,6 +271,11 @@ def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None,
         # SR-13 — returning the failing test's expected value for the failing test's input.
         if not _is_test_path(f.path) and expectations and _hardcoded_answers(f.added, expectations):
             reasons.append(f"SR-13: patch hardcodes the failing test's expected value in '{f.path}'")
+
+        # SR-13 — editing a test, or its fixtures, beyond its expected values.
+        if (_is_test_path(f.path) or f.path.rsplit("/", 1)[-1] == "conftest.py") and not _expected_values_only(f):
+            reasons.append(f"SR-13: patch changes '{f.path}' beyond the expected values of its asserts "
+                           "(a test's setup or fixtures must not be edited to make it pass)")
 
         # SR-13 — deleting or gutting a test.
         if _is_test_path(f.path):
