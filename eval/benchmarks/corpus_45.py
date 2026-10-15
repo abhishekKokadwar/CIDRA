@@ -809,6 +809,11 @@ FAILURE_CORPUS_45: list[dict[str, Any]] = [
         "family_label": "API / Deprecation",
         "name": "TestCase.assertEquals Removed (Python 3.12)",
         "description": "Legacy alias assertEquals removed from unittest in Python 3.12",
+        # The fix renames a call inside a test. Since KNOWN_GAPS G-22 a test file
+        # may change only in its asserts' expected values, so the gate refuses it
+        # by design. The engine never proposes it anyway: an AttributeError is
+        # diagnosed `unknown`, which CIDRA does not patch.
+        "refused_by_design": "G-22",
         "raw_log": (
             "tests/test_legacy.py:18: in test_legacy_math\n"
             "    self.assertEquals(result, 42)\n"
