@@ -53,21 +53,25 @@ def _summarize(families: dict[str, dict[str, Any]]) -> dict[str, Any]:
     refused = {f: m for f, m in families.items() if f in REFUSAL_FAMILIES}
 
     def rate(group: dict, key: str) -> float:
-        total = sum(m["total"] for m in group.values())
+        # Scenarios refused by design are not repair attempts.
+        total = sum(m["total"] - m.get("refused_by_design", 0) for m in group.values())
         return round(100.0 * sum(m[key] for m in group.values()) / total, 1) if total else 0.0
 
     scenarios = sum(m["total"] for m in families.values())
-    conforming = sum(m["repair"] for m in automated.values()) + sum(m["refuse"] for m in refused.values())
+    conforming = (sum(m["repair"] + m.get("refused_by_design", 0) for m in automated.values())
+                  + sum(m["refuse"] for m in refused.values()))
 
     matrix = []
     for fam, m in families.items():
         is_refusal = fam in REFUSAL_FAMILIES
         total = m["total"]
+        by_design = m.get("refused_by_design", 0)
         matrix.append({
             "failure": m["label"],
             "diagnose": f"{m['diagnose']}/{total}",
             "localize": f"{m['localize']}/{total}",
-            "repair": "-" if is_refusal else f"{m['repair']}/{total}",
+            "repair": "-" if is_refusal else f"{m['repair']}/{total - by_design}"
+                      + (f" (+{by_design} refused by design)" if by_design else ""),
             "verify": f"{m['verify']}/{total}",
             "correct_refusal": f"{m['refuse']}/{total}" if is_refusal else "-",
             "notes": ("Refused: no patch is accepted for this class" if is_refusal
@@ -81,6 +85,7 @@ def _summarize(families: dict[str, dict[str, Any]]) -> dict[str, Any]:
         "automated_class_labels": [m["label"] for m in automated.values()],
         "refusal_class_labels": [m["label"] for m in refused.values()],
         "repair_gate_pass_rate_pct": rate(automated, "repair"),
+        "refused_by_design": sum(m.get("refused_by_design", 0) for m in automated.values()),
         "correct_refusal_rate_pct": rate(refused, "refuse"),
         "overall_stage_conformance_pct": round(100.0 * conforming / scenarios, 1) if scenarios else 0.0,
         "matrix": matrix,
@@ -107,6 +112,7 @@ def evaluate_failure_class_coverage() -> dict[str, Any]:
                 "repair": 0,
                 "verify": 0,
                 "refuse": 0,
+                "refused_by_design": 0,
             }
             
         m = metrics_by_family[fam]
@@ -144,12 +150,19 @@ def evaluate_failure_class_coverage() -> dict[str, Any]:
             if cat_dec != PolicyDecision.AUTO_REMEDIATE or (ast_v and not ast_v.ok):
                 m["refuse"] += 1
                 
+        elif s.get("refused_by_design"):
+            # A scripted patch the gate is meant to refuse: conforming only if it does.
+            if ast_v and not ast_v.ok:
+                m["refused_by_design"] += 1
         else:
             if cat_dec == PolicyDecision.AUTO_REMEDIATE and diff_dec == PolicyDecision.AUTO_REMEDIATE and (ast_v and ast_v.ok):
                 m["repair"] += 1
 
         # 4. Verify (AST gate correctly evaluates the patch)
-        if not is_refusal_class:
+        if s.get("refused_by_design"):
+            if ast_v and not ast_v.ok:
+                m["verify"] += 1
+        elif not is_refusal_class:
             if diff and ast_v and ast_v.ok and diff_dec == PolicyDecision.AUTO_REMEDIATE:
                 m["verify"] += 1
         else:
