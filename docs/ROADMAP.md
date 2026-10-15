@@ -35,7 +35,7 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 | 1. Authenticate the incoming event | Done: GitHub triggers the Action; webhook mode checks the HMAC |
 | 2. Get the failing commit without exposing secrets to its code | Done: Action mode, `cidra fix` (sandboxed first run) and webhook mode (fetches the commit itself) |
 | 3. Reproduce the original failure | Done: the CI log's failing tests must fail in the sandbox, twice for a failure CIDRA would patch (G-16, G-17 closed) |
-| 4. Generate a patch | Works; 0 of 12 fixable BugsInPy bugs fixed |
+| 4. Generate a patch | Weak: 0 of 12 fixable BugsInPy bugs fixed; 15 of 19 patches tried did not apply (malformed or wrong context) |
 | 5. Reject test-weakening or unsafe patches | Done: a test file may change only in its asserts' expected values (G-22 closed) |
 | 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
 | 7. Original failure fixed, no unrelated regressions | Done: the CI's failing tests must pass and no test may go from passing to failing; tests already failing are listed, not blocking |
@@ -74,7 +74,8 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 
 ### M3 · Fix real bugs (weeks 6 to 8)
 
-- [ ] Study the BugsInPy misses: 7 correct diagnoses with no green patch, 4 fixable bugs diagnosed `unknown`.
+- [x] Study the BugsInPy misses ([v2 result](../eval/results/claude-haiku-4-5-bugsinpy-v2.json)): of 19 patches tried on the 12 fixable bugs, 15 did not apply and 4 were refused for editing test setup. None reached the test run.
+- [ ] Make patches apply: the model hand-writes unified diffs, which come back corrupt or quote code that is not in the file.
 - [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
 - [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
 
