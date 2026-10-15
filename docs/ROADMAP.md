@@ -38,7 +38,7 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 | 4. Generate a patch | Works; 0 of 12 fixable BugsInPy bugs fixed |
 | 5. Reject test-weakening or unsafe patches | Gate works; a test's setup can be edited to pass (G-22) |
 | 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
-| 7. Original failure fixed, no unrelated regressions | Not done: only the test command's exit code is checked |
+| 7. Original failure fixed, no unrelated regressions | Done: the CI's failing tests must pass and no test may go from passing to failing; tests already failing are listed, not blocking |
 | 8. Draft PR with evidence of what was tested | Weak: diff and "suite passed" only |
 
 ## 3. Milestones

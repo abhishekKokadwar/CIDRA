@@ -94,9 +94,11 @@ def reproduce_once(state: DebugState) -> dict:
     if result.passed:
         return {"reproduced": False, "repro_results": results,
                 "analysis_error": "not reproduced: the tests pass in the sandbox"}
-    targets, evidence, reason = _targets(state, failing_tests(result.stdout_tail + "\n" + result.stderr_tail))
-    out = {"reproduced": not reason, "repro_results": results,
-           "target_tests": targets, "repro_evidence": evidence}
+    sandbox_failed = failing_tests(result.stdout_tail + "\n" + result.stderr_tail)
+    targets, evidence, reason = _targets(state, sandbox_failed)
+    # Every test failing before the patch: verify_fix allows these, and only these, to stay red.
+    out = {"reproduced": not reason, "repro_results": results, "target_tests": targets,
+           "repro_evidence": evidence, "repro_failing_tests": sandbox_failed}
     if reason:
         out["analysis_error"] = reason
         return out
