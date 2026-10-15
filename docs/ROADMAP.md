@@ -36,7 +36,7 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 | 2. Get the failing commit without exposing secrets to its code | Done: Action mode, `cidra fix` (sandboxed first run) and webhook mode (fetches the commit itself) |
 | 3. Reproduce the original failure | Done: the CI log's failing tests must fail in the sandbox, twice for a failure CIDRA would patch (G-16, G-17 closed) |
 | 4. Generate a patch | Works; 0 of 12 fixable BugsInPy bugs fixed |
-| 5. Reject test-weakening or unsafe patches | Gate works; a test's setup can be edited to pass (G-22) |
+| 5. Reject test-weakening or unsafe patches | Done: a test file may change only in its asserts' expected values (G-22 closed) |
 | 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
 | 7. Original failure fixed, no unrelated regressions | Done: the CI's failing tests must pass and no test may go from passing to failing; tests already failing are listed, not blocking |
 | 8. Draft PR with evidence of what was tested | Weak: diff and "suite passed" only |
