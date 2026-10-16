@@ -35,7 +35,7 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 | 1. Authenticate the incoming event | Done: GitHub triggers the Action; webhook mode checks the HMAC |
 | 2. Get the failing commit without exposing secrets to its code | Done: Action mode, `cidra fix` (sandboxed first run) and webhook mode (fetches the commit itself) |
 | 3. Reproduce the original failure | Done: the CI log's failing tests must fail in the sandbox, twice for a failure CIDRA would patch (G-16, G-17 closed) |
-| 4. Generate a patch | Weak: 0 of 12 fixable BugsInPy bugs fixed; 15 of 19 patches tried did not apply (malformed or wrong context) |
+| 4. Generate a patch | Weak: 1 of 12 fixable BugsInPy bugs fixed; patches now apply and reach the tests, but the model often cannot see the cause |
 | 5. Reject test-weakening or unsafe patches | Done: a test file may change only in its asserts' expected values (G-22 closed) |
 | 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
 | 7. Original failure fixed, no unrelated regressions | Done: the CI's failing tests must pass and no test may go from passing to failing; tests already failing are listed, not blocking |
@@ -78,6 +78,8 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 - [x] Make patches apply: the model now proposes "replace this exact text" edits and CIDRA builds the diff; an edit whose text is not in the file is reported back to the model.
 - [x] Show the model the right part of large files: files are read from the checkout, small ones whole, large ones as excerpts around what the failing test calls (one call deep) and the lines the log names. The changed lines of the reference fix are in view for 6 of 12 fixable BugsInPy bugs, up from 1 (`eval/context_visibility.py`, no model needed).
 - [ ] The other 6 (fastapi, tornado-1, youtube-dl-2) are reached through framework code the test does not call directly; coverage-based ranking (SBFL, G-01) is the way to them.
+- [x] Rerun after both ([v3](../eval/results/claude-haiku-4-5-bugsinpy-v3.json)): 1 of 12 fixed. 1 of 27 attempts did not apply (was 15 of 19); 7 reached the tests and failed; 13 returned no edits because the model could not see the cause.
+- [ ] Show the full assertion difference: pytest truncates it ("use -vv"), so the model sees that a value differs but not how. Rerun the target tests with `-vv` before asking for a fix.
 - [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
 - [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
 
