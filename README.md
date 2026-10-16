@@ -94,7 +94,7 @@ flowchart TD
     J --> K{"Fixable category?<br/>missing_dependency / assertion_error"}
     K -- "No" --> R
     K -- "Yes, fix cached" --> L
-    K -- "Yes" --> M["generate_fix (LLM): unified diff"]
+    K -- "Yes" --> M["generate_fix (LLM): text edits, CIDRA builds the diff"]
     M --> L{"Patch audit gate"}
     L -- "Rejected" --> R
     L -- "Passed" --> N["apply_patch + verify_fix"]

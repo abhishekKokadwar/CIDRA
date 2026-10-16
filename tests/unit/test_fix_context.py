@@ -40,11 +40,11 @@ def test_retry_tells_the_model_its_diff_did_not_apply(monkeypatch):
 
     def fake_structured(**kwargs):
         seen["user"] = kwargs["user"]
-        return fix.Patch(diff="d2", target_file="src/calc.py", rationale="r")
+        return fix.Patch(edits=[], rationale="r")
 
     monkeypatch.setattr(fix, "structured", fake_structured)
     out = fix.generate_fix(_state(fix_attempts=1, fix_diff="OLD-DIFF", patch_applied=False,
                                   apply_error="error: patch failed: src/calc.py:8"))
     assert out["fix_attempts"] == 2
-    assert "did not apply" in seen["user"] and "OLD-DIFF" in seen["user"]
+    assert "could not be applied" in seen["user"] and "OLD-DIFF" in seen["user"]
     assert "patch failed: src/calc.py:8" in seen["user"]
