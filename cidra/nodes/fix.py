@@ -8,10 +8,10 @@ verify_fix is the sole writer of `verified` — the one field the final report i
 allowed to make a claim from.
 """
 
+import builtins
 import difflib
 import pathlib
 import re
-import shlex
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -62,6 +62,8 @@ Hard rules:
   symptom by weakening the check is a failed repair, not a repair.
 - Each edit's `old` text must be copied exactly from the <file> contents shown,
   and must appear in that file only once.
+- Large files are shown as excerpts. A line `# [cidra: N lines not shown]` marks
+  a gap; never put it in `old`, and never span a gap with one edit.
 - If you cannot fix it from the evidence given, return no edits rather than
   guessing. An honest non-fix beats a plausible wrong one."""
 
@@ -93,57 +95,132 @@ def select_strategy(state: DebugState) -> dict:
     return out
 
 
-_PY_PATH = re.compile(r"[\w./-]+\.py")
 _IMPORT = re.compile(r"^\s*(?:from|import)\s+([\w.]+)", re.MULTILINE)
-MAX_CONTEXT_FILES = 6
+# A repository file and line the log points at: "pkg/mod.py:12" or 'File "/work/pkg/mod.py", line 12'.
+_LOG_LINE = re.compile(r"(?<![\w/.-])(?:/work/)?((?!/)[\w./-]+\.py)(?::|\", line )(\d+)")
+_CALL = re.compile(r"\b([A-Za-z_]\w*)\s*\(")
+_NOT_DEFS = set(dir(builtins)) | {"self", "cls", "super", "print"}
+WHOLE_FILE_CHARS = 12_000  # a file this small is shown whole
+CONTEXT_CHARS = 48_000    # ponytail: one cap for every model; per-model limits if context windows differ
+MAX_DEF_FILES = 4
+SKIP = "# [cidra: {} lines not shown]"
 
 
-def _candidate_files(state: DebugState, session) -> list[str]:
-    """Files worth showing the model, most relevant first.
+def _read(root: pathlib.Path, path: str) -> Optional[str]:
+    """A repository file's text, or None. `path` may come from the model or the
+    log, so it must resolve inside the checkout (SR-03)."""
+    target = (root / path).resolve()
+    if not target.is_file() or not target.is_relative_to(root):
+        return None
+    try:
+        return target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return None
 
-    The diagnosis often names no file (the analysis prompt forbids guessing one),
-    and a model that cannot see the source invents it and writes a diff that
-    cannot apply. So also take the failing test, the modules that test imports,
-    and any relative .py path the log names. Paths that do not exist in the
-    sandbox simply fail to `cat` and are dropped by the caller.
-    """
-    analysis = state.get("analysis")
-    found: list[str] = []
-    if analysis and analysis.file:
-        found.append(analysis.file)
-    test_file = None
-    if analysis and analysis.failing_test:
-        test_file = analysis.failing_test.split("::")[0]
-        found.append(test_file)
-        if session is not None:
-            shown = session.run("test", f"cat -- {shlex.quote(test_file)}", timeout_s=30)
-            if shown.passed:
-                found += [m.replace(".", "/") + ".py" for m in _IMPORT.findall(shown.stdout_tail)]
-    found += [p for p in _PY_PATH.findall(state.get("error_region", "")) if not p.startswith("/")]
-    files = list(dict.fromkeys(found))[:MAX_CONTEXT_FILES]
-    return [*files, "requirements.txt"]
+
+def _block_end(lines: list[str], start: int) -> int:
+    """The line after the def or class that starts at `start`."""
+    indent = len(lines[start]) - len(lines[start].lstrip())
+    end = start + 1
+    while end < len(lines) and (not lines[end].strip() or len(lines[end]) - len(lines[end].lstrip()) > indent):
+        end += 1
+    return end
+
+
+def _defs(lines: list[str], names: set[str]) -> list[tuple[int, int]]:
+    """Where each of `names` is defined in this file, as (first line, end) spans."""
+    if not names:
+        return []
+    pattern = re.compile(r"^\s*(?:async\s+)?(?:def|class)\s+(" + "|".join(map(re.escape, names)) + r")\b")
+    return [(i, _block_end(lines, i)) for i, line in enumerate(lines) if pattern.match(line)]
+
+
+def _excerpt(text: str, spans: list[tuple[int, int]]) -> str:
+    """The whole file if small, else only `spans` (line ranges), each gap marked."""
+    if len(text) <= WHOLE_FILE_CHARS:
+        return text
+    lines = text.splitlines(keepends=True)
+    merged: list[list[int]] = []
+    for start, end in sorted((max(0, s), min(len(lines), e)) for s, e in spans):
+        if merged and start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    out, at = [], 0
+    for start, end in merged:
+        if start > at:
+            out.append(SKIP.format(start - at) + "\n")
+        out += lines[start:end]
+        at = end
+    if at < len(lines):
+        out.append(SKIP.format(len(lines) - at) + "\n")
+    return "".join(out)
 
 
 def _context(state: DebugState) -> str:
-    """What the model sees: the error region plus the files it may edit."""
-    session = session_for(state["run_id"])
-    analysis = state.get("analysis")
-    wanted = _candidate_files(state, session)
+    """What the model sees: the error, the failing test, and the code it reaches.
 
-    parts = [f"<error>\n{state.get('error_region', '')}\n</error>"]
+    Read from the run's checkout on the host, never through the sandbox's
+    output tail, which cut every file to its last 16 KB. The diagnosis rarely
+    names the file to fix, and an assertion's traceback stops in the test, so
+    follow the failing test like a developer would: show the definitions of
+    what it calls, wherever they live, plus the lines the log points at. Small
+    files are shown whole; large ones as excerpts.
+    """
+    root = pathlib.Path(state.get("source_dir") or PRACTICE_REPO_DIR).resolve()
+    analysis = state.get("analysis")
+    region = state.get("error_region", "")
+
+    files: dict[str, list[tuple[int, int]]] = {}  # path -> line spans worth showing
+    if analysis and analysis.file:
+        files[analysis.file] = []
+    called: set[str] = set()
+    test_file = (analysis.failing_test or "").split("::")[0] if analysis else ""
+    test_text = _read(root, test_file) if test_file else None
+    if test_text is not None:
+        lines = test_text.splitlines()
+        name = analysis.failing_test.split("::")[-1].split("[")[0]
+        spans = _defs(lines, {name})
+        files[test_file] = [(0, 30), *spans]  # its imports and the failing test
+        for start, end in spans:
+            called |= set(_CALL.findall("\n".join(lines[start:end])))
+        called = {n for n in called - _NOT_DEFS if not n.startswith(("assert", "test"))}
+        for module in _IMPORT.findall(test_text):
+            base = module.replace(".", "/")
+            files.setdefault(base + ".py" if _read(root, base + ".py") is not None else base + "/__init__.py", [])
+    for path, line in _LOG_LINE.findall(region):
+        files.setdefault(path, []).append((int(line) - 20, int(line) + 20))
+    if called:
+        hits = []
+        for source in root.rglob("*.py"):
+            rel = source.relative_to(root)
+            if rel.as_posix() == test_file or {"test", "tests"} & set(rel.parts):
+                continue
+            lines = (_read(root, rel.as_posix()) or "").splitlines()
+            spans = _defs(lines, called)
+            if spans:
+                # One hop further: what those definitions call, defined in the same file.
+                inner = {n for s, e in spans for n in _CALL.findall("\n".join(lines[s:e]))} - _NOT_DEFS - called
+                hits.append((len(spans), rel.as_posix(), spans + _defs(lines, inner)))
+        for _, rel, spans in sorted(hits, key=lambda h: (-h[0], h[1]))[:MAX_DEF_FILES]:
+            files.setdefault(rel, []).extend((s - 3, min(e, s + 150)) for s, e in spans)
+    files.setdefault("requirements.txt", [])
+
+    parts = [f"<error>\n{region}\n</error>"]
     # SBFL evidence (Phase 8): a mathematical suspiciousness ranking, so the model
     # edits where the spectrum points rather than the first file it happens to see.
-    evidence = state.get("sbfl_evidence")
-    if evidence:
-        parts.append(evidence)
-    for path in dict.fromkeys(wanted):
-        if session is None:
-            break
-        # `path` can come from the model (analysis.file): quote it so it is an
-        # argument to cat, never shell syntax (SR-03).
-        shown = session.run("test", f"cat -- {shlex.quote(path)}", timeout_s=30)
-        if shown.passed:
-            parts.append(f"<file path=\"{path}\">\n{shown.stdout_tail}</file>")
+    if state.get("sbfl_evidence"):
+        parts.append(state["sbfl_evidence"])
+    used = sum(map(len, parts))
+    for path, spans in files.items():
+        text = _read(root, path)
+        if text is None or (len(text) > WHOLE_FILE_CHARS and not spans):
+            continue
+        shown = _excerpt(text, spans)
+        if used + len(shown) > CONTEXT_CHARS:
+            continue  # ponytail: drops whole files past the cap; trim spans if that loses the fix
+        used += len(shown)
+        parts.append(f"<file path=\"{path}\">\n{shown}</file>")
     if analysis is not None:
         parts.append(f"<diagnosis>\n{analysis.model_dump_json(indent=2)}\n</diagnosis>")
     return "\n\n".join(parts)
