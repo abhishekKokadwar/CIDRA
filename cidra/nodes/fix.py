@@ -12,6 +12,7 @@ import builtins
 import difflib
 import pathlib
 import re
+import shlex
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -19,7 +20,8 @@ from pydantic import BaseModel, Field
 from cidra import config
 from cidra.config import PRACTICE_REPO_DIR
 from cidra.integrations.llm import structured
-from cidra.nodes.environment import sandbox_install_command, sandbox_test_command, session_for
+from cidra.nodes.environment import env_prefix, sandbox_install_command, sandbox_test_command, session_for
+from cidra.nodes.reproduce import _same_test
 from cidra.state import DebugState
 
 # Which file each category is allowed to touch. Deterministic, no LLM.
@@ -207,6 +209,8 @@ def _context(state: DebugState) -> str:
     files.setdefault("requirements.txt", [])
 
     parts = [f"<error>\n{region}\n</error>"]
+    if state.get("failure_detail"):
+        parts.append(f"<failing_test_output>\n{state['failure_detail']}\n</failing_test_output>")
     # SBFL evidence (Phase 8): a mathematical suspiciousness ranking, so the model
     # edits where the spectrum points rather than the first file it happens to see.
     if state.get("sbfl_evidence"):
@@ -272,8 +276,48 @@ def edits_to_diff(edits: list[Edit], root: pathlib.Path) -> str:
     return "".join(_unified(p, before[p], after[p]) for p in after if after[p] != (before[p] or ""))
 
 
+DETAIL_CHARS = 8_000
+HEAD_CHARS = 1_500
+_DIFF_MARKERS = ("Differing items", "Full diff", "Left contains", "Right contains", "At index")
+
+
+def _failure_detail(state: DebugState) -> Optional[str]:
+    """The target tests rerun alone with -vv, once per run.
+
+    Without -vv pytest cuts an assertion's diff short ("use -vv to get more
+    diff"): on the BugsInPy run the model saw that a value differed but not how,
+    and gave up. Only a run where pytest ran and tests failed (exit 1) counts.
+    """
+    session = session_for(state["run_id"])
+    wanted = state.get("target_tests") or []
+    # The sandbox's own ids: the CI's may carry a different rootdir prefix.
+    targets = [t for t in state.get("repro_failing_tests") or [] if any(_same_test(w, t) for w in wanted)][:5]
+    if session is None or not targets:
+        return None
+    # Test ids come from the log: quoted, so they are arguments, never shell syntax (SR-03).
+    run = session.run("test", env_prefix(state) + "python -m pytest -vv -p no:cacheprovider -p no:warnings "
+                      + " ".join(map(shlex.quote, targets)) + " 2>&1")
+    if run.exit_code != 1 or not run.stdout_tail.strip():
+        return None
+    # From the failures section on: the assertion and its diff come first there.
+    out = run.stdout_tail
+    header = out.find("= FAILURES =")
+    out = out[out.rfind("\n", 0, header) + 1 if header >= 0 else 0:]
+    # pytest prints both whole values before saying how they differ; for a large
+    # dict that alone can fill the budget. Keep the test's code, then the diff.
+    found = [i for i in (out.find(m) for m in _DIFF_MARKERS) if i >= 0]
+    if found and min(found) > HEAD_CHARS:
+        cut = out.rfind("\n", 0, min(found)) + 1
+        out = out[:HEAD_CHARS] + f"\n[cidra: {cut - HEAD_CHARS} characters not shown]\n" + out[cut:]
+    return out[:DETAIL_CHARS]
+
+
 def generate_fix(state: DebugState) -> dict:
     attempts = state.get("fix_attempts", 0) + 1
+    out: dict = {"fix_attempts": attempts}
+    if "failure_detail" not in state:
+        out["failure_detail"] = _failure_detail(state)
+        state = {**state, **out}
     previous = state.get("verify_results", [])
     retry_note = ""
     if state.get("patch_applied") is False and state.get("apply_error"):
@@ -302,12 +346,12 @@ def generate_fix(state: DebugState) -> dict:
             max_tokens=4000,  # edits quote the old text, so they run longer than a diff
         )
     except Exception as e:
-        return {"fix_attempts": attempts, "fix_diff": None, "analysis_error": str(e)[:500]}
+        return {**out, "fix_diff": None, "analysis_error": str(e)[:500]}
     try:
         diff = edits_to_diff(patch.edits, pathlib.Path(state.get("source_dir") or PRACTICE_REPO_DIR))
     except ValueError as e:
-        return {"fix_attempts": attempts, "fix_diff": None, "patch_applied": False, "apply_error": str(e)}
-    return {"fix_attempts": attempts, "fix_diff": diff or None}
+        return {**out, "fix_diff": None, "patch_applied": False, "apply_error": str(e)}
+    return {**out, "fix_diff": diff or None}
 
 
 def apply_patch(state: DebugState) -> dict:
