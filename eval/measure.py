@@ -96,7 +96,7 @@ from cidra.nodes.environment import (  # noqa: E402
 from cidra.sandbox import limits  # noqa: E402
 from cidra.sandbox.runner import Session  # noqa: E402
 from eval import corpus_repo  # noqa: E402
-from eval.attempts import attempts_from_updates, why_not_verified  # noqa: E402
+from eval.attempts import attempts_from_updates, run_flaky_fixture, why_not_verified  # noqa: E402
 
 # Per-fixture overrides the pipeline takes as run input.
 _RUN_OVERRIDES = ("install_command", "test_command", "python_version")
@@ -363,7 +363,8 @@ def main() -> int:
 
     records = []
     for fid in wanted:
-        r = run_fixture(fid)
+        flaky = ARGS.check and load_fixture(fid)["expected"]["expected_outcome"] == "flaky_detected"
+        r = run_flaky_fixture(fid, run_fixture) if flaky else run_fixture(fid)
         records.append(r)
         held = "-" if r["held_out"] is None else ("pass" if r["held_out"]["passed"] else "FAIL")
         if r["held_out"] is not None and not r["held_out_valid"]:

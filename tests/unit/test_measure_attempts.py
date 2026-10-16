@@ -71,3 +71,18 @@ def test_edits_that_could_not_be_placed_count_as_did_not_apply():
     [attempt] = attempts_from_updates(updates)
     assert attempt["result"] == "did_not_apply"
     assert attempt["apply_error"] == "edit 1: the old text was not found"
+
+
+def test_a_flaky_fixture_gets_more_tries_only_until_detected():
+    from eval.attempts import run_flaky_fixture
+    outcomes = iter(["failed", "flaky_detected", "failed"])
+    seen = []
+
+    def run(fid):
+        seen.append(fid)
+        return {"outcome": next(outcomes)}
+
+    assert run_flaky_fixture("F-04", run) == {"outcome": "flaky_detected", "tries": 2}
+    assert seen == ["F-04", "F-04"]
+    never = run_flaky_fixture("F-04", lambda fid: {"outcome": "failed"})
+    assert never == {"outcome": "failed", "tries": 3}

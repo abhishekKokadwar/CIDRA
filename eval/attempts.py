@@ -66,3 +66,22 @@ def why_not_verified(records: list[dict]) -> dict[str, int]:
         for a in record.get("attempts") or []:
             counts[a["result"]] += 1
     return {k: v for k, v in counts.items() if v}
+
+
+FLAKY_FIXTURE_TRIES = 3
+
+
+def run_flaky_fixture(fid: str, run, tries: int = FLAKY_FIXTURE_TRIES) -> dict:
+    """Run a fixture whose expected outcome is flaky_detected until it is detected.
+
+    Its test passes at random half the time, so all FLAKY_RUNS (5) runs agree
+    with probability 2 * 0.5**5 = 1/16, and then a correct run reports no
+    flakiness. One try made CI fail on one push in 16; three make it 1 in 4,096.
+    For `measure.py --check` only: a measurement keeps the first result.
+    """
+    for n in range(1, tries + 1):
+        record = run(fid)
+        record["tries"] = n
+        if record["outcome"] == "flaky_detected":
+            break
+    return record
