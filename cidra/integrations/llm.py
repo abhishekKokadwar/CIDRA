@@ -3,8 +3,8 @@
 Only two nodes call an LLM (analyze, generate_fix). Both go through here so
 model choice, forced-tool-call and validation live in one place.
 
-Provider-agnostic on purpose: CIDRA_BASE_URL points at OpenRouter today and
-can point at any OpenAI-compatible endpoint later. Only .env changes.
+Provider-agnostic on purpose: CIDRA_BASE_URL can point at any OpenAI-compatible
+endpoint. Only .env changes.
 """
 
 import logging
@@ -15,12 +15,7 @@ from openai import OpenAI
 from openai import RateLimitError
 from pydantic import BaseModel
 
-from cidra.config import (
-    API_KEY, BASE_URL, 
-    OPENROUTER_API_KEY, OPENROUTER_API_KEY_2, OPENROUTER_BASE_URL,
-    NVIDIA_API_KEY_KIMI, NVIDIA_API_KEY_GLM, NVIDIA_BASE_URL, 
-    GROQ_API_KEY, GROQ_BASE_URL
-)
+from cidra.config import API_KEY, BASE_URL, FALLBACK_MODEL, GEMINI_API_KEY, GEMINI_BASE_URL
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -31,11 +26,7 @@ log = logging.getLogger("cidra.llm")
 _NO_RETRY_STATUS = {400, 401, 402, 403, 404, 422}
 
 _client: OpenAI | None = None
-_or_client_1: OpenAI | None = None
-_or_client_2: OpenAI | None = None
-_kimi_client: OpenAI | None = None
-_glm_client: OpenAI | None = None
-_groq_client: OpenAI | None = None
+_gemini_client: OpenAI | None = None
 
 _latest_telemetry: list[dict] = []
 _requests_sent = 0  # every request this run, including ones that failed
@@ -83,45 +74,11 @@ def client() -> OpenAI:
         _client = OpenAI(api_key=API_KEY, base_url=BASE_URL, timeout=120.0)
     return _client
 
-def openrouter_client_1() -> OpenAI:
-    global _or_client_1
-    if _or_client_1 is None:
-        if not OPENROUTER_API_KEY:
-            raise RuntimeError("OPENROUTER_API_KEY is not set for fallback")
-        _or_client_1 = OpenAI(api_key=OPENROUTER_API_KEY, base_url=OPENROUTER_BASE_URL, timeout=120.0)
-    return _or_client_1
-
-def openrouter_client_2() -> OpenAI:
-    global _or_client_2
-    if _or_client_2 is None:
-        if not OPENROUTER_API_KEY_2:
-            raise RuntimeError("OPENROUTER_API_KEY_2 is not set for fallback")
-        _or_client_2 = OpenAI(api_key=OPENROUTER_API_KEY_2, base_url=OPENROUTER_BASE_URL, timeout=120.0)
-    return _or_client_2
-
-def kimi_client() -> OpenAI:
-    global _kimi_client
-    if _kimi_client is None:
-        if not NVIDIA_API_KEY_KIMI:
-            raise RuntimeError("NVIDIA_API_KEY_KIMI is not set for fallback")
-        _kimi_client = OpenAI(api_key=NVIDIA_API_KEY_KIMI, base_url=NVIDIA_BASE_URL, timeout=120.0)
-    return _kimi_client
-
-def glm_client() -> OpenAI:
-    global _glm_client
-    if _glm_client is None:
-        if not NVIDIA_API_KEY_GLM:
-            raise RuntimeError("NVIDIA_API_KEY_GLM is not set for fallback")
-        _glm_client = OpenAI(api_key=NVIDIA_API_KEY_GLM, base_url=NVIDIA_BASE_URL, timeout=120.0)
-    return _glm_client
-
-def groq_client() -> OpenAI:
-    global _groq_client
-    if _groq_client is None:
-        if not GROQ_API_KEY:
-            raise RuntimeError("GROQ_API_KEY is not set for fallback")
-        _groq_client = OpenAI(api_key=GROQ_API_KEY, base_url=GROQ_BASE_URL, timeout=120.0)
-    return _groq_client
+def gemini_client() -> OpenAI:
+    global _gemini_client
+    if _gemini_client is None:
+        _gemini_client = OpenAI(api_key=GEMINI_API_KEY, base_url=GEMINI_BASE_URL, timeout=120.0)
+    return _gemini_client
 
 
 def structured(
@@ -138,20 +95,11 @@ def structured(
     see routers.route_after_validate.
     """
     # BYOK: the primary call uses the caller's model (CIDRA_MODEL_ANALYZE /
-    # CIDRA_MODEL_FIX) against CIDRA_BASE_URL. The fallbacks below are other
-    # providers, so each carries its own provider-specific model id:
-    # 2-3. OpenRouter Key 2
-    # 4. Groq
-    # 5-6. NVIDIA NIM
-    fallbacks = [
-        ("meta-llama/llama-3.1-70b-instruct", openrouter_client_2, OPENROUTER_API_KEY_2),
-        ("qwen/qwen-2.5-72b-instruct", openrouter_client_2, OPENROUTER_API_KEY_2),
-        ("llama-3.1-8b-instant", groq_client, GROQ_API_KEY),
-        ("moonshotai/kimi-k3", kimi_client, NVIDIA_API_KEY_KIMI),
-        ("z-ai/glm-5.3-flash", glm_client, NVIDIA_API_KEY_GLM),
-    ]
-    # A fallback with no key configured is not in the chain at all.
-    models_to_try = [(model, client)] + [(m, c) for m, c, key in fallbacks if key]
+    # CIDRA_MODEL_FIX) against CIDRA_BASE_URL. One fallback, Gemini, when its key
+    # is set and the primary is not Gemini already.
+    models_to_try = [(model, client)]
+    if GEMINI_API_KEY and BASE_URL.rstrip("/") != GEMINI_BASE_URL.rstrip("/"):
+        models_to_try.append((FALLBACK_MODEL, gemini_client))
 
     last_error = None
     

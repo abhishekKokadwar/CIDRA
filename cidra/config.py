@@ -16,23 +16,15 @@ FLAKY_RUNS = 5
 # non-deterministic test is meaningless (2_scope_and_decisions.md §2).
 FLAKY_SCORE_THRESHOLD = 1
 
-# Provider — any OpenAI-compatible endpoint. OpenRouter for now.
+# Provider — any OpenAI-compatible endpoint, one key (BYOK).
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
 API_KEY = os.environ.get("CIDRA_API_KEY", "")
-BASE_URL = os.environ.get("CIDRA_BASE_URL") or "https://generativelanguage.googleapis.com/v1beta/openai/"
+BASE_URL = os.environ.get("CIDRA_BASE_URL") or GEMINI_BASE_URL
 
-# OpenRouter Fallbacks (Multiple keys for quotas)
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
-OPENROUTER_API_KEY_2 = os.environ.get("OPENROUTER_API_KEY_2", "")
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-
-# NVIDIA Fallback
-NVIDIA_API_KEY_KIMI = os.environ.get("NVIDIA_API_KEY_KIMI", "")
-NVIDIA_API_KEY_GLM = os.environ.get("NVIDIA_API_KEY_GLM", "")
-NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
-
-# Groq Fallback
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
-GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+# One optional fallback, tried only when the primary call fails: Gemini, through
+# its OpenAI-compatible endpoint. No GEMINI_API_KEY, no fallback.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+FALLBACK_MODEL = os.environ.get("CIDRA_FALLBACK_MODEL") or "gemini-3.5-flash"
 
 # Models — cheap for classification, stronger for code edits.
 # See docs/5_fixtures.md §6: record which model produced each eval row.

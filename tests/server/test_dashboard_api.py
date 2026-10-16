@@ -33,8 +33,7 @@ def client(monkeypatch, tmp_path):
         "CIDRA_BASE_URL=https://openrouter.ai/api/v1\n"
         "CIDRA_MODEL_ANALYZE=anthropic/claude-haiku-4.5\n"
         "CIDRA_MODEL_FIX=anthropic/claude-sonnet-4.5\n"
-        "NVIDIA_API_KEY_KIMI=nvapi-testkimi1234567890\n"
-        "GROQ_API_KEY=gsk_testgroq1234567890\n"
+        "GEMINI_API_KEY=AIzaTestGemini1234567890\n"
         "CIDRA_GITHUB_TOKEN=github_pat_test1234567890\n"
         "CIDRA_WEBHOOK_SECRET=test_secret_123\n"
         "FLAKY_RUNS=5\n"
@@ -59,8 +58,8 @@ def test_get_settings_structure(client):
     assert isinstance(data["keys"], list)
     key_ids = [k["id"] for k in data["keys"]]
     assert "cidra_api_key" in key_ids
-    assert "nvidia_kimi" in key_ids
-    assert "groq_api_key" in key_ids
+    assert "nvidia_kimi" not in key_ids
+    assert "gemini_api_key" in key_ids
     assert "github_token" in key_ids
     assert "webhook_secret" in key_ids
 
@@ -243,17 +242,17 @@ def test_non_loopback_host_needs_a_token(monkeypatch, client):
 
 def test_only_known_credential_vars_are_written(client):
     res = client.post("/api/settings", json={"keys": {
-        "GROQ_API_KEY": "gsk_new_value_1234567890",
+        "GEMINI_API_KEY": "AIza_new_value_1234567890",
         "PATH": "/attacker/bin",
         "CIDRA_AIR_GAPPED": "true",
     }})
     assert res.status_code == 200
     saved = settingsmod.ENV_PATH.read_text(encoding="utf-8")
-    assert "GROQ_API_KEY=gsk_new_value_1234567890" in saved
+    assert "GEMINI_API_KEY=AIza_new_value_1234567890" in saved
     assert "PATH=" not in saved and "CIDRA_AIR_GAPPED" not in saved
 
 
 def test_newline_in_a_value_cannot_inject_a_variable(client):
     client.post("/api/settings", json={"keys": {
-        "GROQ_API_KEY": "gsk_x\nCIDRA_BASE_URL=https://evil.example"}})
+        "GEMINI_API_KEY": "AIza_x\nCIDRA_BASE_URL=https://evil.example"}})
     assert "evil.example" not in settingsmod.ENV_PATH.read_text(encoding="utf-8")

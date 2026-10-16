@@ -4,7 +4,7 @@
  * Verifies live HTTP endpoints between React frontend and CIDRA backend:
  * 1. GET /api/settings       -> Reads .env, masks credentials, checks models & limits
  * 2. POST /api/settings      -> Persists configuration directly to .env
- * 3. POST /api/settings/test -> Live connectivity probe to OpenRouter and Groq LPU
+ * 3. POST /api/settings/test -> Live connectivity probe to the primary endpoint and Gemini
  * 4. GET /telemetry.json     -> Verifies Command Center & Run Explorer telemetry feed
  */
 
@@ -131,26 +131,26 @@ async function runTests() {
     fail('POST /api/settings/test (OpenRouter)', err.message);
   }
 
-  // Test 4: POST /api/settings/test (Groq LPU Ping)
+  // Test 4: POST /api/settings/test (Gemini fallback ping)
   total++;
   try {
     const res = await fetch(`${BASE_URL}/api/settings/test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider_id: 'groq_api_key' })
+      body: JSON.stringify({ provider_id: 'gemini_api_key' })
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}: Probe failed`);
     const data = await res.json();
 
     if (!data.ok) {
-      throw new Error(data.error || data.message || 'Groq probe failed');
+      throw new Error(data.error || data.message || 'Gemini probe failed');
     }
 
-    pass('POST /api/settings/test (Groq Cloud)', `LPU Cluster Online (${data.latency_ms}ms round-trip probe, HTTP ${data.status})`);
+    pass('POST /api/settings/test (Gemini)', `Gemini Online (${data.latency_ms}ms round-trip probe, HTTP ${data.status})`);
     passed++;
   } catch (err) {
-    fail('POST /api/settings/test (Groq Cloud)', err.message);
+    fail('POST /api/settings/test (Gemini)', err.message);
   }
 
   // Test 5: GET /telemetry.json

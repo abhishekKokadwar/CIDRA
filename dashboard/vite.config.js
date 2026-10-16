@@ -72,34 +72,14 @@ function getSettingsPayload() {
         baseUrl: env.CIDRA_BASE_URL || 'https://openrouter.ai/api/v1'
       },
       {
-        id: 'nvidia_kimi',
-        provider: 'NVIDIA NIM (Kimi)',
-        label: 'Fast Fallback Tier 1',
-        envVar: 'NVIDIA_API_KEY_KIMI',
-        masked: maskSecret(env.NVIDIA_API_KEY_KIMI),
-        configured: Boolean(env.NVIDIA_API_KEY_KIMI),
+        id: 'gemini_api_key',
+        provider: 'Google Gemini',
+        label: 'Fallback when the primary call fails',
+        envVar: 'GEMINI_API_KEY',
+        masked: maskSecret(env.GEMINI_API_KEY),
+        configured: Boolean(env.GEMINI_API_KEY),
         canTest: true,
-        baseUrl: 'https://integrate.api.nvidia.com/v1'
-      },
-      {
-        id: 'nvidia_glm',
-        provider: 'NVIDIA NIM (GLM)',
-        label: 'Fast Fallback Tier 2',
-        envVar: 'NVIDIA_API_KEY_GLM',
-        masked: maskSecret(env.NVIDIA_API_KEY_GLM),
-        configured: Boolean(env.NVIDIA_API_KEY_GLM),
-        canTest: true,
-        baseUrl: 'https://integrate.api.nvidia.com/v1'
-      },
-      {
-        id: 'groq_api_key',
-        provider: 'Groq Cloud',
-        label: 'Ultra-Fast LPU Inference',
-        envVar: 'GROQ_API_KEY',
-        masked: maskSecret(env.GROQ_API_KEY),
-        configured: Boolean(env.GROQ_API_KEY),
-        canTest: true,
-        baseUrl: 'https://api.groq.com/openai/v1'
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/'
       },
       {
         id: 'github_token',
@@ -136,8 +116,7 @@ function getSettingsPayload() {
       model_analyze: env.CIDRA_MODEL_ANALYZE || 'anthropic/claude-3.5-sonnet',
       model_fix: env.CIDRA_MODEL_FIX || 'anthropic/claude-3.5-sonnet',
       base_url: env.CIDRA_BASE_URL || 'https://openrouter.ai/api/v1',
-      nvidia_base_url: 'https://integrate.api.nvidia.com/v1',
-      groq_base_url: 'https://api.groq.com/openai/v1'
+      fallback_model: env.CIDRA_FALLBACK_MODEL || 'gemini-3.5-flash'
     },
     flakiness: {
       flaky_runs: parseInt(env.FLAKY_RUNS || '5', 10),
@@ -239,27 +218,15 @@ function cidraSettingsPlugin() {
                 return;
               }
 
-              if (provider_id === 'groq_api_key') {
-                const key = env.GROQ_API_KEY;
-                if (!key) throw new Error('No Groq key configured in .env');
-                const resp = await fetch('https://api.groq.com/openai/v1/models', {
+              if (provider_id === 'gemini_api_key') {
+                const key = env.GEMINI_API_KEY;
+                if (!key) throw new Error('No Gemini key configured in .env');
+                const resp = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/models', {
                   headers: { Authorization: `Bearer ${key}` }
                 });
                 const elapsed = Date.now() - start;
                 res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ ok: resp.ok, status: resp.status, latency_ms: elapsed, message: resp.ok ? 'Groq LPU Engine Online' : 'Invalid or expired key' }));
-                return;
-              }
-
-              if (provider_id === 'nvidia_kimi' || provider_id === 'nvidia_glm') {
-                const key = provider_id === 'nvidia_kimi' ? env.NVIDIA_API_KEY_KIMI : env.NVIDIA_API_KEY_GLM;
-                if (!key) throw new Error('No NVIDIA NIM key configured in .env');
-                const resp = await fetch('https://integrate.api.nvidia.com/v1/models', {
-                  headers: { Authorization: `Bearer ${key}` }
-                });
-                const elapsed = Date.now() - start;
-                res.setHeader('Content-Type', 'application/json');
-                res.end(JSON.stringify({ ok: resp.ok, status: resp.status, latency_ms: elapsed, message: resp.ok ? 'NVIDIA NIM Cluster Online' : 'Invalid or expired key' }));
+                res.end(JSON.stringify({ ok: resp.ok, status: resp.status, latency_ms: elapsed, message: resp.ok ? 'Gemini Online' : 'Invalid or expired key' }));
                 return;
               }
 

@@ -59,10 +59,12 @@ its own wording that points at `install_command` / `test_command`.
 ### G-19 · Dead or ignored settings — 🛠 (small)
 - Dashboard "Flakiness & Sandbox" fields are saved to `.env` and `config`, but `reproduce.py`
   and `routers.py` imported the constants at load time, so the engine never sees them.
-- `CIDRA_ENABLE_RATE_LIMIT_BACKOFF` (set by `action.yml`), `limits.AUTO_REMOVE`,
-  `OPENROUTER_API_KEY` / `openrouter_client_1` and the `model` input of `action.yml` are
-  read by nothing.
-- The fallback model IDs in `llm.py` have not been checked since 2026-10-03.
+- `CIDRA_ENABLE_RATE_LIMIT_BACKOFF` (set by `action.yml`), `limits.AUTO_REMOVE` and the
+  `model` input of `action.yml` are read by nothing.
+- The settings page's "test" button for the primary key always probes OpenRouter, whatever
+  `CIDRA_BASE_URL` is.
+- (Done 2026-10-17: the five-provider fallback chain, mostly retired or unknown models, was
+  replaced by one optional Gemini fallback.)
 **Fix:** remove them, or read them at call time.
 
 ### G-20 · Public telemetry carries full prompts — 🛠 🌐

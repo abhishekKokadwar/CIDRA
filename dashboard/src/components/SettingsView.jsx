@@ -53,28 +53,6 @@ const DEFAULT_CATALOG_MODELS = [
     description: 'Zero-cost inference model with high trace localization performance on Python errors.'
   },
   {
-    id: 'moonshotai/kimi-k3',
-    name: 'Kimi K3 (NIM Fallback)',
-    provider: 'NVIDIA Fallback Cluster',
-    role: 'Reliable Fallback Engine',
-    category: 'fast',
-    latency: '0.9s',
-    context: '128k',
-    isFree: true,
-    description: 'Active automatic fallback engine when OpenRouter hits free-tier rate limits or timeouts.'
-  },
-  {
-    id: 'groq/llama-3.3-70b-versatile',
-    name: 'Llama 3.3 70B (Groq LPU)',
-    provider: 'Groq Cloud',
-    role: 'Sub-Second Local Repro Loop',
-    category: 'fast',
-    latency: '0.35s',
-    context: '128k',
-    isFree: false,
-    description: 'Extreme speed inference designed for fast inner-loop validation inside container runs.'
-  },
-  {
     id: 'openai/gpt-4o',
     name: 'GPT-4o (Omni)',
     provider: 'OpenAI / OpenRouter',
@@ -102,9 +80,7 @@ const FALLBACK_SETTINGS = {
   isCloudViewer: true,
   keys: [
     { id: 'cidra_api_key', provider: 'OpenRouter', label: 'Primary LLM Inference Gateway', envVar: 'CIDRA_API_KEY', masked: 'sk-or-v••••••••c4a2', configured: true, canTest: false, baseUrl: 'https://openrouter.ai/api/v1' },
-    { id: 'nvidia_kimi', provider: 'NVIDIA NIM (Kimi)', label: 'Fast Fallback Tier 1', envVar: 'NVIDIA_API_KEY_KIMI', masked: 'nvapi-••••••••9a1e', configured: true, canTest: false, baseUrl: 'https://integrate.api.nvidia.com/v1' },
-    { id: 'nvidia_glm', provider: 'NVIDIA NIM (GLM)', label: 'Fast Fallback Tier 2', envVar: 'NVIDIA_API_KEY_GLM', masked: 'nvapi-••••••••3b8c', configured: true, canTest: false, baseUrl: 'https://integrate.api.nvidia.com/v1' },
-    { id: 'groq_api_key', provider: 'Groq Cloud', label: 'Ultra-Fast LPU Inference', envVar: 'GROQ_API_KEY', masked: 'gsk_••••••••8819', configured: true, canTest: false, baseUrl: 'https://api.groq.com/openai/v1' },
+    { id: 'gemini_api_key', provider: 'Google Gemini', label: 'Fallback when the primary call fails', envVar: 'GEMINI_API_KEY', masked: 'AIza••••••••7c1d', configured: true, canTest: false, baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/' },
     { id: 'github_token', provider: 'GitHub PAT (Read/Write)', label: 'Automated Pull Requests & Branches', envVar: 'CIDRA_GITHUB_TOKEN', masked: 'github_pat_••••••••3301', configured: true, canTest: false, baseUrl: 'https://api.github.com' },
     { id: 'github_token_ro', provider: 'GitHub PAT (Read-Only)', label: 'Safe CI Log & Metadata Fetching', envVar: 'CIDRA_GITHUB_TOKEN_RO', masked: 'github_pat_••••••••5519', configured: true, canTest: false, baseUrl: 'https://api.github.com' },
     { id: 'webhook_secret', provider: 'Webhook HMAC Secret', label: 'GitHub Webhook Delivery Verification', envVar: 'CIDRA_WEBHOOK_SECRET', masked: 'whsec_••••••••4120', configured: true, canTest: false, baseUrl: '' }
@@ -612,9 +588,7 @@ export default function SettingsView() {
                   style={{ width: '100%', background: 'var(--bg-dark)', border: '1px solid var(--border-light)', color: 'var(--text-main)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.825rem' }}
                 >
                   <option value="CIDRA_API_KEY">CIDRA_API_KEY (OpenRouter Primary)</option>
-                  <option value="NVIDIA_API_KEY_KIMI">NVIDIA_API_KEY_KIMI (NVIDIA Fallback)</option>
-                  <option value="NVIDIA_API_KEY_GLM">NVIDIA_API_KEY_GLM (GLM Fallback)</option>
-                  <option value="GROQ_API_KEY">GROQ_API_KEY (Groq LPU)</option>
+                  <option value="GEMINI_API_KEY">GEMINI_API_KEY (Gemini Fallback)</option>
                   <option value="CIDRA_GITHUB_TOKEN">CIDRA_GITHUB_TOKEN (GitHub PAT)</option>
                   <option value="CIDRA_WEBHOOK_SECRET">CIDRA_WEBHOOK_SECRET (HMAC Secret)</option>
                 </select>
@@ -1104,7 +1078,7 @@ export default function SettingsView() {
 
               <button
                 onClick={() => {
-                  ['cidra_api_key', 'groq_api_key', 'nvidia_kimi', 'github_token'].forEach(id => {
+                  ['cidra_api_key', 'gemini_api_key', 'github_token'].forEach(id => {
                     testProvider(id);
                   });
                 }}
@@ -1129,8 +1103,7 @@ export default function SettingsView() {
                 <tbody>
                   {[
                     { id: 'cidra_api_key', name: 'OpenRouter Gateway', role: 'Primary Inference Node', url: 'https://openrouter.ai/api/v1' },
-                    { id: 'groq_api_key', name: 'Groq Cloud LPU', role: 'Ultra-Fast Repro Loop', url: 'https://api.groq.com/openai/v1' },
-                    { id: 'nvidia_kimi', name: 'NVIDIA NIM Cluster', role: 'Secondary Fallback Tier', url: 'https://integrate.api.nvidia.com/v1' },
+                    { id: 'gemini_api_key', name: 'Google Gemini', role: 'Fallback When The Primary Fails', url: 'https://generativelanguage.googleapis.com/v1beta/openai/' },
                     { id: 'github_token', name: 'GitHub REST API', role: 'CI Log Extraction & PR Creation', url: 'https://api.github.com' }
                   ].map((p) => {
                     const st = testStatuses[p.id];
