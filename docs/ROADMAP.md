@@ -76,7 +76,8 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 
 - [x] Study the BugsInPy misses ([v2 result](../eval/results/claude-haiku-4-5-bugsinpy-v2.json)): of 19 patches tried on the 12 fixable bugs, 15 did not apply and 4 were refused for editing test setup. None reached the test run.
 - [x] Make patches apply: the model now proposes "replace this exact text" edits and CIDRA builds the diff; an edit whose text is not in the file is reported back to the model.
-- [ ] Show the model the right part of large files: file contents are cut to the last 16 KB, so the code to fix can be out of view.
+- [x] Show the model the right part of large files: files are read from the checkout, small ones whole, large ones as excerpts around what the failing test calls (one call deep) and the lines the log names. The changed lines of the reference fix are in view for 6 of 12 fixable BugsInPy bugs, up from 1 (`eval/context_visibility.py`, no model needed).
+- [ ] The other 6 (fastapi, tornado-1, youtube-dl-2) are reached through framework code the test does not call directly; coverage-based ranking (SBFL, G-01) is the way to them.
 - [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
 - [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
 
