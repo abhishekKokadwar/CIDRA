@@ -16,7 +16,7 @@ def _result(a: dict) -> str:
     if a.get("model_error"):
         return "model_error"
     if not a.get("diff"):
-        return "empty_patch"
+        return "did_not_apply" if a.get("apply_error") else "empty_patch"
     if a.get("audit_ok") is False:
         return "refused_by_audit"
     if a.get("applied") is False:
@@ -38,11 +38,15 @@ def attempts_from_updates(updates: list[tuple[str, dict]]) -> list[dict]:
         elif node == "generate_fix":
             attempts.append({"n": len(attempts) + 1, "source": "model", "diff": update.get("fix_diff"),
                              "model_error": update.get("analysis_error")})
+            if update.get("apply_error"):  # edits that could not be placed in the file
+                attempts[-1].update(applied=False, apply_error=update["apply_error"])
         elif attempts and node == "audit_patch":
             attempts[-1].update(audit_ok=update.get("patch_audit_ok"),
                                 audit_reasons=update.get("patch_audit_reasons") or [])
         elif attempts and node == "apply_patch":
-            attempts[-1].update(applied=update.get("patch_applied"), apply_error=update.get("apply_error"))
+            # Without a diff apply_patch sends no apply_error: keep generate_fix's.
+            attempts[-1].update({to: update[key] for key, to in
+                                 (("patch_applied", "applied"), ("apply_error", "apply_error")) if key in update})
         elif attempts and node == "verify_fix":
             attempts[-1].update(verified=bool(update.get("verified")),
                                 still_failing=update.get("verify_failing_tests") or [],

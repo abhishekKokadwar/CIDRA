@@ -1,12 +1,15 @@
 """Fix generation and verification. See docs/4_architecture.md §5 nodes 12-15.
 
-The safety-critical split: the LLM produces a unified diff (data). CIDRA decides
-the command (code). Nothing the model returns is ever executed as a shell string.
+The safety-critical split: the LLM proposes text edits (data). CIDRA turns them
+into a unified diff and decides the command (code). Nothing the model returns is
+ever executed as a shell string.
 
 verify_fix is the sole writer of `verified` — the one field the final report is
 allowed to make a claim from.
 """
 
+import difflib
+import pathlib
 import re
 import shlex
 from typing import Optional
@@ -14,6 +17,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 from cidra import config
+from cidra.config import PRACTICE_REPO_DIR
 from cidra.integrations.llm import structured
 from cidra.nodes.environment import sandbox_install_command, sandbox_test_command, session_for
 from cidra.state import DebugState
@@ -32,25 +36,33 @@ STRATEGIES = {
 }
 
 
-class Patch(BaseModel):
-    """LLM output for a fix. A diff, never a command."""
+class Edit(BaseModel):
+    path: str = Field(description="File to change, relative to the repository root, as in <file path=...>.")
+    old: str = Field(description="Exact text to replace, copied from the file with its indentation. "
+                                 "Include enough lines that it appears only once. Empty to add "
+                                 "text at the end of the file, or to create a new file.")
+    new: str = Field(description="The text that replaces `old`.")
 
-    diff: str = Field(description="Unified diff with a/ and b/ prefixes.")
-    target_file: str
+
+class Patch(BaseModel):
+    """LLM output for a fix. Text edits, never a command or a hand-written diff:
+    models get diff line counts and context wrong, so CIDRA builds the diff."""
+
+    edits: list[Edit] = Field(default_factory=list, description="Empty if you cannot fix it.")
     rationale: str
 
 
-SYSTEM = """You repair a single CI failure by emitting one unified diff.
+SYSTEM = """You repair a single CI failure by proposing text edits to the files shown.
 
 Hard rules:
-- Output a diff only. Never shell commands, never instructions to run anything.
+- Output edits only. Never shell commands, never instructions to run anything.
 - Change the minimum needed to make the failing test pass. No refactors, no
   cleanups, no unrelated edits, no new files unless the fix is impossible without one.
 - Never edit a test to make it pass when the code under test is wrong. Fixing the
   symptom by weakening the check is a failed repair, not a repair.
-- The diff must apply with `git apply` against the paths shown. Include correct
-  @@ hunk headers and full context lines.
-- If you cannot fix it from the evidence given, emit an empty diff rather than
+- Each edit's `old` text must be copied exactly from the <file> contents shown,
+  and must appear in that file only once.
+- If you cannot fix it from the evidence given, return no edits rather than
   guessing. An honest non-fix beats a plausible wrong one."""
 
 
@@ -137,18 +149,65 @@ def _context(state: DebugState) -> str:
     return "\n\n".join(parts)
 
 
+def _unified(path: str, before: Optional[str], after: str) -> str:
+    lines = difflib.unified_diff(before.splitlines(keepends=True) if before else [],
+                                 after.splitlines(keepends=True),
+                                 "/dev/null" if before is None else f"a/{path}", f"b/{path}")
+    return "".join(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n"
+                   for line in lines)
+
+
+def edits_to_diff(edits: list[Edit], root: pathlib.Path) -> str:
+    """The model's edits as one unified diff against `root`, the run's checkout.
+
+    Raises ValueError, worded for the model, when an edit cannot be placed: a path
+    outside the checkout, or an `old` text that is missing or not unique.
+    """
+    root = root.resolve()
+    before: dict[str, Optional[str]] = {}
+    after: dict[str, str] = {}
+    for n, edit in enumerate(edits, 1):
+        # The path comes from the model: it must stay inside the checkout (SR-03).
+        target = (root / edit.path).resolve()
+        if target == root or not target.is_relative_to(root):
+            raise ValueError(f"edit {n}: {edit.path!r} is not a file in the repository")
+        path = target.relative_to(root).as_posix()
+        if path not in after:
+            try:
+                before[path] = None
+                if target.is_file():
+                    with target.open(encoding="utf-8", newline="") as f:  # keep CRLF as is
+                        before[path] = f.read()
+            except (OSError, UnicodeDecodeError) as e:
+                raise ValueError(f"edit {n}: cannot read {path}: {e}") from e
+            after[path] = before[path] or ""
+        text, old, new = after[path], edit.old, edit.new
+        if "\r\n" in text:  # the model writes \n; match the file's line endings
+            old, new = (s.replace("\r\n", "\n").replace("\n", "\r\n") for s in (old, new))
+        if not old:
+            after[path] = text + ("\n" if text and not text.endswith("\n") else "") + new
+            continue
+        count = text.count(old)
+        if count != 1:
+            where = "was not found in" if count == 0 else f"appears {count} times in"
+            raise ValueError(f"edit {n}: the old text {where} {path}:\n{edit.old[:500]}")
+        after[path] = text.replace(old, new)
+    return "".join(_unified(p, before[p], after[p]) for p in after if after[p] != (before[p] or ""))
+
+
 def generate_fix(state: DebugState) -> dict:
     attempts = state.get("fix_attempts", 0) + 1
     previous = state.get("verify_results", [])
     retry_note = ""
-    if state.get("fix_diff") and state.get("patch_applied") is False:
-        # The last diff never applied: say so, or the model sends it again.
+    if state.get("patch_applied") is False and state.get("apply_error"):
+        # The last edits never applied: say so, or the model sends them again.
         retry_note = (
-            "\n\nYour previous diff did not apply. Do not repeat it. Copy the context "
-            "lines exactly from the <file> contents above.\n"
-            f"<previous_diff>\n{state['fix_diff'][-2000:]}\n</previous_diff>\n"
-            f"<apply_error>\n{(state.get('apply_error') or '')[-1000:]}\n</apply_error>"
+            "\n\nYour previous edits could not be applied. Do not repeat them. Copy each "
+            "old text exactly from the <file> contents above, with enough lines to be unique.\n"
         )
+        if state.get("fix_diff"):
+            retry_note += f"<previous_diff>\n{state['fix_diff'][-2000:]}\n</previous_diff>\n"
+        retry_note += f"<apply_error>\n{state['apply_error'][-1000:]}\n</apply_error>"
     elif previous:
         last = previous[-1]
         retry_note = (
@@ -163,11 +222,15 @@ def generate_fix(state: DebugState) -> dict:
             schema=Patch,
             system=SYSTEM,
             user=_context(state) + retry_note,
-            max_tokens=2000,
+            max_tokens=4000,  # edits quote the old text, so they run longer than a diff
         )
     except Exception as e:
         return {"fix_attempts": attempts, "fix_diff": None, "analysis_error": str(e)[:500]}
-    return {"fix_attempts": attempts, "fix_diff": patch.diff or None}
+    try:
+        diff = edits_to_diff(patch.edits, pathlib.Path(state.get("source_dir") or PRACTICE_REPO_DIR))
+    except ValueError as e:
+        return {"fix_attempts": attempts, "fix_diff": None, "patch_applied": False, "apply_error": str(e)}
+    return {"fix_attempts": attempts, "fix_diff": diff or None}
 
 
 def apply_patch(state: DebugState) -> dict:

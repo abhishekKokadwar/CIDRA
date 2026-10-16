@@ -360,7 +360,7 @@ graph TB
 | Dimension | Ranks 1-3 (dependency / assertion / config) | Rank 4 (flaky) |
 |---|---|---|
 | Reproduction | 1 run, expect **consistently red** | **N=5 runs**, expect **inconsistency** |
-| Fix generation | Yes — LLM produces a unified diff | **None.** There is no code fix to make |
+| Fix generation | Yes — LLM proposes text edits; CIDRA builds the unified diff | **None.** There is no code fix to make |
 | Success signal | Sandbox turns **green** after patch | Non-determinism **confirmed** across runs |
 | Terminal outcome | `verified_fix` | `flaky_detected` |
 

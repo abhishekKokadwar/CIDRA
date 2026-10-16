@@ -59,3 +59,15 @@ def test_counts_over_runs():
     records = [{"attempts": [{"result": "did_not_apply"}, {"result": "still_failing"}]},
                {"attempts": [{"result": "did_not_apply"}]}, {"attempts": []}]
     assert why_not_verified(records) == {"did_not_apply": 2, "still_failing": 1}
+
+
+def test_edits_that_could_not_be_placed_count_as_did_not_apply():
+    updates = [
+        ("generate_fix", {"fix_diff": None, "patch_applied": False, "apply_error": "edit 1: the old text was not found"}),
+        ("audit_patch", {"patch_audit_ok": True}),
+        ("apply_patch", {"patch_applied": False}),
+        ("verify_fix", {"verified": False}),
+    ]
+    [attempt] = attempts_from_updates(updates)
+    assert attempt["result"] == "did_not_apply"
+    assert attempt["apply_error"] == "edit 1: the old text was not found"

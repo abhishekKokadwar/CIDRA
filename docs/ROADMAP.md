@@ -75,7 +75,8 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 ### M3 · Fix real bugs (weeks 6 to 8)
 
 - [x] Study the BugsInPy misses ([v2 result](../eval/results/claude-haiku-4-5-bugsinpy-v2.json)): of 19 patches tried on the 12 fixable bugs, 15 did not apply and 4 were refused for editing test setup. None reached the test run.
-- [ ] Make patches apply: the model hand-writes unified diffs, which come back corrupt or quote code that is not in the file.
+- [x] Make patches apply: the model now proposes "replace this exact text" edits and CIDRA builds the diff; an edit whose text is not in the file is reported back to the model.
+- [ ] Show the model the right part of large files: file contents are cut to the last 16 KB, so the code to fix can be out of view.
 - [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
 - [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
 
