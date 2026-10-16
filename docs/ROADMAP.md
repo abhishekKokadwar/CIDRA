@@ -79,7 +79,7 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 - [x] Show the model the right part of large files: files are read from the checkout, small ones whole, large ones as excerpts around what the failing test calls (one call deep) and the lines the log names. The changed lines of the reference fix are in view for 6 of 12 fixable BugsInPy bugs, up from 1 (`eval/context_visibility.py`, no model needed).
 - [ ] The other 6 (fastapi, tornado-1, youtube-dl-2) are reached through framework code the test does not call directly; coverage-based ranking (SBFL, G-01) is the way to them.
 - [x] Rerun after both ([v3](../eval/results/claude-haiku-4-5-bugsinpy-v3.json)): 1 of 12 fixed. 1 of 27 attempts did not apply (was 15 of 19); 7 reached the tests and failed; 13 returned no edits because the model could not see the cause.
-- [ ] Show the full assertion difference: pytest truncates it ("use -vv"), so the model sees that a value differs but not how. Rerun the target tests with `-vv` before asking for a fix.
+- [x] Show the full assertion difference: before the first fix attempt the target tests are rerun alone with `pytest -vv`, and the failures section goes in the prompt, with a huge value printout skipped so the diff fits.
 - [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
 - [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
 

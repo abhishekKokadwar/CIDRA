@@ -110,6 +110,7 @@ class DebugState(TypedDict, total=False):
     verify_failing_tests: list[str]  # still failing after the patch (allowed only if failing before)
     regressions: list[str]  # failing after the patch, passing before it
     verify_note: Optional[str]  # why the last verification did not pass
+    failure_detail: Optional[str]  # the target tests rerun with -vv, for the fix prompt
 
     # Output target (set by the webhook in Phase 7; absent for fixture runs)
     issue_number: Optional[int]  # PR/issue to comment on
