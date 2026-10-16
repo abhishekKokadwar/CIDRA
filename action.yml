@@ -24,20 +24,8 @@ inputs:
   github_token_ro:
     description: 'Optional read-only token used to fetch CI logs. Defaults to github_token.'
     required: false
-  nvidia_api_key_kimi:
-    description: 'NVIDIA API Key for Kimi-k3 fallback'
-    required: false
-  nvidia_api_key_glm:
-    description: 'NVIDIA API Key for GLM-5.3 fallback'
-    required: false
-  groq_api_key:
-    description: 'Groq API Key for Llama fallback'
-    required: false
-  openrouter_api_key:
-    description: 'OpenRouter API Key 1 for fallback'
-    required: false
-  openrouter_api_key_2:
-    description: 'OpenRouter API Key 2 for fallback'
+  gemini_api_key:
+    description: 'Optional Gemini API key. If set, a failed call to the main model is retried once on Gemini.'
     required: false
   enable_pr_creation:
     description: 'If true, CIDRA will open a PR with the verified fix'
@@ -89,11 +77,7 @@ runs:
         CIDRA_ENABLE_RATE_LIMIT_BACKOFF: 'true'
         CIDRA_GITHUB_TOKEN: ${{ inputs.github_token }}
         CIDRA_GITHUB_TOKEN_RO: ${{ inputs.github_token_ro }}
-        NVIDIA_API_KEY_KIMI: ${{ inputs.nvidia_api_key_kimi }}
-        NVIDIA_API_KEY_GLM: ${{ inputs.nvidia_api_key_glm }}
-        GROQ_API_KEY: ${{ inputs.groq_api_key }}
-        OPENROUTER_API_KEY: ${{ inputs.openrouter_api_key }}
-        OPENROUTER_API_KEY_2: ${{ inputs.openrouter_api_key_2 }}
+        GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
         CIDRA_ENABLE_PR_CREATION: ${{ inputs.enable_pr_creation }}
         CIDRA_SOURCE_DIR: ${{ inputs.source_dir }}
         CIDRA_INSTALL_COMMAND: ${{ inputs.install_command }}

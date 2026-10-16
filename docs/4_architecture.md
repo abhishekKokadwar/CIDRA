@@ -72,15 +72,15 @@ key for any OpenAI-compatible endpoint:
 |---|---|
 | `CIDRA_API_KEY` + `CIDRA_BASE_URL` | Primary provider (required) |
 | `CIDRA_MODEL_ANALYZE` / `CIDRA_MODEL_FIX` | Model ids for the two LLM nodes |
-| `OPENROUTER_API_KEY[_2]`, `GROQ_API_KEY`, `NVIDIA_API_KEY_KIMI` / `_GLM` | Optional fallback providers, tried in order when the primary fails |
+| `GEMINI_API_KEY` (+ `CIDRA_FALLBACK_MODEL`) | Optional single fallback, Gemini, tried when the primary fails |
 
 All calls go through `integrations/llm.py::structured()`: one forced tool call, Pydantic-
-validated, 3 tries per provider (65s backoff on a 429) before falling through to the next.
+validated, 3 tries per model (65s backoff on a 429) before falling through to the fallback.
 Keys live in the host process environment only; the sandbox is created with a fixed
 environment and no host env passthrough, so repo code and LLM patches never see them.
 
 The primary call sends the configured model id (`CIDRA_MODEL_ANALYZE` / `CIDRA_MODEL_FIX`);
-each fallback provider uses its own fixed model id, since ids are provider-specific.
+the fallback sends `CIDRA_FALLBACK_MODEL` to Gemini, and is skipped when the primary is Gemini.
 
 ---
 

@@ -78,9 +78,9 @@ def _args() -> argparse.Namespace:
 ARGS = _args()
 FIXTURES = pathlib.Path(ARGS.corpus).resolve()
 
-# Set before cidra.config is imported. The fallback providers are switched off so
+# Set before cidra.config is imported. The fallback is switched off so
 # the numbers describe exactly one model.
-os.environ.update({"OPENROUTER_API_KEY_2": "", "GROQ_API_KEY": "", "NVIDIA_API_KEY_KIMI": "", "NVIDIA_API_KEY_GLM": ""})
+os.environ["GEMINI_API_KEY"] = ""
 os.environ["CIDRA_FIX_CACHE"] = str(ROOT / "worktrees" / "measure_fix_cache.json")  # never the real cache
 os.environ.pop("GITHUB_STEP_SUMMARY", None)
 if ARGS.stub:

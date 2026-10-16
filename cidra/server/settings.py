@@ -21,11 +21,7 @@ ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
 # payload is ignored: the endpoint must not be a way to set arbitrary env vars.
 ALLOWED_KEY_VARS = frozenset({
     "CIDRA_API_KEY",
-    "OPENROUTER_API_KEY",
-    "OPENROUTER_API_KEY_2",
-    "NVIDIA_API_KEY_KIMI",
-    "NVIDIA_API_KEY_GLM",
-    "GROQ_API_KEY",
+    "GEMINI_API_KEY",
     "CIDRA_GITHUB_TOKEN",
     "CIDRA_GITHUB_TOKEN_RO",
     "CIDRA_WEBHOOK_SECRET",
@@ -107,34 +103,14 @@ def get_current_settings() -> Dict[str, Any]:
             "baseUrl": env.get("CIDRA_BASE_URL", config.BASE_URL),
         },
         {
-            "id": "nvidia_kimi",
-            "provider": "NVIDIA NIM (Kimi)",
-            "label": "Fast Fallback Tier 1",
-            "envVar": "NVIDIA_API_KEY_KIMI",
-            "masked": mask_secret(env.get("NVIDIA_API_KEY_KIMI") or config.NVIDIA_API_KEY_KIMI),
-            "configured": bool(env.get("NVIDIA_API_KEY_KIMI") or config.NVIDIA_API_KEY_KIMI),
+            "id": "gemini_api_key",
+            "provider": "Google Gemini",
+            "label": "Fallback when the primary call fails",
+            "envVar": "GEMINI_API_KEY",
+            "masked": mask_secret(env.get("GEMINI_API_KEY") or config.GEMINI_API_KEY),
+            "configured": bool(env.get("GEMINI_API_KEY") or config.GEMINI_API_KEY),
             "canTest": True,
-            "baseUrl": config.NVIDIA_BASE_URL,
-        },
-        {
-            "id": "nvidia_glm",
-            "provider": "NVIDIA NIM (GLM)",
-            "label": "Fast Fallback Tier 2",
-            "envVar": "NVIDIA_API_KEY_GLM",
-            "masked": mask_secret(env.get("NVIDIA_API_KEY_GLM") or config.NVIDIA_API_KEY_GLM),
-            "configured": bool(env.get("NVIDIA_API_KEY_GLM") or config.NVIDIA_API_KEY_GLM),
-            "canTest": True,
-            "baseUrl": config.NVIDIA_BASE_URL,
-        },
-        {
-            "id": "groq_api_key",
-            "provider": "Groq Cloud",
-            "label": "Ultra-Fast LPU Inference",
-            "envVar": "GROQ_API_KEY",
-            "masked": mask_secret(env.get("GROQ_API_KEY") or config.GROQ_API_KEY),
-            "configured": bool(env.get("GROQ_API_KEY") or config.GROQ_API_KEY),
-            "canTest": True,
-            "baseUrl": config.GROQ_BASE_URL,
+            "baseUrl": config.GEMINI_BASE_URL,
         },
         {
             "id": "github_token",
@@ -172,8 +148,7 @@ def get_current_settings() -> Dict[str, Any]:
         "model_analyze": env.get("CIDRA_MODEL_ANALYZE", config.MODEL_ANALYZE),
         "model_fix": env.get("CIDRA_MODEL_FIX", config.MODEL_FIX),
         "base_url": env.get("CIDRA_BASE_URL", config.BASE_URL),
-        "nvidia_base_url": config.NVIDIA_BASE_URL,
-        "groq_base_url": config.GROQ_BASE_URL,
+        "fallback_model": config.FALLBACK_MODEL,
     }
 
     flakiness = {
@@ -287,33 +262,17 @@ def test_provider(provider_id: str) -> Dict[str, Any]:
                 elapsed_ms = round((time.time() - start_time) * 1000)
                 return {"ok": True, "latency_ms": elapsed_ms, "status": resp.status, "message": "OpenRouter verified"}
 
-        elif provider_id in ("nvidia_kimi", "nvidia_glm"):
-            key = (
-                env.get("NVIDIA_API_KEY_KIMI") or config.NVIDIA_API_KEY_KIMI
-                if provider_id == "nvidia_kimi"
-                else env.get("NVIDIA_API_KEY_GLM") or config.NVIDIA_API_KEY_GLM
-            )
+        elif provider_id == "gemini_api_key":
+            key = env.get("GEMINI_API_KEY") or config.GEMINI_API_KEY
             if not key:
-                return {"ok": False, "error": "No NVIDIA API key configured"}
+                return {"ok": False, "error": "No Gemini API key configured"}
             req = urllib.request.Request(
-                "https://integrate.api.nvidia.com/v1/models",
+                config.GEMINI_BASE_URL + "models",
                 headers={"Authorization": f"Bearer {key}", "User-Agent": "CIDRA/1.0"},
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
                 elapsed_ms = round((time.time() - start_time) * 1000)
-                return {"ok": True, "latency_ms": elapsed_ms, "status": resp.status, "message": "NVIDIA NIM verified"}
-
-        elif provider_id == "groq_api_key":
-            key = env.get("GROQ_API_KEY") or config.GROQ_API_KEY
-            if not key:
-                return {"ok": False, "error": "No Groq API key configured"}
-            req = urllib.request.Request(
-                "https://api.groq.com/openai/v1/models",
-                headers={"Authorization": f"Bearer {key}", "User-Agent": "CIDRA/1.0"},
-            )
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                elapsed_ms = round((time.time() - start_time) * 1000)
-                return {"ok": True, "latency_ms": elapsed_ms, "status": resp.status, "message": "Groq LPU verified"}
+                return {"ok": True, "latency_ms": elapsed_ms, "status": resp.status, "message": "Gemini verified"}
 
         elif provider_id in ("github_token", "github_token_ro"):
             token = (

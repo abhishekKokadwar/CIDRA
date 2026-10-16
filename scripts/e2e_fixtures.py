@@ -28,7 +28,7 @@ PORT = 8765
 os.environ.update({
     "CIDRA_BASE_URL": f"http://127.0.0.1:{PORT}/v1", "CIDRA_API_KEY": "fake",
     "CIDRA_MODEL_ANALYZE": "fake", "CIDRA_MODEL_FIX": "fake",
-    "OPENROUTER_API_KEY_2": "", "GROQ_API_KEY": "", "NVIDIA_API_KEY_KIMI": "", "NVIDIA_API_KEY_GLM": "",
+    "GEMINI_API_KEY": "",
     "CIDRA_FIX_CACHE": str(ROOT / "worktrees" / "e2e_fix_cache.json"),  # never the real cache
 })
 os.environ.pop("GITHUB_STEP_SUMMARY", None)

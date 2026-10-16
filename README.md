@@ -22,7 +22,7 @@
   <a href="#3-interactive-web-dashboard--hitl-gate">Dashboard</a> •
   <a href="#4-quick-start--installation">Quick Start</a> •
   <a href="#5-github-actions-integration">CI Integration</a> •
-  <a href="#6-multi-tier-llm-fallback-chain">LLM Fallback</a> •
+  <a href="#6-one-model-one-optional-fallback">LLM Fallback</a> •
   <a href="#7-hardened-sandbox--threat-model-adv-01adv-08">Threat Model</a> •
   <a href="#8-testing--verification-suite">Tests</a> •
   <a href="#9-repository-structure--development">Development</a>
@@ -139,7 +139,7 @@ cidra dashboard
 2. **Run Explorer**: Complete trace inspector displaying step-by-step state transitions, raw CI terminal logs, and syntax-highlighted unified diffs.
 3. **Visual Orchestrator**: A diagram of the LangGraph topology with an animated walkthrough. It is illustrative and does not follow a live run.
 4. **4-Tab Configuration Manager**:
-   - **API Keys**: Configure OpenRouter, Groq, NVIDIA NIM, and GitHub PAT credentials with **one-click live round-trip latency probes**.
+   - **API Keys**: Configure the primary model key, the Gemini fallback key and GitHub PAT credentials with **one-click live round-trip latency probes**.
    - **Model Chain**: Configure analysis models, fix models, and base URLs.
    - **Flakiness & Sandbox**: Flaky-run count, container timeout and retry limit. The fields can be edited and are saved to `.env`, but the engine does not read them: it uses the constants in `cidra/config.py` and `cidra/sandbox/limits.py` (5 runs, 3 fix attempts, 300 s per test run).
    - **Runtime Status**: View active paths, worktree directories, and SQLite database connectivity.
@@ -291,28 +291,9 @@ The sandbox installs dependencies with `pip install --quiet -r requirements.txt`
 
 ---
 
-## 6. Multi-Tier LLM Fallback Chain
+## 6. One Model, One Optional Fallback
 
-CIDRA is bring-your-own-key. The primary call goes to the endpoint and model you configure. If it fails, CIDRA tries each fallback provider that has a key set, in order. A fallback with no key is skipped, and a permanent error (bad key, unknown model, no credit) moves straight to the next provider.
-
-```mermaid
-flowchart TD
-    P["<b>Primary</b><br/>CIDRA_BASE_URL + CIDRA_API_KEY<br/>CIDRA_MODEL_ANALYZE / CIDRA_MODEL_FIX"]
-    F1["<b>Fallback 1</b><br/>OpenRouter (OPENROUTER_API_KEY_2)"]
-    F2["<b>Fallback 2</b><br/>Groq (GROQ_API_KEY)"]
-    F3["<b>Fallback 3</b><br/>NVIDIA NIM (NVIDIA_API_KEY_KIMI, NVIDIA_API_KEY_GLM)"]
-
-    P -- "failed" --> F1
-    F1 -- "failed or no key" --> F2
-    F2 -- "failed or no key" --> F3
-
-    style P fill:#161b22,stroke:#58a6ff,stroke-width:2px,color:#c9d1d9
-    style F1 fill:#161b22,stroke:#bc8cff,stroke-width:2px,color:#c9d1d9
-    style F2 fill:#161b22,stroke:#f0883e,stroke-width:2px,color:#c9d1d9
-    style F3 fill:#161b22,stroke:#3fb950,stroke-width:2px,color:#c9d1d9
-```
-
-The fallback model IDs are fixed in [cidra/integrations/llm.py](cidra/integrations/llm.py). Providers retire models; check them against your provider before relying on a fallback.
+CIDRA is bring-your-own-key: one key, one OpenAI-compatible endpoint, the models you choose. Each call is tried up to 3 times (a 65-second back-off on a rate limit). If it still fails and `GEMINI_API_KEY` is set, the same call is tried once more on Gemini (`CIDRA_FALLBACK_MODEL`, default `gemini-3.5-flash`), unless the primary endpoint already is Gemini. Without that key there is no fallback. Fallback calls count against the same per-run caps (`CIDRA_MAX_LLM_CALLS`, `CIDRA_MAX_LLM_TOKENS`).
 
 ### Configuration Environment Variables (`.env`)
 
@@ -324,10 +305,8 @@ Copy [.env.example](.env.example) to `.env` to configure your environment:
 | `CIDRA_BASE_URL` | Primary OpenAI-compatible endpoint | `https://generativelanguage.googleapis.com/v1beta/openai/` |
 | `CIDRA_MODEL_ANALYZE` | Model ID for root cause analysis | `gemini-3.5-flash` |
 | `CIDRA_MODEL_FIX` | Model ID for patch generation | `gemini-3.5-flash` |
-| `OPENROUTER_API_KEY_2` | OpenRouter fallback key | *Optional* |
-| `GROQ_API_KEY` | Groq fallback key | *Optional* |
-| `NVIDIA_API_KEY_KIMI` | NVIDIA NIM fallback key | *Optional* |
-| `NVIDIA_API_KEY_GLM` | NVIDIA NIM fallback key | *Optional* |
+| `GEMINI_API_KEY` | Key for the one fallback, Gemini, used when the primary call fails | *Optional* |
+| `CIDRA_FALLBACK_MODEL` | Gemini model for the fallback | `gemini-3.5-flash` |
 | `CIDRA_GITHUB_TOKEN` | GitHub token with branch and PR write permissions | *Optional (for PRs)* |
 | `CIDRA_GITHUB_TOKEN_RO` | Read-only GitHub token for CI logs | *Optional (falls back to the write token)* |
 | `CIDRA_ENABLE_PR_CREATION` | Open a draft PR for a verified fix | `false` |
@@ -399,7 +378,7 @@ npm run test:wiring
 - **Core Unit Suite (`tests/unit/`)**: 184 tests (Ochiai/Tarantula SBFL ranking, patch audit guards, git isolation, flaky detection).
 - **Integration Suite (`tests/integration/`)**: 23 tests (real sandbox runs on fixture branches and corpus repositories; skipped when `CIDRA_PRACTICE_REPO` is not set).
 - **Key-free end-to-end run**: `scripts/fake_llm.py` stands in for the model so the whole pipeline can run without an API key.
-- **Wiring Verification (`test-backend-wiring.js`)**: 5 checks (Live latency probes to OpenRouter and Groq, settings round-trip, telemetry parsing).
+- **Wiring Verification (`test-backend-wiring.js`)**: 5 checks (live latency probes to the primary endpoint and Gemini, settings round-trip, telemetry parsing).
 
 ### Measured results
 
