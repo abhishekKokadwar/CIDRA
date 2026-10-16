@@ -1,34 +1,117 @@
 name: CI
 
+# Tiered: a PR runs only the tiers its files can affect. Docs-only changes run
+# nothing but the gate; tests/unit-only changes run the unit tier; anything
+# else runs every tier. A push to main always runs every tier.
+#
+# Branch protection requires only `ci-ok`. Do not add `paths:` filters to the
+# triggers: a workflow that never starts never reports, and the PR stays blocked.
+
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
+permissions:
+  contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      unit: ${{ steps.tiers.outputs.unit }}
+      full: ${{ steps.tiers.outputs.full }}
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - id: tiers
+      env:
+        EVENT: ${{ github.event_name }}
+        BASE: ${{ github.event.pull_request.base.sha }}
+      run: |
+        if [ "$EVENT" != "pull_request" ]; then
+          echo "unit=true" >> "$GITHUB_OUTPUT"; echo "full=true" >> "$GITHUB_OUTPUT"; exit 0
+        fi
+        unit=false; full=false
+        # Unknown paths count as code: a file missing from the list below runs every tier.
+        while IFS= read -r f; do
+          case "$f" in
+            "") ;;
+            *.md|docs/*|LICENSE|.github/CODEOWNERS|.github/pull_request_template.md|eval/results/*) ;;
+            tests/unit/*) unit=true ;;
+            *) unit=true; full=true ;;
+          esac
+        done <<< "$(git diff --name-only "$BASE"...HEAD)"
+        echo "unit=$unit" >> "$GITHUB_OUTPUT"; echo "full=$full" >> "$GITHUB_OUTPUT"
+        echo "unit tier: $unit, sandbox and pipeline tiers: $full"
+
+  unit:
+    needs: changes
+    if: needs.changes.outputs.unit == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: "3.11"
+        cache: pip
+    - run: pip install ".[dev]"
+    - run: pytest -q tests/unit
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install ".[dev]"
+  sandbox:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: pip
+    - run: pip install ".[dev]"
+    - run: docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+    - name: Integration tests (real sandbox)
+      run: pytest -q tests/integration
+    - name: Adversarial containment (G-05)
+      env:
+        CIDRA_CANARY_SECRET: ci-canary-${{ github.run_id }}  # without it the secret-theft check proves nothing
+      run: python eval/adversarial/run_adversarial.py
+    - name: Security benchmark (G-05)
+      run: python eval/security_fixtures/run_benchmark.py --tier 2
 
-    - name: Build Sandbox Image
-      run: |
-        docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+  pipeline:
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: pip
+    - run: pip install ".[dev]"
+    - run: docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+    - run: git clone --quiet https://github.com/helpmecode69/cidra-practice "$RUNNER_TEMP/cidra-practice"
+    - name: Full pipeline on the practice fixtures (stub model)
+      env:
+        CIDRA_PRACTICE_REPO: ${{ runner.temp }}/cidra-practice
+      run: python eval/measure.py --stub --check --out "$RUNNER_TEMP/stub.json"
 
-    - name: Run tests
+  ci-ok:
+    needs: [ changes, unit, sandbox, pipeline ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - name: Every tier that ran passed
+      env:
+        RESULTS: ${{ join(needs.*.result, ' ') }}
       run: |
-        pytest -q 2>&1
+        echo "tier results: $RESULTS"
+        case " $RESULTS " in *" failure "*|*" cancelled "*) exit 1 ;; esac

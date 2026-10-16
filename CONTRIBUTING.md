@@ -18,7 +18,16 @@ This file says how changes are made, so the history stays readable and every cha
 2. **Keep the branch short-lived.** Before opening a pull request, rebase it on the latest `main`
    (`git fetch origin && git rebase origin/main`). The telemetry bot commits to `main`, so expect to rebase.
 3. **Open a pull request** against `main`. Its description says what changed, why, and how it was checked.
-4. **CI must be green** (`test-cidra.yml`) before merging.
+4. **CI must be green** before merging: branch protection requires the `ci-ok` check of
+   [test-cidra.yml](.github/workflows/test-cidra.yml). CI is tiered by the files a PR changes:
+
+   | PR changes | Runs |
+   |---|---|
+   | only docs (`*.md`, `docs/`, `eval/results/`) | nothing but the `ci-ok` gate |
+   | only `tests/unit/` (and docs) | unit tests |
+   | anything else | unit tests; integration tests, adversarial and security suites in the real sandbox; the full pipeline on the 7 practice fixtures with the stub model |
+
+   A push to `main` runs every tier. The paid-model BugsInPy run is never in CI.
 5. **Merge with "Rebase and merge"**, so each commit lands on `main` as written and keeps its author.
    Use "Squash and merge" only for a branch whose commits are work-in-progress noise.
 6. Delete the branch after merging.
@@ -76,9 +85,16 @@ pytest -q                     # unit and server suites, no Docker or key needed
 git status                    # the test suite rewrites some tracked files; do not commit them
 ```
 
-Changes to `cidra/sandbox/`, `cidra/git_ops.py` or `cidra/nodes/checkout.py` also need the Docker
-integration tests (`CIDRA_PRACTICE_REPO=... pytest tests/integration`) and the adversarial suite
-(`python eval/adversarial/run_adversarial.py`). A change that affects repair results should be measured
-with `eval/measure.py`, and the result file committed under `eval/results/`.
+CI runs the Docker tiers for you. To run them locally (Docker up):
+
+```bash
+pytest -q tests/integration
+python eval/adversarial/run_adversarial.py
+python eval/security_fixtures/run_benchmark.py --tier 2
+CIDRA_PRACTICE_REPO=/path/to/cidra-practice python eval/measure.py --stub --check
+```
+
+A change meant to improve repair results should also be measured with the real model on the
+BugsInPy corpus (`eval/measure.py --corpus eval/corpus`), and the result file committed under `eval/results/`.
 
 Open gaps and their status are in [docs/KNOWN_GAPS.md](docs/KNOWN_GAPS.md).

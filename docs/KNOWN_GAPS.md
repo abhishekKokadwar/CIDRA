@@ -49,15 +49,6 @@ funded endpoint) + Docker up. Then
 **Done when:** a replayed real failure produces a verified fix and a posted comment, with no
 manual command; `--twice` shows the idempotency no-op.
 
-### G-05 · Adversarial + benchmark on Docker are point-in-time (Phases 4/6/9) — 🐳
-**What:** ADV-01..08 (8/8 contained) and the security benchmark (SEC-01/04/06/07 PASS) were
-recorded on specific dates, not in CI. They must be re-run after any change to `runner.py`,
-`limits.py`, `git_ops.py`, or `checkout.py` — currently a manual discipline.
-**Unblock / fix:** a CI job (or a documented pre-merge step) that runs
-`eval/adversarial/run_adversarial.py` and `eval/security_fixtures/run_benchmark.py` with
-Docker up.
-**Done when:** these run automatically and gate merges to the sandbox/git modules.
-
 ### G-18 · Install failure and non-reproduction are reported as "could not diagnose" — 🛠 (small)
 `install_deps` returns `env_ready: False` with no message, and a run that does not reproduce
 has a diagnosis but ends `failed`. The report then says "CIDRA could not produce a usable
@@ -136,6 +127,10 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-05 · Adversarial + benchmark on Docker were point-in-time** — Closed 2026-10-16. CI's
+  sandbox tier runs `eval/adversarial/run_adversarial.py` (with a canary secret set, so the
+  secret-theft check is not vacuous) and `eval/security_fixtures/run_benchmark.py --tier 2`,
+  which now exits 1 on any FAIL. Both gate every PR that changes code.
 - **G-22 · A test's setup could be edited to make it pass** — Closed 2026-10-15. A patch may
   change a test file (or a `conftest.py`) only by correcting the expected values of its
   asserts; anything else in it is refused by the audit gate. The fastapi-5 patch is in

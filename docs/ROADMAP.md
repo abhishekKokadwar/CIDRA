@@ -47,15 +47,15 @@ Each milestone ends when its exit criteria hold **and are checked by tests in CI
 
 ### M1 · Trustworthy "verified" (weeks 1 to 3)
 
-- [ ] Run the 15 sandbox safety tests in CI (they skip on a practice-repo check they do not need).
+- [x] Run the 15 sandbox safety tests in CI (they skip on a practice-repo check they do not need).
 - [ ] Record per-test results (pytest JUnit XML) before and after the patch.
 - [ ] G-17: the test the CI log names must be among the sandbox's failures, or the run is "not reproduced".
 - [ ] No regressions: verified means the target test went red to green **and** no test went green to red. Tests already failing before the patch do not block a verification but are listed.
 - [ ] G-22: on an `assertion_error` fix, the failing test file may change only in assert expected values.
 - [ ] G-16: reproduce at least twice for every fixable category; a disagreement means flaky.
 - [ ] G-18: an install failure or a non-reproduction says why, and points to `install_command` / `test_command`.
-- [ ] A self-contained end-to-end test in CI: a small repository created in the test, the stub model, and the full graph to `verified_fix`, `diagnosis_only` and `flaky_detected`.
-- [ ] The adversarial and security suites run in CI (G-05).
+- [x] An end-to-end test in CI (done with the 7 practice fixtures and the stub model, `measure.py --check`, instead of a repository built in the test): a small repository created in the test, the stub model, and the full graph to `verified_fix`, `diagnosis_only` and `flaky_detected`.
+- [x] The adversarial and security suites run in CI (G-05).
 
 **Exit:** each item above has a CI test that fails on the old behaviour.
 
