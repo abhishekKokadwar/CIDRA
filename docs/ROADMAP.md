@@ -35,7 +35,7 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 | 1. Authenticate the incoming event | Done: GitHub triggers the Action; webhook mode checks the HMAC |
 | 2. Get the failing commit without exposing secrets to its code | Done: Action mode, `cidra fix` (sandboxed first run) and webhook mode (fetches the commit itself) |
 | 3. Reproduce the original failure | Done: the CI log's failing tests must fail in the sandbox, twice for a failure CIDRA would patch (G-16, G-17 closed) |
-| 4. Generate a patch | Weak: 1 of 12 fixable BugsInPy bugs fixed; patches now apply and reach the tests, but the model often cannot see the cause |
+| 4. Generate a patch | Works on 5 of 12 fixable BugsInPy bugs (one doubtful on review); the other 7 need code the model is not shown, or a correct diagnosis |
 | 5. Reject test-weakening or unsafe patches | Done: a test file may change only in its asserts' expected values (G-22 closed) |
 | 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
 | 7. Original failure fixed, no unrelated regressions | Done: the CI's failing tests must pass and no test may go from passing to failing; tests already failing are listed, not blocking |
@@ -80,6 +80,8 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 - [ ] The other 6 (fastapi, tornado-1, youtube-dl-2) are reached through framework code the test does not call directly; coverage-based ranking (SBFL, G-01) is the way to them.
 - [x] Rerun after both ([v3](../eval/results/claude-haiku-4-5-bugsinpy-v3.json)): 1 of 12 fixed. 1 of 27 attempts did not apply (was 15 of 19); 7 reached the tests and failed; 13 returned no edits because the model could not see the cause.
 - [x] Show the full assertion difference: before the first fix attempt the target tests are rerun alone with `pytest -vv`, and the failures section goes in the prompt, with a huge value printout skipped so the diff fits.
+- [x] Rerun after it ([v4](../eval/results/claude-haiku-4-5-bugsinpy-v4.json)): 5 of 12 fixed, $0.32. Reviewed by hand: 3 match the project's fix, 1 takes another plausible route, 1 (tornado-1) is doubtful.
+- [ ] Validate the held-out sets of the fixed cases (`measure.py --validate`), so "fails held-out tests" can be judged instead of read by hand.
 - [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
 - [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
 
