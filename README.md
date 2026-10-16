@@ -384,18 +384,28 @@ npm run test:wiring
 
 From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in dry run. One small paid model for both runs (named in the result files), priced at $1 / $5 per million input / output tokens.
 
-| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 18 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v3.json)) |
+| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 18 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v4.json)) |
 |---|---|---|
-| Correct diagnosis | 7 / 7 | 12 / 18 |
-| Verified fix, where one exists | 4 / 4 | 1 / 12 |
+| Correct diagnosis | 7 / 7 | 13 / 18 |
+| Verified fix, where one exists | 4 / 4 | 5 / 12 |
 | Correctly declined | 3 / 3 | 6 / 6 |
-| "Verified" fix that fails held-out tests | 0 / 4 | not judged (youtube-dl-3 has no validated held-out set) |
-| Median cost per run | $0.008 | $0.011 |
-| Total cost | $0.05 | $0.28 |
+| "Verified" fix that fails held-out tests | 0 / 4 | 0 / 5 (held-out sets not validated) |
+| Median cost per run | $0.008 | $0.016 |
+| Total cost | $0.05 | $0.32 |
 
-The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, thefuck, tornado and youtube-dl, chosen by rules fixed before any model ran ([eval/corpus/README.md](eval/corpus/README.md)). On those, CIDRA declined every case it should and claimed no false fix, and fixed 1 of the 12 fixable ones (youtube-dl-3: a one-line regex change in the same place as the project's own fix, but not identical to it).
+The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, thefuck, tornado and youtube-dl, chosen by rules fixed before any model ran ([eval/corpus/README.md](eval/corpus/README.md)). On those, CIDRA declined every case it should and fixed 5 of the 12 fixable ones: tornado-1, -3 and -5, youtube-dl-1 and -3. All 5 also passed the held-out tests, but those sets are not validated, so this is not counted as proof.
 
-Every fix attempt is recorded in the result file. Of the 27 attempts, 7 reached the test run and did not turn it green (6 still failing, 1 broke another test), 2 were refused for editing a test's setup, 1 did not apply, and 13 returned no edits: the model said it could not see the cause, either because the code to change was not shown to it or because pytest cut the assertion diff short. The run before the last two fixes ([v2](eval/results/claude-haiku-4-5-bugsinpy-v2.json)) fixed 0 of 12, and none of its 19 patches reached the test run: 15 did not apply. Diagnosis varies between runs of the same model (14/18 in v2, 12/18 here); the analysis step did not change. What to fix next is in [ROADMAP M3](docs/ROADMAP.md).
+Read by hand against each project's own fix: tornado-5 is the same change, youtube-dl-1 behaves the same, and tornado-3 has the same idea with a different edge case for a `None` entry. youtube-dl-3 takes another route, a stricter entity pattern, that looks correct. tornado-1 passes the test by re-attaching a stream that tornado deliberately detaches, where the project routes the call through the connection instead; treat it as doubtful.
+
+The 7 not fixed: 4 fastapi bugs and youtube-dl-2 go through framework code the failing test does not call directly, so the code to change is not shown to the model, and its guesses do not apply (CIDRA refuses an edit whose text is not in the file). Two more were misdiagnosed. How the number moved, one change at a time:
+
+| Run | Change | Fixed |
+|---|---|---|
+| [v2](eval/results/claude-haiku-4-5-bugsinpy-v2.json) | baseline after the G-15/G-16/G-17/G-22 fixes | 0 / 12 (15 of 19 patches did not apply) |
+| [v3](eval/results/claude-haiku-4-5-bugsinpy-v3.json) | edits instead of hand-written diffs; code excerpts instead of a 16 KB tail | 1 / 12 |
+| v4 | the failing test's full `-vv` assertion diff in the prompt | 5 / 12 |
+
+Diagnosis varies between runs of the same model (12 to 14 of 18); the analysis step did not change. Next steps are in [ROADMAP M3](docs/ROADMAP.md).
 
 ---
 
