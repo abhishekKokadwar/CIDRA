@@ -78,6 +78,14 @@ Support"; Node.js is log parsing only.
 
 ---
 
+### G-23 · A crash mid-run leaves its sandbox container running — 🐳 🛠 (small)
+**What:** `cleanup` is the last node of the graph, so an exception in an earlier node (seen on
+2026-10-16: Windows ran out of resources talking to Docker during `install_deps`) skips it. The
+run's container keeps running and holds up to 2 GB until removed by hand.
+**Unblock / fix:** close the run's session and remove its checkout in a `finally` around the graph
+run, in every entry point (Action, CLI, server, `eval/measure.py`).
+**Done when:** a test that raises inside a node leaves no container and no checkout behind.
+
 ## Deferred by design (not bugs — scoped out, revisit when the phase arrives)
 
 ### G-06 · Security benchmark: SEC-02/03/05/08 still PENDING — 🛠

@@ -405,16 +405,18 @@ npm run test:wiring
 
 From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in dry run. One small paid model for both runs (named in the result files), priced at $1 / $5 per million input / output tokens.
 
-| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 18 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v2.json)) |
+| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 18 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v3.json)) |
 |---|---|---|
-| Correct diagnosis | 7 / 7 | 14 / 18 |
-| Verified fix, where one exists | 4 / 4 | 0 / 12 |
+| Correct diagnosis | 7 / 7 | 12 / 18 |
+| Verified fix, where one exists | 4 / 4 | 1 / 12 |
 | Correctly declined | 3 / 3 | 6 / 6 |
-| "Verified" fix that fails held-out tests | 0 / 4 | none to judge |
-| Median cost per run | $0.008 | $0.007 |
-| Total cost | $0.05 | $0.27 |
+| "Verified" fix that fails held-out tests | 0 / 4 | not judged (youtube-dl-3 has no validated held-out set) |
+| Median cost per run | $0.008 | $0.011 |
+| Total cost | $0.05 | $0.28 |
 
-The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, thefuck, tornado and youtube-dl, chosen by rules fixed before any model ran ([eval/corpus/README.md](eval/corpus/README.md)). On those, CIDRA declined every case it should and claimed no false fix, but fixed none of the 12 fixable ones. Every fix attempt is recorded in the result file. Of the 19 patches the model wrote, 15 did not apply: the model writes the diff by hand, and it comes back malformed or quotes code that is not in the file. The other 4 edited the failing test's setup and were refused by the audit gate. No patch reached the test run, so making patches apply is the next thing to fix ([ROADMAP M3](docs/ROADMAP.md)). An earlier run, before the sandbox restore fix (G-15) and the test-edit rule (G-22), is kept as [claude-haiku-4-5-bugsinpy.json](eval/results/claude-haiku-4-5-bugsinpy.json); its one "verified" case was not a real fix.
+The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, thefuck, tornado and youtube-dl, chosen by rules fixed before any model ran ([eval/corpus/README.md](eval/corpus/README.md)). On those, CIDRA declined every case it should and claimed no false fix, and fixed 1 of the 12 fixable ones (youtube-dl-3: a one-line regex change in the same place as the project's own fix, but not identical to it).
+
+Every fix attempt is recorded in the result file. Of the 27 attempts, 7 reached the test run and did not turn it green (6 still failing, 1 broke another test), 2 were refused for editing a test's setup, 1 did not apply, and 13 returned no edits: the model said it could not see the cause, either because the code to change was not shown to it or because pytest cut the assertion diff short. The run before the last two fixes ([v2](eval/results/claude-haiku-4-5-bugsinpy-v2.json)) fixed 0 of 12, and none of its 19 patches reached the test run: 15 did not apply. Diagnosis varies between runs of the same model (14/18 in v2, 12/18 here); the analysis step did not change. What to fix next is in [ROADMAP M3](docs/ROADMAP.md).
 
 ---
 
