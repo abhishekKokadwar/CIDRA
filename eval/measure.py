@@ -69,6 +69,9 @@ def _args() -> argparse.Namespace:
                              "fix commit, catch the fixture's cheat_llm.json patch if it has one, and "
                              "add a failing test on the failing commit or catch that patch")
     parser.add_argument("--out", help="results JSON path (default: eval/results/<label>.json)")
+    parser.add_argument("--check", action="store_true",
+                        help="exit 1 unless every fixture ends as expected, with a correct diagnosis "
+                             "and any verified fix passing its held-out tests (for CI, with --stub)")
     return parser.parse_args()
 
 
@@ -401,6 +404,12 @@ def main() -> int:
     print(f"   total               {summary['total_prompt_tokens']} prompt + "
           f"{summary['total_completion_tokens']} completion tokens, ${summary['total_cost_usd']}")
     print(f"\nwrote {out}")
+    if ARGS.check:
+        wrong = [r["fixture"] for r in records if r["outcome"] != r["expected_outcome"]
+                 or not r["diagnosis_correct"] or (r["held_out"] is not None and not r["held_out"]["passed"])]
+        if wrong:
+            print(f"check failed: {', '.join(wrong)}")
+            return 1
     return 0
 
 

@@ -193,7 +193,8 @@ def main():
             print(f"      {mark} {name:<12} {status:<8} {detail}")
     n_pass = sum(r["verdict"] in ("PASS", "BOUNDED") for r in rows)
     print(f"\n  {n_pass}/{len(rows)} fixtures resolved; rest PENDING (nodes not yet built)\n")
+    return 1 if any(status == "FAIL" for r in rows for _, status, _ in r["checks"]) else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
