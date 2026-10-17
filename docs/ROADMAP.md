@@ -28,7 +28,7 @@ interviewers, research (optional).
 **Out of scope for this plan:** languages other than Python, the dashboard, webhook mode
 beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 
-## 2. Where it stands (2026-10-15)
+## 2. Where it stands (2026-10-17)
 
 | Requirement | Status |
 |---|---|
@@ -45,14 +45,18 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 
 Each milestone ends when its exit criteria hold **and are checked by tests in CI**.
 
+**Order, as it actually went:** M1 was mostly done when the first real-bug run showed 0 of 12
+fixed, so M3's fix-rate work was pulled forward and its target met (5 of 12, 4 genuine on
+review). Next, back in order: the two open M1 items, then M2.
+
 ### M1 · Trustworthy "verified" (weeks 1 to 3)
 
 - [x] Run the 15 sandbox safety tests in CI (they skip on a practice-repo check they do not need).
 - [ ] Record per-test results (pytest JUnit XML) before and after the patch.
-- [ ] G-17: the test the CI log names must be among the sandbox's failures, or the run is "not reproduced".
-- [ ] No regressions: verified means the target test went red to green **and** no test went green to red. Tests already failing before the patch do not block a verification but are listed.
-- [ ] G-22: on an `assertion_error` fix, the failing test file may change only in assert expected values.
-- [ ] G-16: reproduce at least twice for every fixable category; a disagreement means flaky.
+- [x] G-17: the test the CI log names must be among the sandbox's failures, or the run is "not reproduced".
+- [x] No regressions: verified means the target test went red to green **and** no test went green to red. Tests already failing before the patch do not block a verification but are listed.
+- [x] G-22: on an `assertion_error` fix, the failing test file may change only in assert expected values.
+- [x] G-16: reproduce at least twice for every fixable category; a disagreement means flaky.
 - [ ] G-18: an install failure or a non-reproduction says why, and points to `install_command` / `test_command`.
 - [x] An end-to-end test in CI (done with the 7 practice fixtures and the stub model, `measure.py --check`, instead of a repository built in the test): a small repository created in the test, the stub model, and the full graph to `verified_fix`, `diagnosis_only` and `flaky_detected`.
 - [x] The adversarial and security suites run in CI (G-05).
@@ -77,11 +81,12 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 - [x] Study the BugsInPy misses ([v2 result](../eval/results/claude-haiku-4-5-bugsinpy-v2.json)): of 19 patches tried on the 12 fixable bugs, 15 did not apply and 4 were refused for editing test setup. None reached the test run.
 - [x] Make patches apply: the model now proposes "replace this exact text" edits and CIDRA builds the diff; an edit whose text is not in the file is reported back to the model.
 - [x] Show the model the right part of large files: files are read from the checkout, small ones whole, large ones as excerpts around what the failing test calls (one call deep) and the lines the log names. The changed lines of the reference fix are in view for 6 of 12 fixable BugsInPy bugs, up from 1 (`eval/context_visibility.py`, no model needed).
-- [ ] The other 6 (fastapi, tornado-1, youtube-dl-2) are reached through framework code the test does not call directly; coverage-based ranking (SBFL, G-01) is the way to them.
+- The other 6 (fastapi, tornado-1, youtube-dl-2) are reached through framework code the test does not call directly. Coverage-based ranking (SBFL, G-01) would reach them, but SBFL is out of scope for this plan (section 1); revisit after M5.
 - [x] Rerun after both ([v3](../eval/results/claude-haiku-4-5-bugsinpy-v3.json)): 1 of 12 fixed. 1 of 27 attempts did not apply (was 15 of 19); 7 reached the tests and failed; 13 returned no edits because the model could not see the cause.
 - [x] Show the full assertion difference: before the first fix attempt the target tests are rerun alone with `pytest -vv`, and the failures section goes in the prompt, with a huge value printout skipped so the diff fits.
 - [x] Rerun after it ([v4](../eval/results/claude-haiku-4-5-bugsinpy-v4.json)): 5 of 12 fixed, $0.32. Reviewed by hand: 3 match the project's fix, 1 takes another plausible route, 1 (tornado-1) is doubtful.
-- [ ] Validate the held-out sets of the fixed cases (`measure.py --validate`), so "fails held-out tests" can be judged instead of read by hand.
+- [x] Validate the held-out sets of the fixed cases (`measure.py --validate`): **0 of 5 valid**. Each is the failing test file itself, all of whose tests already ran in the failing run, so passing it proves nothing beyond the target tests. False "verified" stays judged by hand until the next item is done.
+- [ ] Independent held-out tests for the 5 fixed cases: tests a wrong fix would fail (e.g. tornado-1 calling `set_nodelay` on a live connection), checked to pass on the project's fix and fail on the buggy commit.
 - [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
 - [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
 
