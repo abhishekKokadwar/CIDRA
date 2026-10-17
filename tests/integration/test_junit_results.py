@@ -33,7 +33,7 @@ def state(tmp_path: pathlib.Path):
     s = {"run_id": "it-junit", "source_dir": str(tmp_path),
          "test_command": "cd /work && python -m pytest -q 2>&1",  # behind a cd on purpose
          "ci_failing_tests": ["tests/test_calc.py::test_add"]}
-    assert prepare_sandbox(s) == {"image_tag": None}
+    assert prepare_sandbox(s)["image_tag"].startswith("cidra-sandbox:")
     yield s
     close_session("it-junit")
 

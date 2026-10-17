@@ -154,6 +154,9 @@ def render_comment(state: DebugState) -> str:
     else:  # failed
         parts += failed_body
 
+    from cidra.evidence import render as evidence
+    parts += evidence(state)  # ROADMAP M2: what was run, and each test before and after
+
     block = _model_block(state)
     if block:
         parts += ["", block]
