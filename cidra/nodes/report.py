@@ -47,15 +47,52 @@ def _category(state: DebugState) -> str:
     return a.category if a is not None else "unknown"
 
 
+def _fence(text: str | None, limit: int) -> list[str]:
+    """Untrusted output (an install log, a runner error) in a code block it cannot close."""
+    return ["```", _clip(text, limit).replace("```", "'''"), "```"]
+
+
+def _why_failed(state: DebugState) -> tuple[str, list[str]]:
+    """Title and body for a run that ended `failed`: which step stopped it, and
+    which input to change (G-18). These are the usual first-run failures on a
+    new repository, so "could not diagnose" alone sent people to the source."""
+    from cidra import config
+    err = state.get("analysis_error")
+    last = (state.get("repro_results") or [None])[-1]
+    if state.get("env_ready") is False and last is not None and last.step == "install" and not last.passed:
+        cmd = state.get("install_command") or config.INSTALL_COMMAND
+        return "⚠️ **CIDRA — could not install the dependencies**", [
+            "", f"The sandbox could not install the project with `{cmd}`, so CIDRA did not try to "
+                "reproduce or fix the failure.", "", "_Install output:_", *_fence(err, 600), "",
+            "If the project installs another way, set the `install_command` input: one `pip install` "
+            "command (CIDRA appends `--target`).",
+        ]
+    if state.get("env_ready") and state.get("analysis") is not None and not state.get("reproduced"):
+        cmd = state.get("test_command") or config.TEST_COMMAND
+        lines = ["", f"CIDRA diagnosed the failure but could not make it fail in the sandbox with `{cmd}`, "
+                     "so it did not attempt a fix."]
+        if err:
+            lines += ["", "_Why:_", *_fence(err, 400)]
+        return "⚠️ **CIDRA — diagnosed, but could not reproduce**", lines + [
+            "", "If your CI runs the tests differently (another directory, extra options or environment), "
+                "set the `test_command` input to match.",
+        ]
+    lines = ["", "CIDRA could not produce a usable diagnosis for this run."]
+    if err:
+        lines += ["", f"_Reason:_ `{_clip(err, 200)}`"]
+    return "⚠️ **CIDRA — could not diagnose**", lines
+
+
 def render_comment(state: DebugState) -> str:
     """The comment body. `compose_report` must have set `outcome` first."""
     outcome = state.get("outcome", "failed")
     cat = _category(state)
+    failed_head, failed_body = _why_failed(state) if outcome == "failed" else ("", [])
     head = {
         "verified_fix": "✅ **CIDRA — verified fix**",
         "flaky_detected": "🎲 **CIDRA — flaky test detected**",
         "diagnosis_only": "🔎 **CIDRA — diagnosis only** (no verified fix)",
-        "failed": "⚠️ **CIDRA — could not diagnose**",
+        "failed": failed_head,
     }.get(outcome, "⚠️ **CIDRA**")
 
     parts = [_MARKER, head, "", f"**Failure class:** `{cat}`"]
@@ -115,10 +152,7 @@ def render_comment(state: DebugState) -> str:
             if state.get("verify_note"):
                 parts += ["", f"_Last attempt:_ {_clip(state['verify_note'], 300)}"]
     else:  # failed
-        err = state.get("analysis_error")
-        parts += ["", "CIDRA could not produce a usable diagnosis for this run."]
-        if err:
-            parts += ["", f"_Reason:_ `{_clip(err, 200)}`"]
+        parts += failed_body
 
     block = _model_block(state)
     if block:

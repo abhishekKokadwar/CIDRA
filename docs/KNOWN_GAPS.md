@@ -49,13 +49,6 @@ funded endpoint) + Docker up. Then
 **Done when:** a replayed real failure produces a verified fix and a posted comment, with no
 manual command; `--twice` shows the idempotency no-op.
 
-### G-18 · Install failure and non-reproduction are reported as "could not diagnose" — 🛠 (small)
-`install_deps` returns `env_ready: False` with no message, and a run that does not reproduce
-has a diagnosis but ends `failed`. The report then says "CIDRA could not produce a usable
-diagnosis" with no reason. These are the most likely first-run failures on a new repository.
-**Fix:** set `analysis_error` from the install output tail, and give `failed`-with-analysis
-its own wording that points at `install_command` / `test_command`.
-
 ### G-19 · Dead or ignored settings — 🛠 (small)
 - Dashboard "Flakiness & Sandbox" fields are saved to `.env` and `config`, but `reproduce.py`
   and `routers.py` imported the constants at load time, so the engine never sees them.
@@ -144,6 +137,7 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-18 · Install failure and non-reproduction reported as "could not diagnose"** — Closed 2026-10-17. `install_deps` records the exit code and install output; the report names the step that stopped the run (install, or diagnosed but not reproduced, with the reason), the command it ran, and the input to change (`install_command` / `test_command`). Untrusted output is shown in a code block it cannot close. Tested on the real sandbox in `tests/integration/test_failed_reasons_sandbox.py`.
 - **G-05 · Adversarial + benchmark on Docker were point-in-time** — Closed 2026-10-16. CI's
   sandbox tier runs `eval/adversarial/run_adversarial.py` (with a canary secret set, so the
   secret-theft check is not vacuous) and `eval/security_fixtures/run_benchmark.py --tier 2`,

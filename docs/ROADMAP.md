@@ -47,7 +47,7 @@ Each milestone ends when its exit criteria hold **and are checked by tests in CI
 
 **Order, as it actually went:** M1 was mostly done when the first real-bug run showed 0 of 12
 fixed, so M3's fix-rate work was pulled forward and its target met (5 of 12, 4 genuine on
-review). Next, back in order: the two open M1 items, then M2.
+review). M1 is complete; next is M2.
 
 ### M1 · Trustworthy "verified" (weeks 1 to 3)
 
@@ -57,7 +57,7 @@ review). Next, back in order: the two open M1 items, then M2.
 - [x] No regressions: verified means the target test went red to green **and** no test went green to red. Tests already failing before the patch do not block a verification but are listed.
 - [x] G-22: on an `assertion_error` fix, the failing test file may change only in assert expected values.
 - [x] G-16: reproduce at least twice for every fixable category; a disagreement means flaky.
-- [ ] G-18: an install failure or a non-reproduction says why, and points to `install_command` / `test_command`.
+- [x] G-18: an install failure or a non-reproduction says why, and points to `install_command` / `test_command`.
 - [x] An end-to-end test in CI (done with the 7 practice fixtures and the stub model, `measure.py --check`, instead of a repository built in the test): a small repository created in the test, the stub model, and the full graph to `verified_fix`, `diagnosis_only` and `flaky_detected`.
 - [x] The adversarial and security suites run in CI (G-05).
 
