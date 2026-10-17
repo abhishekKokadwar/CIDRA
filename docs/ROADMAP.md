@@ -52,7 +52,7 @@ review). Next, back in order: the two open M1 items, then M2.
 ### M1 · Trustworthy "verified" (weeks 1 to 3)
 
 - [x] Run the 15 sandbox safety tests in CI (they skip on a practice-repo check they do not need).
-- [ ] Record per-test results (pytest JUnit XML) before and after the patch.
+- [x] Record per-test results (pytest JUnit XML) before and after the patch: every sandbox test run asks pytest for a report, read whole from the container; kept as `repro_junit` / `verify_junit` and in `measure.py` results (`tests_before` / `tests_after`). The pass/fail judgement still reads the log; switching it to the report is M2 work.
 - [x] G-17: the test the CI log names must be among the sandbox's failures, or the run is "not reproduced".
 - [x] No regressions: verified means the target test went red to green **and** no test went green to red. Tests already failing before the patch do not block a verification but are listed.
 - [x] G-22: on an `assertion_error` fix, the failing test file may change only in assert expected values.

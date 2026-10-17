@@ -58,6 +58,8 @@ WORKDIR = "/work"
 SITE = "/home/cidra/site"
 # The checkout as it arrived, so each fix attempt starts from it (Session.apply_patch).
 PRISTINE = "/home/cidra/pristine"
+# pytest's per-test report of the last test run (sandbox_test_command asks for it).
+JUNIT = "/home/cidra/junit.xml"
 AUTO_REMOVE = True
 
 # Output capture — logs go to the LLM, so they are bounded.

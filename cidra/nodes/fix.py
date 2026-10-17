@@ -17,7 +17,7 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from cidra import config
+from cidra import config, junit
 from cidra.config import PRACTICE_REPO_DIR
 from cidra.integrations.llm import structured
 from cidra.nodes.environment import env_prefix, sandbox_install_command, sandbox_test_command, session_for
@@ -382,6 +382,7 @@ def verify_fix(state: DebugState) -> dict:
             return {"verified": False, "verify_results": [*state.get("verify_results", []), *results]}
 
     verified_run = session.run("verify", sandbox_test_command(state))
+    after = junit.read(session)  # per-test results with the patch applied
     results.append(verified_run)
     verified, still_failing, regressions, note = judge_verification(state, verified_run)
 
@@ -403,6 +404,7 @@ def verify_fix(state: DebugState) -> dict:
         "verify_failing_tests": still_failing,
         "regressions": regressions,
         "verify_note": note,
+        "verify_junit": after,
     }
 
 

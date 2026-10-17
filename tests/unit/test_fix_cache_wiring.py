@@ -40,6 +40,11 @@ def test_verify_writes_cache_on_success(monkeypatch, tmp_path):
                           duration_s=0.1, timed_out=False)
 
     class S:
+
+        def read_file(self, path, max_bytes=0):  # no JUnit report
+
+            return None
+
         def run(self, *a, **k): return green
     monkeypatch.setattr(fix, "session_for", lambda rid: S())
 
@@ -59,6 +64,11 @@ def test_verify_does_not_rewrite_on_cache_hit(monkeypatch, tmp_path):
                           duration_s=0.1, timed_out=False)
 
     class S:
+
+        def read_file(self, path, max_bytes=0):  # no JUnit report
+
+            return None
+
         def run(self, *a, **k): return green
     monkeypatch.setattr(fix, "session_for", lambda rid: S())
 
@@ -76,6 +86,11 @@ def test_verify_does_not_cache_a_failure(monkeypatch, tmp_path):
                         duration_s=0.1, timed_out=False)
 
     class S:
+
+        def read_file(self, path, max_bytes=0):  # no JUnit report
+
+            return None
+
         def run(self, *a, **k): return red
     monkeypatch.setattr(fix, "session_for", lambda rid: S())
 

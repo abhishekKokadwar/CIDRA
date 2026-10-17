@@ -349,6 +349,20 @@ class Session:
             timed_out=code is None,
         )
 
+    def read_file(self, path: str, max_bytes: int = 5_000_000) -> Optional[bytes]:
+        """A file from the container, whole, or None if absent or over `max_bytes`.
+        Copied out as an archive, so the output-tail limit of run() does not apply."""
+        try:
+            stream, stat = self.container.get_archive(path)
+        except NotFound:
+            return None
+        if stat.get("size", 0) > max_bytes:
+            return None
+        with tarfile.open(fileobj=io.BytesIO(b"".join(stream))) as tar:
+            member = tar.next()
+            data = tar.extractfile(member) if member is not None and member.isfile() else None
+            return data.read() if data is not None else None
+
     def apply_patch(self, patch: str) -> SandboxResult:
         """Apply an LLM diff as data. Never evaluated as a command.
 
