@@ -204,10 +204,10 @@ def prepare_sandbox(state: DebugState) -> dict:
     if not source.exists():
         return {"env_ready": False, "analysis_error": f"source not found: {source}"}
     try:
-        _SESSIONS[run_id] = Session(source, state.get("python_version")).__enter__()
+        session = _SESSIONS[run_id] = Session(source, state.get("python_version")).__enter__()
     except Exception as e:
         return {"env_ready": False, "analysis_error": f"sandbox unavailable: {e}"[:500]}
-    return {"image_tag": None}
+    return {"image_tag": f"{session.image}@{session.image_id}"}
 
 
 def install_deps(state: DebugState) -> dict:

@@ -239,11 +239,13 @@ class Session:
         self.source_dir = source_dir
         self.python = python  # a version in limits.PYTHON_IMAGES, else the default image
         self.image = limits.IMAGE
+        self.image_id = None
         self.container = None
         self._patched = False  # a diff is applied on top of the pristine tree
 
     def __enter__(self) -> "Session":
         self.image = ensure_image(self.python)
+        self.image_id = client().images.get(self.image).id  # the exact image, for the evidence block
         self.container = _create("none", self.image)
         self.container.start()
         self.container.put_archive(limits.WORKDIR, _tar_bytes(self.source_dir))

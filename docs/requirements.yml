@@ -56,3 +56,7 @@
   title: Adversarial and security suites
   accept: Hostile payloads stay contained in the real sandbox and the security benchmark has no FAIL.
   jobs: [sandbox]
+
+- id: M2-EVIDENCE
+  title: Evidence in every report
+  accept: Every report from a run that reached the sandbox shows the failing commit, the exact image, the install and test commands, the audit verdict, any dependency change, model usage, and each test's outcome before and after the patch.
