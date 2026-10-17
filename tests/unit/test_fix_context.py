@@ -3,8 +3,12 @@ say why the last attempt failed. Found by the real-model runs: the source was
 read through the sandbox's 16 KB output tail, so in 0 of 12 BugsInPy bugs the
 lines the reference fix changes were in view."""
 
+import pytest
+
 from cidra.nodes import fix
 from cidra.state import Analysis
+
+pytestmark = pytest.mark.req('R4')
 
 FILLER = "".join(f"def unrelated_{i}():\n    return {i}\n\n\n" for i in range(800))  # well past 16 KB
 BIG = (

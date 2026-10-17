@@ -10,6 +10,8 @@ from cidra.nodes import fix
 from cidra.nodes.fix import Edit, edits_to_diff
 from scripts.fake_llm import diff_to_edits
 
+pytestmark = pytest.mark.req('R4')
+
 CALC = "def add(a, b):\n    return a - b\n\n\ndef sub(a, b):\n    return a - b\n"
 
 

@@ -41,6 +41,7 @@ def _run(monkeypatch, tmp_path, repo):
     return seen
 
 
+@pytest.mark.req('R2')
 def test_failure_log_comes_from_the_sandbox(monkeypatch, tmp_path):
     repo = _repo(tmp_path / "repo", "assert 1 + 1 == 3")
     state = _run(monkeypatch, tmp_path, repo)

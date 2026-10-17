@@ -1,9 +1,13 @@
 """A run that stops before a fix says which step stopped it and which input to
 change (KNOWN_GAPS G-18), instead of "could not diagnose" for everything."""
 
+import pytest
+
 from cidra.nodes import environment
 from cidra.nodes.report import render_comment
 from cidra.state import Analysis, SandboxResult
+
+pytestmark = pytest.mark.req('M1-G18')
 
 ANALYSIS = Analysis(category="assertion_error", confidence=0.9, evidence="add() subtracts",
                     proposed_action="fix add")

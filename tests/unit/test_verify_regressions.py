@@ -1,8 +1,12 @@
 """Verified = the CI's failing tests pass and nothing that passed before now fails (roadmap requirement 7)."""
 
+import pytest
+
 from cidra.nodes import fix
 from cidra.nodes.report import render_comment
 from cidra.state import DebugState, SandboxResult
+
+pytestmark = pytest.mark.req('R7')
 
 BEFORE = ["tests/a.py::target", "tests/old.py::already_broken"]
 

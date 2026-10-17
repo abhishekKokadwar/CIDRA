@@ -7,6 +7,8 @@ import pytest
 
 from cidra.nodes.audit import audit_diff
 
+pytestmark = pytest.mark.req('R5')
+
 ROOT = Path(__file__).resolve().parents[2]
 
 # What the model sent for BugsInPy fastapi-5 on 2026-10-15: the test went green because

@@ -2,8 +2,12 @@
 assertion's diff short, and on the BugsInPy run the model gave up 13 times
 saying it could not see how the values differed."""
 
+import pytest
+
 from cidra.nodes import fix
 from cidra.state import SandboxResult
+
+pytestmark = pytest.mark.req('R4')
 
 FULL_DIFF = "=========== FAILURES ===========\nE   Full diff:\nE   - {'user_id': 1}\nE   + {'user_id': 1, 'extra': 2}\n1 failed in 0.1s\n"
 

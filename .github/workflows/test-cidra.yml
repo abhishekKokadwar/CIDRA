@@ -1,8 +1,7 @@
 name: CI
 
-# Tiered: a PR runs only the tiers its files can affect. Docs-only changes run
-# nothing but the gate; tests/unit-only changes run the unit tier; anything
-# else runs every tier. A push to main always runs every tier.
+# Tiered: a docs-only PR runs nothing but the gate; any other change runs every
+# tier, then the requirements check. A push to main always runs everything.
 #
 # Branch protection requires only `ci-ok`. Do not add `paths:` filters to the
 # triggers: a workflow that never starts never reports, and the PR stays blocked.
@@ -24,8 +23,7 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     outputs:
-      unit: ${{ steps.tiers.outputs.unit }}
-      full: ${{ steps.tiers.outputs.full }}
+      code: ${{ steps.tiers.outputs.code }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -36,25 +34,23 @@ jobs:
         EVENT: ${{ github.event_name }}
         BASE: ${{ github.event.pull_request.base.sha }}
       run: |
-        if [ "$EVENT" != "pull_request" ]; then
-          echo "unit=true" >> "$GITHUB_OUTPUT"; echo "full=true" >> "$GITHUB_OUTPUT"; exit 0
-        fi
-        unit=false; full=false
+        if [ "$EVENT" != "pull_request" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+        code=false
         # Unknown paths count as code: a file missing from the list below runs every tier.
         while IFS= read -r f; do
           case "$f" in
             "") ;;
+            docs/requirements.yml) code=true ;;  # what CI must prove: never on the docs path
             *.md|docs/*|LICENSE|.github/CODEOWNERS|.github/pull_request_template.md|eval/results/*) ;;
-            tests/unit/*) unit=true ;;
-            *) unit=true; full=true ;;
+            *) code=true ;;
           esac
         done <<< "$(git diff --name-only "$BASE"...HEAD)"
-        echo "unit=$unit" >> "$GITHUB_OUTPUT"; echo "full=$full" >> "$GITHUB_OUTPUT"
-        echo "unit tier: $unit, sandbox and pipeline tiers: $full"
+        echo "code=$code" >> "$GITHUB_OUTPUT"
+        echo "code changed: $code"
 
   unit:
     needs: changes
-    if: needs.changes.outputs.unit == 'true'
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -63,11 +59,20 @@ jobs:
         python-version: "3.11"
         cache: pip
     - run: pip install ".[dev]"
-    - run: pytest -q tests/unit
+    - name: Unit and server tests
+      env:
+        CIDRA_REQ_REPORT: req-unit.json
+      run: pytest -q tests/unit tests/server
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: req-unit
+        path: req-unit.json
+        if-no-files-found: ignore
 
   sandbox:
     needs: changes
-    if: needs.changes.outputs.full == 'true'
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -78,7 +83,15 @@ jobs:
     - run: pip install ".[dev]"
     - run: docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
     - name: Integration tests (real sandbox)
+      env:
+        CIDRA_REQ_REPORT: req-integration.json
       run: pytest -q tests/integration
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: req-integration
+        path: req-integration.json
+        if-no-files-found: ignore
     - name: Adversarial containment (G-05)
       env:
         CIDRA_CANARY_SECRET: ci-canary-${{ github.run_id }}  # without it the secret-theft check proves nothing
@@ -88,7 +101,7 @@ jobs:
 
   pipeline:
     needs: changes
-    if: needs.changes.outputs.full == 'true'
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -104,8 +117,33 @@ jobs:
         CIDRA_PRACTICE_REPO: ${{ runner.temp }}/cidra-practice
       run: python eval/measure.py --stub --check --out "$RUNNER_TEMP/stub.json"
 
-  ci-ok:
+  requirements:
+    # Every requirement in docs/requirements.yml has a test that passed in this run
+    # (skipped does not count) and every CI job it names passed.
     needs: [ changes, unit, sandbox, pipeline ]
+    if: always() && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - run: pip install pyyaml
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: req-*
+        merge-multiple: true
+        path: req
+    - name: Check every requirement is proven
+      env:
+        NEEDS: ${{ toJSON(needs) }}
+      run: |
+        jobs=$(python -c 'import json, os; print(json.dumps({k: v["result"] for k, v in json.loads(os.environ["NEEDS"]).items()}))')
+        shopt -s nullglob
+        python scripts/check_requirements.py docs/requirements.yml req/*.json --jobs "$jobs"
+
+  ci-ok:
+    needs: [ changes, unit, sandbox, pipeline, requirements ]
     if: always()
     runs-on: ubuntu-latest
     steps:

@@ -53,6 +53,7 @@ def test_open_draft_pr_is_idempotent(monkeypatch):
     assert "new body" in seen["body"]
 
 
+@pytest.mark.req('R8')
 def test_open_draft_pr_never_merges(monkeypatch):
     """SR-11: the PR path must never call a merge endpoint."""
     def handler(req):
@@ -123,6 +124,7 @@ def test_build_fix_branch_with_the_default_relative_worktree_root(repo_and_remot
 
 # ---------- publish wiring ----------
 
+@pytest.mark.req('R8')
 def test_publish_opens_pr_on_verified_fix(monkeypatch):
     from cidra.nodes import publish
     import cidra.config as cfg
@@ -139,6 +141,7 @@ def test_publish_opens_pr_on_verified_fix(monkeypatch):
     assert out["pr_url"] == "https://gh/pr/9"
 
 
+@pytest.mark.req('R8')
 def test_publish_no_pr_when_not_verified(monkeypatch):
     from cidra.nodes import publish
     import cidra.config as cfg

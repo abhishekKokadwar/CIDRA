@@ -3,7 +3,11 @@
 import json
 import pathlib
 
+import pytest
+
 from cidra.nodes.audit import audit_diff, audit_patch, call_expectations, MAX_CHANGED_LINES, MAX_CHANGED_FILES
+
+pytestmark = pytest.mark.req('R5')
 
 SEC07 = pathlib.Path("eval/security_fixtures/07_repo_write_abuse/payload/candidate_patches.json")
 CANDIDATES = {p["id"]: p for p in json.loads(SEC07.read_text())["patches"]}

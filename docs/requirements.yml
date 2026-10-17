@@ -1,0 +1,58 @@
+# What CIDRA must do, each with its evidence in CI (ROADMAP §2 and the milestones).
+#
+# A requirement holds when at least one test tagged @pytest.mark.req("<id>") ran and
+# passed in the CI run, and every job it lists passed. A skipped test is not evidence.
+# scripts/check_requirements.py enforces this; CI's `requirements` job fails otherwise.
+#
+# Adding a requirement: add it here, tag the tests that prove it, and keep the
+# acceptance line to what those tests actually check.
+
+- id: R1
+  title: Authenticate the incoming event
+  accept: Webhook deliveries are accepted only with a valid HMAC signature; a missing, wrong or malformed one is rejected before anything runs.
+
+- id: R2
+  title: Get the failing commit without exposing secrets to its code
+  accept: The commit's code runs only in the sandbox, which has no host secrets, no network for tests and no Docker socket; the fetch token never reaches argv or disk.
+
+- id: R3
+  title: Reproduce the original failure
+  accept: The CI log's failing tests must fail in the sandbox, twice for a failure CIDRA would patch; otherwise the run is not reproduced or is flaky.
+
+- id: R4
+  title: Generate a patch
+  accept: The model's edits become a diff that applies to the checkout, built from code it was shown and the failing test's full assertion diff; an edit that cannot be placed is reported back.
+
+- id: R5
+  title: Reject test-weakening or unsafe patches
+  accept: The audit gate refuses deleted or skipped tests, CI edits, stand-in modules, hardcoded answers, and test-file edits beyond assert expected values.
+
+- id: R6
+  title: Apply to a clean copy and rerun
+  accept: Each attempt applies to the checkout as it arrived, never on top of an earlier attempt.
+
+- id: R7
+  title: Original failure fixed, no unrelated regressions
+  accept: Verified only when the target tests pass and no test that passed before fails; tests already failing are listed, not blocking.
+
+- id: R8
+  title: Draft PR with evidence of what was tested
+  accept: Only a verified fix opens a draft PR (never merged) and claims a fix; other outcomes say so without a diff.
+
+- id: M1-JUNIT
+  title: Per-test results before and after the patch
+  accept: Every sandbox test run leaves a JUnit report, read whole, kept before (repro_junit) and after (verify_junit) the patch.
+
+- id: M1-G18
+  title: Say why a run stopped
+  accept: An install failure or a non-reproduction is reported with its reason, the command run and the input to change.
+
+- id: M1-E2E
+  title: The whole pipeline works end to end
+  accept: The 7 practice fixtures run through the full graph with the stub model and each ends as expected (verified fix, diagnosis only, flaky).
+  jobs: [pipeline]
+
+- id: M1-G05
+  title: Adversarial and security suites
+  accept: Hostile payloads stay contained in the real sandbox and the security benchmark has no FAIL.
+  jobs: [sandbox]

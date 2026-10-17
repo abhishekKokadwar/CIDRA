@@ -1,6 +1,10 @@
 """Per-test outcomes from pytest's JUnit report (ROADMAP M1)."""
 
+import pytest
+
 from cidra import junit
+
+pytestmark = pytest.mark.req('M1-JUNIT')
 
 REPORT = b"""<?xml version="1.0" encoding="utf-8"?>
 <testsuites><testsuite name="pytest" tests="4">

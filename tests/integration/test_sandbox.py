@@ -39,12 +39,14 @@ def test_red_test_is_a_result_not_an_exception():
     assert not r.passed
 
 
+@pytest.mark.req('R2')
 def test_runs_as_non_root():
     r = run_in_sandbox("test", _tmp_source(), "id -un && id -u")
     assert limits.USER in r.stdout_tail
     assert "\n0\n" not in r.stdout_tail, "running as uid 0"
 
 
+@pytest.mark.req('R2')
 def test_network_is_off_for_test_step():
     # ADV-03: exfiltration attempt from the step where LLM patches execute.
     r = run_in_sandbox(
@@ -66,12 +68,14 @@ def test_timeout_kills_and_reports():
     assert r.duration_s < 25
 
 
+@pytest.mark.req('R2')
 def test_docker_socket_absent():
     # ADV-01: the container must not be able to reach the daemon.
     r = run_in_sandbox("test", _tmp_source(), "test -S /var/run/docker.sock && echo PRESENT || echo ABSENT")
     assert "ABSENT" in r.stdout_tail
 
 
+@pytest.mark.req('R2')
 def test_no_host_secrets_in_env(monkeypatch):
     # ADV-07: the API key must never be visible inside the container. Plant known
     # values on the host first, or the check passes on a machine with no secrets.
@@ -129,6 +133,7 @@ def test_session_survives_install_across_steps():
     assert "six" in r.stdout_tail, r.stderr_tail
 
 
+@pytest.mark.req('R2')
 def test_session_has_no_network():
     from cidra.sandbox.runner import Session
 

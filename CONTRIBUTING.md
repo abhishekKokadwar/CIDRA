@@ -24,9 +24,11 @@ This file says how changes are made, so the history stays readable and every cha
    | PR changes | Runs |
    |---|---|
    | only docs (`*.md`, `docs/`, `eval/results/`) | nothing but the `ci-ok` gate |
-   | only `tests/unit/` (and docs) | unit tests |
-   | anything else | unit tests; integration tests, adversarial and security suites in the real sandbox; the full pipeline on the 7 practice fixtures with the stub model |
+   | anything else, including `docs/requirements.yml` | unit and server tests; integration tests, adversarial and security suites in the real sandbox; the full pipeline on the 7 practice fixtures with the stub model; then the requirements check |
 
+   The requirements check fails unless every requirement in [docs/requirements.yml](docs/requirements.yml)
+   has a test tagged `@pytest.mark.req("<id>")` that ran and passed (skipped does not count), and every
+   CI job it names passed. A new requirement or roadmap item goes in that file with the tests that prove it.
    A push to `main` runs every tier. The paid-model BugsInPy run is never in CI.
 5. **Merge with "Rebase and merge"**, so each commit lands on `main` as written and keeps its author.
    Use "Squash and merge" only for a branch whose commits are work-in-progress noise.

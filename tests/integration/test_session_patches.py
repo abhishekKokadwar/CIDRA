@@ -10,6 +10,8 @@ import pytest
 
 from cidra.sandbox.runner import Session, client
 
+pytestmark = pytest.mark.req('R6')
+
 try:
     client().ping()
 except Exception:  # noqa: BLE001 - no daemon, no image: nothing to test here
