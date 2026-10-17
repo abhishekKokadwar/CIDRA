@@ -16,6 +16,13 @@ def _red(*failed: str) -> SandboxResult:
 
 
 class _Session:
+
+
+    def read_file(self, path, max_bytes=0):  # no JUnit report
+
+
+        return None
+
     def __init__(self, result):
         self.result = result
 

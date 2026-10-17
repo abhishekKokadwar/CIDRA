@@ -164,12 +164,12 @@ def workflow_env(tree: pathlib.Path, workflow_file: str | None = None) -> dict[s
     return env
 
 
-def env_prefix(state: DebugState) -> str:
+def env_prefix(state: DebugState, skip: frozenset = frozenset()) -> str:
     """`K=V ` pairs to put in front of the test command. CIDRA-authored: names are
     validated and values quoted, so repo-supplied text is data, never shell syntax."""
     env = state.get("ci_env") or {}
     return "".join(
-        f"{k}={shlex.quote(str(v))} " for k, v in sorted(env.items()) if _ENV_NAME.match(k)
+        f"{k}={shlex.quote(str(v))} " for k, v in sorted(env.items()) if _ENV_NAME.match(k) and k not in skip
     )
 
 
@@ -179,7 +179,14 @@ def sandbox_install_command(state: DebugState) -> str:
 
 def sandbox_test_command(state: DebugState) -> str:
     """The run's test command behind its CI env. Operator-set; the LLM never contributes."""
-    return env_prefix(state) + (state.get("test_command") or config.TEST_COMMAND)
+    # Every run asks pytest for a per-test JUnit report (cidra/junit.py), on top of any
+    # PYTEST_ADDOPTS the repo's CI sets. Exported, so it reaches pytest even behind
+    # `cd sub && ...`; the old report is removed first so a run that writes none
+    # cannot be read as the previous one's.
+    addopts = f"{(state.get('ci_env') or {}).get('PYTEST_ADDOPTS', '')} --junitxml={limits.JUNIT}".strip()
+    return (f"rm -f {limits.JUNIT}; export PYTEST_ADDOPTS={shlex.quote(addopts)}; "
+            + env_prefix(state, skip=frozenset({"PYTEST_ADDOPTS"}))
+            + (state.get("test_command") or config.TEST_COMMAND))
 
 
 def prepare_sandbox(state: DebugState) -> dict:

@@ -12,6 +12,13 @@ def _run(failed=(), step="test"):
 
 
 class _Session:
+
+
+    def read_file(self, path, max_bytes=0):  # no JUnit report
+
+
+        return None
+
     def __init__(self, *results):
         self.results, self.calls = list(results), 0
 

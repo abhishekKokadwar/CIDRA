@@ -5,6 +5,7 @@ made to happen here, nothing that follows can be verified.
 """
 
 from cidra.config import FLAKY_RUNS, FLAKY_SCORE_THRESHOLD
+from cidra import junit
 from cidra.nodes.environment import sandbox_test_command, session_for
 from cidra.state import DebugState, SandboxResult
 
@@ -87,18 +88,20 @@ def reproduce_once(state: DebugState) -> dict:
         return {"reproduced": False}
     result = session.run("test", _test_command(state))
     results = [*state.get("repro_results", []), result]
+    # Per-test results before any patch; read now, before a second run replaces the report.
+    before = junit.read(session)
     error = _runner_error(result)
     if error:
         # A runner that never ran proves nothing: not reproduced, and say why.
-        return {"reproduced": False, "repro_results": results, "analysis_error": error}
+        return {"reproduced": False, "repro_results": results, "analysis_error": error, "repro_junit": before}
     if result.passed:
-        return {"reproduced": False, "repro_results": results,
+        return {"reproduced": False, "repro_results": results, "repro_junit": before,
                 "analysis_error": "not reproduced: the tests pass in the sandbox"}
     sandbox_failed = failing_tests(result.stdout_tail + "\n" + result.stderr_tail)
     targets, evidence, reason = _targets(state, sandbox_failed)
     # Every test failing before the patch: verify_fix allows these, and only these, to stay red.
     out = {"reproduced": not reason, "repro_results": results, "target_tests": targets,
-           "repro_evidence": evidence, "repro_failing_tests": sandbox_failed}
+           "repro_evidence": evidence, "repro_failing_tests": sandbox_failed, "repro_junit": before}
     if reason:
         out["analysis_error"] = reason
         return out

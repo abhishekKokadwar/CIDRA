@@ -88,6 +88,13 @@ run's container keeps running and holds up to 2 GB until removed by hand.
 run, in every entry point (Action, CLI, server, `eval/measure.py`).
 **Done when:** a test that raises inside a node leaves no container and no checkout behind.
 
+### G-24 · CI environment variables do not reach a command after `cd ... &&` — 🛠 (small)
+**What:** `env_prefix` puts the CI workflow's `env:` values inline (`CI=1 cd sub && pytest`), so
+they apply to `cd` only and the test run never sees them. The JUnit setting is exported for this
+reason; the CI's own variables are not yet.
+**Fix:** export them (`export K=V; ...`), as `sandbox_test_command` does for `PYTEST_ADDOPTS`.
+**Done when:** a test command of the form `cd sub && pytest` sees the workflow's variables.
+
 ## Deferred by design (not bugs — scoped out, revisit when the phase arrives)
 
 ### G-06 · Security benchmark: SEC-02/03/05/08 still PENDING — 🛠

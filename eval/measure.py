@@ -272,6 +272,8 @@ def run_fixture(fid: str) -> dict:
         "diff": state.get("fix_diff") if verified else None,
         "target_tests": state.get("target_tests") or [],
         "repro_evidence": state.get("repro_evidence"),
+        "tests_before": state.get("repro_junit"),  # per-test outcome before the patch
+        "tests_after": state.get("verify_junit"),  # and with the last patch applied
         "attempts": attempts_from_updates(updates),
     }
     if verified and state.get("fix_diff"):

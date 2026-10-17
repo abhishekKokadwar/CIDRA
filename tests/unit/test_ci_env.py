@@ -105,8 +105,16 @@ def test_install_and_test_commands_default_and_per_run_override():
     from cidra import config
     from cidra.nodes.environment import sandbox_install_command, sandbox_test_command
     assert sandbox_install_command({}) == config.INSTALL_COMMAND
-    assert sandbox_test_command({}) == config.TEST_COMMAND
+    junit = "rm -f /home/cidra/junit.xml; export PYTEST_ADDOPTS=--junitxml=/home/cidra/junit.xml; "
+    assert sandbox_test_command({}) == junit + config.TEST_COMMAND
     state = {"install_command": "pip install --quiet .", "test_command": "pytest -q tests/unit 2>&1",
              "ci_env": {"API_TOKEN": "tok value"}}
     assert sandbox_install_command(state) == "pip install --quiet ."
-    assert sandbox_test_command(state) == "API_TOKEN='tok value' pytest -q tests/unit 2>&1"
+    assert sandbox_test_command(state) == junit + "API_TOKEN='tok value' pytest -q tests/unit 2>&1"
+
+
+def test_the_repos_own_pytest_addopts_are_kept_beside_the_junit_report():
+    from cidra.nodes.environment import sandbox_test_command
+    cmd = sandbox_test_command({"ci_env": {"PYTEST_ADDOPTS": "-x --tb=short", "CI": "1"}, "test_command": "cd sub && pytest"})
+    assert cmd == ("rm -f /home/cidra/junit.xml; export PYTEST_ADDOPTS='-x --tb=short --junitxml=/home/cidra/junit.xml'; "
+                   "CI=1 cd sub && pytest")

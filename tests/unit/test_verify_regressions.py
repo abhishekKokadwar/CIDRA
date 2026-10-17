@@ -15,6 +15,13 @@ def _after(*failed, code=None):
 
 
 class _Session:
+
+
+    def read_file(self, path, max_bytes=0):  # no JUnit report
+
+
+        return None
+
     def __init__(self, result):
         self.result = result
 
