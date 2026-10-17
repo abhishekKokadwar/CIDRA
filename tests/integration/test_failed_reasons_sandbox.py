@@ -13,6 +13,8 @@ from cidra.nodes.reproduce import reproduce_once
 from cidra.sandbox.runner import client
 from cidra.state import Analysis
 
+pytestmark = pytest.mark.req('M1-G18')
+
 try:
     client().ping()
 except Exception:  # noqa: BLE001 - no daemon, no image: nothing to test here

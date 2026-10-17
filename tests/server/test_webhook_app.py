@@ -52,6 +52,7 @@ def test_valid_failure_accepted_and_dispatched(client):
     assert client.dispatched[0].run_id == "999" and client.dispatched[0].issue_number == 42
 
 
+@pytest.mark.req('R1')
 def test_bad_signature_401_and_no_dispatch(client):
     body = _body()
     r = client.post("/webhook", content=body, headers={
@@ -60,6 +61,7 @@ def test_bad_signature_401_and_no_dispatch(client):
     assert client.dispatched == []
 
 
+@pytest.mark.req('R1')
 def test_missing_signature_401(client):
     body = _body()
     r = client.post("/webhook", content=body, headers={"X-GitHub-Event": "workflow_run"})

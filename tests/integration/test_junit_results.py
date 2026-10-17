@@ -10,6 +10,8 @@ from cidra.nodes.fix import verify_fix
 from cidra.nodes.reproduce import reproduce_once
 from cidra.sandbox.runner import client
 
+pytestmark = pytest.mark.req('M1-JUNIT', 'R7')
+
 try:
     client().ping()
 except Exception:  # noqa: BLE001 - no daemon, no image: nothing to test here

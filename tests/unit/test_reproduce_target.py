@@ -2,9 +2,13 @@
 
 from pathlib import Path
 
+import pytest
+
 from cidra.nodes import reproduce
 from cidra.nodes.ingest import failing_tests, isolate_error
 from cidra.state import Analysis, DebugState, SandboxResult
+
+pytestmark = pytest.mark.req('R3')
 
 FIXTURES = Path(__file__).resolve().parents[2] / "eval" / "fixtures"
 

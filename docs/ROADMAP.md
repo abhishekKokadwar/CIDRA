@@ -43,7 +43,8 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 
 ## 3. Milestones
 
-Each milestone ends when its exit criteria hold **and are checked by tests in CI**.
+Each milestone ends when its exit criteria hold **and are checked by tests in CI**: its items are in
+[requirements.yml](requirements.yml), so the requirements check fails if one loses its passing test.
 
 **Order, as it actually went:** M1 was mostly done when the first real-bug run showed 0 of 12
 fixed, so M3's fix-rate work was pulled forward and its target met (5 of 12, 4 genuine on
@@ -142,5 +143,7 @@ tokens per task; estimate them on five cases before a full run.
 - Every change on a branch, through a pull request, CI green, rebase-merged
   ([CONTRIBUTING.md](../CONTRIBUTING.md)).
 - Every bug fix ships with a test that fails on the old code.
+- Every requirement and finished milestone item is listed in [requirements.yml](requirements.yml) with
+  tests tagged `@pytest.mark.req`; CI fails if any of them has no passing test in the run.
 - A change that affects repair results is measured with `eval/measure.py` and its result file committed.
 - A gap found and not fixed goes into [KNOWN_GAPS.md](KNOWN_GAPS.md) the same day.

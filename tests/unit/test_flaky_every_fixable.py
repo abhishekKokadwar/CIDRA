@@ -1,8 +1,12 @@
 """A failure CIDRA would patch is reproduced twice; one that flips is flaky, not fixable (KNOWN_GAPS G-16)."""
 
+import pytest
+
 from cidra.nodes import reproduce
 from cidra.nodes.report import render_comment
 from cidra.state import Analysis, SandboxResult
+
+pytestmark = pytest.mark.req('R3')
 
 
 def _run(failed=(), step="test"):

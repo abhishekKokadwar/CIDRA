@@ -54,6 +54,7 @@ def test_webhook_run_checks_out_the_failing_commit(remote):
     assert not (tree / ".git").exists()
 
 
+@pytest.mark.req('R2')
 def test_the_token_is_never_on_a_command_line_or_on_disk(remote, calls):
     out = environment.checkout_commit({"run_id": "w1", "repo": "o/r", "commit_sha": remote})
     for argv, _ in calls:

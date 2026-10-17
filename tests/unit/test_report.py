@@ -1,5 +1,7 @@
 """Phase 6.1 — comment body composition. Pure, no network."""
 
+import pytest
+
 from cidra.nodes.report import render_comment, _MARKER, MAX_PROSE, MAX_DIFF
 from cidra.state import Analysis
 
@@ -11,6 +13,7 @@ def _analysis(**kw):
     return Analysis(**base)
 
 
+@pytest.mark.req('R8')
 def test_verified_fix_shows_diff():
     body = render_comment({
         "outcome": "verified_fix", "verified": True,
@@ -21,12 +24,14 @@ def test_verified_fix_shows_diff():
     assert "suggestion" in body.lower()  # never claims autonomy
 
 
+@pytest.mark.req('R8')
 def test_diagnosis_only_never_claims_a_fix():
     body = render_comment({"outcome": "diagnosis_only", "analysis": _analysis()})
     assert "```diff" not in body
     assert "did **not** produce a fix" in body
 
 
+@pytest.mark.req('R8')
 def test_failed_has_no_diff_and_no_fix_language():
     body = render_comment({"outcome": "failed", "analysis": None,
                            "analysis_error": "malformed JSON x3"})

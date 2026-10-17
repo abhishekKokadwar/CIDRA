@@ -1,6 +1,10 @@
 """Phase 7.1 — HMAC signature verification."""
 
+import pytest
+
 from cidra.server.security import verify_signature, sign
+
+pytestmark = pytest.mark.req('R1')
 
 SECRET = "s3cr3t"
 BODY = b'{"action":"completed"}'
