@@ -216,7 +216,9 @@ def install_deps(state: DebugState) -> dict:
     if session is None:
         return {"env_ready": False}
     result = session.install(sandbox_install_command(state))
-    return {
-        "env_ready": result.passed,
-        "repro_results": [*state.get("repro_results", []), result],
-    }
+    out = {"env_ready": result.passed, "repro_results": [*state.get("repro_results", []), result]}
+    if not result.passed:
+        # The most likely first failure on a new repository: say what went wrong (G-18).
+        tail = (result.stderr_tail.strip() or result.stdout_tail.strip())[-600:]
+        out["analysis_error"] = f"install failed (exit {result.exit_code}): {tail}"
+    return out
