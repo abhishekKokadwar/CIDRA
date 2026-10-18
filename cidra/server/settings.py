@@ -14,7 +14,7 @@ from typing import Any, Dict
 
 from cidra import config
 
-ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+ENV_PATH = Path(config.ENV_FILE).resolve()
 
 
 # The only credential variables the settings API may write. Anything else in the

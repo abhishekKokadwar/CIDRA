@@ -52,10 +52,28 @@ def from_vitest(report: dict) -> dict[str, dict]:
             for f in report["testResults"] for t in f["assertionResults"]}
 
 
+def from_playwright(report: dict) -> dict[str, dict]:
+    """A Playwright JSON report in the same shape: a spec's [ID]s in its title, and it
+    passed only if every run of it was as expected."""
+    out: dict[str, dict] = {}
+
+    def walk(suite: dict, where: str) -> None:
+        for spec in suite.get("specs", []):
+            statuses = {t["status"] for t in spec["tests"]}
+            outcome = "skipped" if statuses == {"skipped"} else "passed" if statuses == {"expected"} else "failed"
+            out[f"{where}::{spec['title']}"] = {"req": re.findall(r"\[([A-Z0-9-]+)\]", spec["title"]), "outcome": outcome}
+        for child in suite.get("suites", []):
+            walk(child, f"{where}::{child['title']}")
+
+    for suite in report["suites"]:
+        walk(suite, suite["title"])
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("requirements")
-    ap.add_argument("reports", nargs="*", help="JSON files written with CIDRA_REQ_REPORT, or vitest JSON reports")
+    ap.add_argument("reports", nargs="*", help="JSON files written with CIDRA_REQ_REPORT, or vitest / Playwright JSON reports")
     ap.add_argument("--jobs", default="{}", help="JSON object: CI job name -> result")
     args = ap.parse_args()
     with open(args.requirements, encoding="utf-8") as f:
@@ -64,7 +82,11 @@ def main() -> int:
     for path in args.reports:
         with open(path, encoding="utf-8") as f:
             report = json.load(f)
-        results.update(from_vitest(report) if "testResults" in report else report)
+        if "testResults" in report:
+            report = from_vitest(report)
+        elif "suites" in report and "config" in report:
+            report = from_playwright(report)
+        results.update(report)
     rows, problems = check(requirements, results, json.loads(args.jobs))
     out = "\n".join(["## Requirements", "", "| | Id | Requirement | Evidence |", "|---|---|---|---|", *rows])
     if problems:

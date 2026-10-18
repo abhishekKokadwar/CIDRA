@@ -8,6 +8,7 @@ import TimelineNode from './components/TimelineNode';
 import OrchestratorView from './components/OrchestratorView';
 import SettingsView from './components/SettingsView';
 import { outcomeBadge } from './outcome';
+import { AUTH_HELP, apiFetch } from './api';
 import { Play, CheckCircle2, Clock, ChevronRight, Bot, PlayCircle, Cpu, Zap, Activity, FileJson, RefreshCw, ExternalLink, ShieldCheck, Check, Workflow } from 'lucide-react';
 
 export default function App() {
@@ -25,11 +26,13 @@ export default function App() {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [authNeeded, setAuthNeeded] = useState(false);
 
   const fetchTelemetry = async () => {
     try {
       setRefreshing(true);
-      const res = await fetch(`/telemetry.json?t=${Date.now()}`);
+      const res = await apiFetch(`/telemetry.json?t=${Date.now()}`);
+      setAuthNeeded(res.status === 401);
       if (res.ok) {
         const data = await res.json();
         setTelemetry(data);
@@ -71,6 +74,11 @@ export default function App() {
       />
 
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {authNeeded && (
+          <div role="alert" style={{ padding: '0.75rem 1rem', marginBottom: '1.5rem', borderRadius: '8px', border: '1px solid rgba(245, 165, 36, 0.3)', background: 'rgba(245, 165, 36, 0.1)', color: 'var(--color-warning)' }}>
+            {AUTH_HELP}
+          </div>
+        )}
         {activeTab === 'overview' && (
           <CommandCenter 
             stats={telemetry.stats} 
@@ -559,7 +567,7 @@ function ContainerFlakinessLab({ run }) {
   const handleApprove = async () => {
     setApproving(true);
     try {
-      const res = await fetch(`/api/runs/${encodeURIComponent(run.id)}/approve`, { method: 'POST' });
+      const res = await apiFetch(`/api/runs/${encodeURIComponent(run.id)}/approve`, { method: 'POST' });
       if (!res.ok) throw new Error(`server answered ${res.status}`);
       const data = await res.json();
       setApproval({ ok: true, message: data.message, prUrl: data.pr_url });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { AUTH_HELP, apiFetch } from '../api';
 import { 
   Key, 
   Bot, 
@@ -146,8 +147,10 @@ export default function SettingsView() {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/settings?t=${Date.now()}`);
-      if (res.ok) {
+      const res = await apiFetch(`/api/settings?t=${Date.now()}`);
+      if (res.status === 401) {
+        setSaveMessage({ type: 'error', text: AUTH_HELP });
+      } else if (res.ok) {
         const data = await res.json();
         setSettings(data);
         if (data.models) {
@@ -198,7 +201,7 @@ export default function SettingsView() {
         keys: overrides.keys || {}
       };
 
-      const res = await fetch('/api/settings', {
+      const res = await apiFetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -230,7 +233,7 @@ export default function SettingsView() {
     }));
 
     try {
-      const res = await fetch('/api/settings/test', {
+      const res = await apiFetch('/api/settings/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider_id: providerId })

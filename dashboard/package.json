@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "test:wiring": "node test-backend-wiring.js",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -19,6 +19,7 @@
     "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

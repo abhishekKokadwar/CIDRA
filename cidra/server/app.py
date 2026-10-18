@@ -39,10 +39,9 @@ async def _lifespan(app: FastAPI):
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logging.getLogger("cidra").setLevel(logging.INFO)
     if not config.WEBHOOK_SECRET:
-        raise RuntimeError(
-            "CIDRA_WEBHOOK_SECRET is not set — refusing to start. "
-            "Set it here and in the repo's webhook config (see docs/8_api_contracts.md)."
-        )
+        # The dashboard works without it; /webhook refuses every delivery (503).
+        log.warning("CIDRA_WEBHOOK_SECRET is not set: /webhook is off. "
+                    "Set it here and in the repo's webhook config (see docs/8_api_contracts.md).")
     yield
 
 
@@ -108,22 +107,11 @@ def health(request: Request):
     return {"service": "cidra", "ok": True}
 
 
-if (_STATIC_DIR / "assets").exists():
-    app.mount("/assets", StaticFiles(directory=str(_STATIC_DIR / "assets")), name="assets")
-
-
-@app.get("/telemetry.json")
+@app.get("/telemetry.json", dependencies=[Depends(api_guard)])
 def get_telemetry():
-    if (_STATIC_DIR / "telemetry.json").exists():
-        return FileResponse(_STATIC_DIR / "telemetry.json")
-    return history.load()
-
-
-@app.get("/cidra_icon.png")
-def get_icon():
-    if (_STATIC_DIR / "cidra_icon.png").exists():
-        return FileResponse(_STATIC_DIR / "cidra_icon.png")
-    return Response(status_code=404)
+    # This directory's runs. Not the telemetry.json bundled in static/: that is
+    # the hosted demo's data, and showed every user someone else's runs.
+    return history.dashboard_telemetry()
 
 
 @app.post("/webhook")
@@ -133,6 +121,8 @@ async def webhook(
     x_hub_signature_256: str | None = Header(default=None),
     x_github_event: str | None = Header(default=None),
 ) -> Response:
+    if not config.WEBHOOK_SECRET:
+        return Response(status_code=503, content="webhook off: CIDRA_WEBHOOK_SECRET is not set")
     body = await request.body()
 
     # 1. Authenticity, before anything parses the body.
@@ -225,3 +215,7 @@ async def test_provider_endpoint(request: Request):
     provider_id = payload.get("provider_id", "")
     return settings.test_provider(provider_id)
 
+
+# Last, so every route above wins: the dashboard's files (bundle, favicon, logos).
+if _STATIC_DIR.exists():
+    app.mount("/", StaticFiles(directory=str(_STATIC_DIR)), name="static")
