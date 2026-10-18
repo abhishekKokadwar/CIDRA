@@ -105,3 +105,28 @@ def post_or_update_comment(repo: str, issue: int, body: str) -> str:
             r = c.post(f"/repos/{repo}/issues/{issue}/comments", json={"body": body})
         r.raise_for_status()
         return r.json()["html_url"]
+
+
+def post_or_update_commit_comment(repo: str, sha: str, body: str) -> str:
+    """Comment on a commit, or update CIDRA's existing comment there (KNOWN_GAPS G-08).
+
+    For a failure with no pull request (a branch push): without it the report
+    was only in the job summary. Same marker-based idempotency as PR comments.
+    """
+    if _MARKER not in body:
+        raise ValueError("comment body is missing the CIDRA marker; refusing to post")
+    with _client() as c:
+        existing = None
+        for page in range(1, 11):
+            r = c.get(f"/repos/{repo}/commits/{sha}/comments", params={"per_page": 100, "page": page})
+            r.raise_for_status()
+            batch = r.json()
+            existing = next((x["id"] for x in batch if _MARKER in x.get("body", "")), None)
+            if existing is not None or len(batch) < 100:
+                break
+        if existing is not None:
+            r = c.patch(f"/repos/{repo}/comments/{existing}", json={"body": body})
+        else:
+            r = c.post(f"/repos/{repo}/commits/{sha}/comments", json={"body": body})
+        r.raise_for_status()
+        return r.json()["html_url"]

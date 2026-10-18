@@ -114,11 +114,6 @@ above a similarity threshold, measured on the fixture corpus.
 `cidra/nodes/audit.py` uses Python `ast`. Non-Python languages (Phase 12 multi-language) need
 tree-sitter parsing for the same SR-13/14/15 guards. Deferred until multi-language lands.
 
-### G-08 · Commit-comment fallback for no-PR runs — 🛠 (small)
-When a verified/diagnosed run has no PR, `publish` dry-runs. A commit-comment fallback would
-make branch-push runs post visibly. Offered earlier, not yet built. Closes part of G-04
-without needing a PR.
-
 ---
 
 ## Documentation debt (carried since earlier phases)
@@ -137,6 +132,7 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-08 · Commit-comment fallback for no-PR runs** — Closed 2026-10-19. With no pull request, `publish` comments on the failing commit (updating its own comment by marker); every GitHub write is guarded, and a 403 names the workflow permission to add. Tested against a local server that answers like the GitHub API (`tests/integration/test_publish_github_api.py`).
 - **G-18 · Install failure and non-reproduction reported as "could not diagnose"** — Closed 2026-10-17. `install_deps` records the exit code and install output; the report names the step that stopped the run (install, or diagnosed but not reproduced, with the reason), the command it ran, and the input to change (`install_command` / `test_command`). Untrusted output is shown in a code block it cannot close. Tested on the real sandbox in `tests/integration/test_failed_reasons_sandbox.py`.
 - **G-05 · Adversarial + benchmark on Docker were point-in-time** — Closed 2026-10-16. CI's
   sandbox tier runs `eval/adversarial/run_adversarial.py` (with a canary secret set, so the

@@ -113,6 +113,7 @@ class DebugState(TypedDict, total=False):
     failure_detail: Optional[str]  # the target tests rerun with -vv, for the fix prompt
     repro_junit: Optional[dict[str, str]]  # per-test outcome before the patch (pytest JUnit report)
     verify_junit: Optional[dict[str, str]]  # per-test outcome with the last patch applied
+    publish_errors: list[str]  # GitHub writes that failed, with the permission to add on a 403
 
     # Output target (set by the webhook in Phase 7; absent for fixture runs)
     issue_number: Optional[int]  # PR/issue to comment on
