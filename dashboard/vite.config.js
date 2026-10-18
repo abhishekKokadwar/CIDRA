@@ -289,7 +289,7 @@ function syncToPythonStatic() {
 export default defineConfig({
   plugins: [tailwindcss(), react(), cidraSettingsPlugin(), syncToPythonStatic()],
   define: { __CIDRA_VERSION__: JSON.stringify(cidraVersion) },
-  test: { environment: 'jsdom' },
+  test: { environment: 'jsdom', include: ['src/**/*.test.{js,jsx}'] },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

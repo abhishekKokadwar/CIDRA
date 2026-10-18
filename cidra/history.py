@@ -89,11 +89,25 @@ def load_full_state(run_id: str) -> Optional[dict]:
         return None
 
 def export_dashboard_telemetry():
-    """Generates a comprehensive telemetry.json in dashboard/public for real-time visualization."""
-    states_dir = Path("run_states")
-    if not states_dir.exists():
+    """Writes dashboard_telemetry() where the hosted demo dashboard reads it."""
+    if not Path("run_states").exists():
         return
-    
+    dashboard_data = dashboard_telemetry()
+    out_paths = [
+        Path("dashboard/public/telemetry.json"),
+        Path("cidra/static/telemetry.json"),
+        Path("cidra_telemetry.json")
+    ]
+    for out_p in out_paths:
+        try:
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            out_p.write_text(json.dumps(dashboard_data, indent=2), encoding="utf-8")
+        except Exception as e:
+            log.warning("Could not write telemetry to %s: %s", out_p, e)
+
+
+def dashboard_telemetry() -> dict:
+    """The dashboard's view of this directory's run history: stats and one entry per run."""
     runs = []
     total_verified = 0
     total_duration = 0.0
@@ -254,18 +268,7 @@ def export_dashboard_telemetry():
         },
         "runs": runs
     }
-    
-    out_paths = [
-        Path("dashboard/public/telemetry.json"),
-        Path("cidra/static/telemetry.json"),
-        Path("cidra_telemetry.json")
-    ]
-    for out_p in out_paths:
-        try:
-            out_p.parent.mkdir(parents=True, exist_ok=True)
-            out_p.write_text(json.dumps(dashboard_data, indent=2), encoding="utf-8")
-        except Exception as e:
-            log.warning("Could not write telemetry to %s: %s", out_p, e)
+    return dashboard_data
 
 def record(state: DebugState, path: str | Path | None = None) -> bool:
     """Append a run summary. Best-effort: returns False on any I/O error, never raises."""

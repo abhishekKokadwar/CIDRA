@@ -4,7 +4,7 @@ import pathlib
 
 import yaml
 
-from scripts.check_requirements import check, from_vitest
+from scripts.check_requirements import check, from_playwright, from_vitest
 
 REQS = [{"id": "R1", "title": "Auth"}, {"id": "R2", "title": "Sandbox"},
         {"id": "E2E", "title": "Pipeline", "jobs": ["pipeline"]}]
@@ -66,3 +66,17 @@ def test_a_vitest_report_counts_as_evidence_by_the_ids_in_test_titles():
     assert results["src/a.test.jsx::todo [R2] later"]["outcome"] == "skipped"
     assert _problems(results) == ["R2: no passing test (2 tagged, 1 skipped)",
                                   "R2: src/a.test.jsx::keys [R2] counts set keys failed"]
+
+
+def test_a_playwright_report_counts_as_evidence_by_the_ids_in_spec_titles():
+    spec = lambda title, *statuses: {"title": title, "tests": [{"status": s} for s in statuses]}
+    report = {"config": {}, "suites": [{"title": "a.spec.js", "specs": [spec("[R1] screens open", "expected")],
+                                        "suites": [{"title": "group", "specs": [
+                                            spec("[R2] token works", "unexpected"),
+                                            spec("[R2] retried", "expected", "flaky"),
+                                            spec("[R2] later", "skipped")]}]}]}
+    results = from_playwright(report)
+    assert results["a.spec.js::[R1] screens open"] == {"req": ["R1"], "outcome": "passed"}
+    assert {k: v["outcome"] for k, v in results.items() if "R2" in k} == {
+        "a.spec.js::group::[R2] token works": "failed", "a.spec.js::group::[R2] retried": "failed",
+        "a.spec.js::group::[R2] later": "skipped"}

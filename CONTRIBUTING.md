@@ -24,7 +24,7 @@ This file says how changes are made, so the history stays readable and every cha
    | PR changes | Runs |
    |---|---|
    | only docs (`*.md`, `docs/`, `eval/results/`) | nothing but the `ci-ok` gate |
-   | anything else, including `docs/requirements.yml` | unit and server tests; integration tests, adversarial and security suites in the real sandbox; the full pipeline on the 7 practice fixtures with the stub model; the dashboard's lint, component tests and build; then the requirements check |
+   | anything else, including `docs/requirements.yml` | unit and server tests; integration tests, adversarial and security suites in the real sandbox; the full pipeline on the 7 practice fixtures with the stub model; the dashboard's lint, component tests and build; browser tests of the dashboard against the real server; then the requirements check |
 
    The requirements check fails unless every requirement in [docs/requirements.yml](docs/requirements.yml)
    has a test tagged `@pytest.mark.req("<id>")` (or, in the dashboard, a test whose title starts with `[<id>]`)
@@ -93,6 +93,7 @@ The dashboard (`dashboard/`):
 ```bash
 npm ci && npm run lint && npm test
 npm run build                 # also refreshes cidra/static; commit it with any change to dashboard/src
+npx playwright install chromium && npm run e2e   # browser tests against the real server, on scratch data
 ```
 
 CI runs the Docker tiers for you. To run them locally (Docker up):

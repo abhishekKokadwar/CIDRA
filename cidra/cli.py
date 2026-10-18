@@ -246,6 +246,10 @@ def dashboard_run(args):
                   "its API reads credentials and writes .env.", host)
         sys.exit(1)
     url = f"http://{host}:{port}"
+    if config.DASHBOARD_TOKEN:
+        # The page reads the token from the fragment, which is never sent to a server.
+        from urllib.parse import quote
+        url += f"/#token={quote(config.DASHBOARD_TOKEN, safe='')}"
     log.info(f"Starting CIDRA Web Dashboard at {url}")
     if not getattr(args, "no_open", False):
         try:

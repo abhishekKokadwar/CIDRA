@@ -92,3 +92,28 @@
 - id: UI-VERSION
   title: The dashboard shows its real version
   accept: The sidebar, open or collapsed, shows the version in pyproject.toml, the package the dashboard ships in.
+
+- id: UI-OWN-RUNS
+  title: The dashboard shows your runs
+  accept: /telemetry.json is built from the run history of the directory the dashboard runs in, never the sample file bundled in the package; with no runs it is empty.
+
+- id: UI-STATIC
+  title: Every file the dashboard page uses is served
+  accept: The favicon, logos and every asset index.html references answer 200 from the dashboard server; an unknown path is a 404.
+
+- id: UI-STARTS
+  title: The dashboard starts with nothing configured
+  accept: The server starts without CIDRA_WEBHOOK_SECRET; /webhook then refuses every delivery with a 503 that names the missing variable, and still rejects bad signatures when it is set.
+
+- id: UI-ENV
+  title: Settings use your project's .env
+  accept: CIDRA reads, and the Settings page writes, the .env in the directory CIDRA runs from (or CIDRA_ENV_FILE), not a file next to the installed package.
+
+- id: UI-SCREENS
+  title: Every dashboard screen works in a browser
+  accept: Against the real server on fixed data, every screen opens with no console error, uncaught exception or failed request; a run opens with its patch, its approval is recorded, and its pull request is listed.
+  jobs: [e2e]
+
+- id: UI-TOKEN
+  title: The dashboard works behind its access token
+  accept: With CIDRA_DASHBOARD_TOKEN set, the runs and the API need the token; the link `cidra dashboard` prints carries it and the page sends it on every call; a page without it says how to get in instead of showing nothing or sample data.

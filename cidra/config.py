@@ -4,7 +4,11 @@ import os
 
 from dotenv import load_dotenv
 
-load_dotenv()
+# The project's .env: in the directory CIDRA runs from, where the dashboard's
+# Settings page saves it too. Not next to the installed package, which after
+# a pip install is site-packages.
+ENV_FILE = os.environ.get("CIDRA_ENV_FILE") or ".env"
+load_dotenv(ENV_FILE)
 
 # Bounded loops
 MAX_ANALYSIS_ATTEMPTS = 2

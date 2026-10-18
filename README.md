@@ -174,6 +174,8 @@ CIDRA includes a reactive web dashboard built with React, Vite, and custom CSS d
 cidra dashboard
 ```
 
+It shows the runs recorded in the directory you start it from (`cidra_run_history.jsonl`) and edits that directory's `.env`. The hosted dashboard above shows sample data.
+
 ### Dashboard Capabilities
 
 1. **Command Center**: Real-time KPI counters tracking mean time to recovery (MTTR), repair success rate, token consumption, and system health status.
@@ -364,7 +366,8 @@ Copy [.env.example](.env.example) to `.env` to configure your environment:
 | `CIDRA_INSTALL_COMMAND` | One `pip install` of the dependencies, run in the sandbox (`--target` is appended) | detected: requirements files, else `pyproject.toml` / `setup.py` |
 | `CIDRA_TEST_COMMAND` | Test command, run in the sandbox with no network | `pytest -q 2>&1` |
 | `CIDRA_WEBHOOK_SECRET` | HMAC SHA256 secret for webhook validation | *Optional (for webhook)* |
-| `CIDRA_DASHBOARD_TOKEN` | Token for the dashboard API; required to serve it on a non-loopback host | *Optional* |
+| `CIDRA_DASHBOARD_TOKEN` | Token for the dashboard and its API; required to serve it on a non-loopback host. `cidra dashboard` prints a link that carries it (`/#token=...`) | *Optional* |
+| `CIDRA_ENV_FILE` | The `.env` CIDRA reads and the dashboard's Settings page writes. Default: `.env` in the directory CIDRA runs from | *Optional* |
 | `CIDRA_AUDIT_SIGNING_KEY` | Key that signs the audit manifest; without it the manifest is unsigned | *Optional* |
 
 The flaky-run count (5), the fix-attempt limit (3) and the sandbox timeouts (300 s per test run) are constants in [cidra/config.py](cidra/config.py) and [cidra/sandbox/limits.py](cidra/sandbox/limits.py), not environment settings.
@@ -403,31 +406,26 @@ Checked by the Docker isolation tests in [tests/integration/test_sandbox.py](tes
 
 ## 8. Testing & Verification Suite
 
-CIDRA maintains high test coverage with automated unit and integration verification suites:
+Every pull request runs all of these in CI ([CONTRIBUTING.md](CONTRIBUTING.md) has the tiers), and a requirements check fails unless every requirement in [docs/requirements.yml](docs/requirements.yml) has a test that passed.
 
 ```bash
-# 1. Run the server and API tests (47 tests)
-pytest tests/server -v
+# Unit and server tests: no Docker, network or API key needed
+pytest -q tests/unit tests/server
 
-# 2. Run the core unit tests (184 tests: SBFL, patch audit, git ops, LangGraph routing)
-#    No Docker, network or API key needed
-pytest tests/unit -v
+# Integration tests in the real Docker sandbox
+CIDRA_PRACTICE_REPO=/path/to/cidra-practice pytest -q tests/integration
 
-# 3. Run the Docker integration tests against a clone of the practice repo (23 tests)
-CIDRA_PRACTICE_REPO=/path/to/cidra-practice pytest tests/integration -v
-
-# 4. Run the Dashboard-to-Backend live wiring test suite
+# Dashboard: lint, component tests, and browser tests against the real server
 cd dashboard
-npm run test:wiring
+npm ci && npm run lint && npm test
+npx playwright install chromium && npm run e2e
 ```
 
-### Test Suite Summary
-
-- **Server Test Suite (`tests/server/`)**: 47 tests (FastAPI endpoints, HMAC signatures, settings persistence, replay safety).
-- **Core Unit Suite (`tests/unit/`)**: 184 tests (Ochiai/Tarantula SBFL ranking, patch audit guards, git isolation, flaky detection).
-- **Integration Suite (`tests/integration/`)**: 23 tests (real sandbox runs on fixture branches and corpus repositories; skipped when `CIDRA_PRACTICE_REPO` is not set).
-- **Key-free end-to-end run**: `scripts/fake_llm.py` stands in for the model so the whole pipeline can run without an API key.
-- **Wiring Verification (`test-backend-wiring.js`)**: 5 checks (live latency probes to the primary endpoint and Gemini, settings round-trip, telemetry parsing).
+- **Unit and server (`tests/unit/`, `tests/server/`)**: graph routing, patch audit, git isolation, flaky detection, FastAPI endpoints, HMAC signatures, settings persistence.
+- **Integration (`tests/integration/`)**: real sandbox runs on fixture branches and corpus repositories, and publishing against a local fake of GitHub's API.
+- **Pipeline**: the whole graph on the 7 practice fixtures, with `scripts/fake_llm.py` standing in for the model.
+- **Dashboard components (`dashboard/src/__tests__/`)**: React screens rendered with fixed data (Vitest).
+- **Dashboard in a browser (`dashboard/e2e/`)**: Playwright drives every screen of the real server, which runs on a scratch run history and a scratch `.env`, never yours. Any console error or failed request fails the test.
 
 ### Measured results
 
@@ -478,7 +476,7 @@ cidra/
 ├── dashboard/            # Modern React + Vite frontend source code
 │   ├── src/              # UI components, views, icons, design system tokens
 │   ├── vite.config.js    # Direct-to-cidra/static compiler & dev server
-│   └── package.json      # Frontend dependencies & wiring test scripts
+│   └── package.json      # Frontend dependencies, lint, test and e2e scripts
 ├── docs/                 # Engineering specs, threat model, API contracts
 ├── eval/                 # Evaluation harness & benchmark fixtures
 ├── tests/                # Test suites
