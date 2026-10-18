@@ -164,20 +164,46 @@ def test_post_settings_updates_api_keys_securely(client):
     assert "CIDRA_API_KEY=sk-or-v1-newsecret9876543210zyxw" in saved_env_after
 
 
-def test_provider_connection_test(client):
-    """Verify POST /api/settings/test returns latency and status."""
-    # Mock urllib response for OpenRouter ping
-    mock_resp = MagicMock()
-    mock_resp.status = 200
+@pytest.mark.req("UI-PROBE")
+def test_the_key_test_makes_the_call_cidra_makes_on_the_configured_endpoint(client):
+    """A one-token completion with CIDRA_MODEL_FIX at CIDRA_BASE_URL: it proves the
+    key, the endpoint and the model id together, whatever the provider."""
+    mock_resp = MagicMock(status=200)
     mock_resp.__enter__.return_value = mock_resp
+    with patch("urllib.request.urlopen", return_value=mock_resp) as opened:
+        data = client.post("/api/settings/test", json={"provider_id": "cidra_api_key"}).json()
+    req = opened.call_args.args[0]
+    assert req.full_url == "https://openrouter.ai/api/v1/chat/completions" and req.get_method() == "POST"
+    assert json.loads(req.data) == {"model": "anthropic/claude-sonnet-4.5", "max_tokens": 1,
+                                    "messages": [{"role": "user", "content": "ping"}]}
+    assert req.get_header("Authorization") == "Bearer sk-or-v1-testkey1234567890abcdef"
+    assert data["ok"] is True and "latency_ms" in data
+    assert data["message"] == "openrouter.ai answered with anthropic/claude-sonnet-4.5"
 
-    with patch("urllib.request.urlopen", return_value=mock_resp):
-        res = client.post("/api/settings/test", json={"provider_id": "cidra_api_key"})
-        assert res.status_code == 200
-        data = res.json()
-        assert data["ok"] is True
-        assert "latency_ms" in data
-        assert data["message"] == "OpenRouter verified"
+
+@pytest.mark.req("UI-PROBE")
+def test_a_refused_key_test_says_what_the_provider_said(client):
+    import io
+    import urllib.error
+    body = io.BytesIO(b'{"error":{"message":"No endpoints found for anthropic/claude-sonnet-4.5.","code":404}}')
+    err = urllib.error.HTTPError("https://openrouter.ai/api/v1/chat/completions", 404, "Not Found", {}, body)
+    with patch("urllib.request.urlopen", side_effect=err):
+        data = client.post("/api/settings/test", json={"provider_id": "cidra_api_key"}).json()
+    assert data["ok"] is False and data["error"] == "HTTP 404: No endpoints found for anthropic/claude-sonnet-4.5."
+
+
+@pytest.mark.req("UI-PROBE")
+def test_the_primary_key_is_labelled_with_its_real_endpoint(client):
+    keys = {k["id"]: k for k in client.get("/api/settings").json()["keys"]}
+    assert keys["cidra_api_key"]["provider"] == "openrouter.ai"
+
+
+def test_saving_a_base_url_applies_it_and_refuses_a_non_url(client, monkeypatch):
+    monkeypatch.setattr(config, "BASE_URL", config.BASE_URL)
+    client.post("/api/settings", json={"models": {"base_url": "https://api.anthropic.com/v1/"}})
+    assert config.BASE_URL == "https://api.anthropic.com/v1/"
+    client.post("/api/settings", json={"models": {"base_url": "javascript:alert(1)"}})
+    assert "javascript" not in settingsmod.ENV_PATH.read_text(encoding="utf-8") and config.BASE_URL.startswith("https://")
 
 
 def test_list_runs_endpoint(client, monkeypatch):

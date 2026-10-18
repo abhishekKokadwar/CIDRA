@@ -11,6 +11,7 @@ import urllib.error
 import json
 from pathlib import Path
 from typing import Any, Dict
+from urllib.parse import urlsplit
 
 from cidra import config
 
@@ -94,8 +95,9 @@ def get_current_settings() -> Dict[str, Any]:
     keys_list = [
         {
             "id": "cidra_api_key",
-            "provider": "OpenRouter",
-            "label": "Primary LLM Inference Gateway",
+            # The endpoint actually configured, not a provider name guessed for it.
+            "provider": urlsplit(env.get("CIDRA_BASE_URL") or config.BASE_URL).hostname or "Custom endpoint",
+            "label": "Primary model endpoint (CIDRA_BASE_URL)",
             "envVar": "CIDRA_API_KEY",
             "masked": mask_secret(env.get("CIDRA_API_KEY") or config.API_KEY),
             "configured": bool(env.get("CIDRA_API_KEY") or config.API_KEY),
@@ -197,7 +199,7 @@ def save_settings(payload: Dict[str, Any]) -> Dict[str, Any]:
         updates["CIDRA_MODEL_ANALYZE"] = str(models_input["model_analyze"])
     if "model_fix" in models_input:
         updates["CIDRA_MODEL_FIX"] = str(models_input["model_fix"])
-    if "base_url" in models_input:
+    if "base_url" in models_input and urlsplit(str(models_input["base_url"])).scheme in ("http", "https"):
         updates["CIDRA_BASE_URL"] = str(models_input["base_url"])
 
     # Extract flakiness & sandbox
@@ -228,6 +230,8 @@ def save_settings(payload: Dict[str, Any]) -> Dict[str, Any]:
 
         if "CIDRA_API_KEY" in updates:
             config.API_KEY = updates["CIDRA_API_KEY"]
+        if "CIDRA_BASE_URL" in updates:
+            config.BASE_URL = updates["CIDRA_BASE_URL"]
         if "CIDRA_MODEL_ANALYZE" in updates:
             config.MODEL_ANALYZE = updates["CIDRA_MODEL_ANALYZE"]
         if "CIDRA_MODEL_FIX" in updates:
@@ -250,29 +254,30 @@ def test_provider(provider_id: str) -> Dict[str, Any]:
     start_time = time.time()
 
     try:
-        if provider_id == "cidra_api_key":
-            key = env.get("CIDRA_API_KEY") or config.API_KEY
+        if provider_id in ("cidra_api_key", "gemini_api_key"):
+            if provider_id == "cidra_api_key":
+                key = env.get("CIDRA_API_KEY") or config.API_KEY
+                base = env.get("CIDRA_BASE_URL") or config.BASE_URL
+                model = env.get("CIDRA_MODEL_FIX") or config.MODEL_FIX
+            else:
+                key = env.get("GEMINI_API_KEY") or config.GEMINI_API_KEY
+                base, model = config.GEMINI_BASE_URL, config.FALLBACK_MODEL
             if not key:
-                return {"ok": False, "error": "No API key configured for OpenRouter"}
+                return {"ok": False, "error": "No API key set"}
+            # The call CIDRA makes, capped at one token: it checks the key, the
+            # endpoint and the model id together. A model list would not: some
+            # providers serve it without a key, and it says nothing of the id.
             req = urllib.request.Request(
-                "https://openrouter.ai/api/v1/auth/key",
-                headers={"Authorization": f"Bearer {key}", "User-Agent": "CIDRA/1.0"},
+                base.rstrip("/") + "/chat/completions", method="POST",
+                data=json.dumps({"model": model, "max_tokens": 1,
+                                 "messages": [{"role": "user", "content": "ping"}]}).encode(),
+                headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+                         "User-Agent": "CIDRA/1.0"},
             )
-            with urllib.request.urlopen(req, timeout=5) as resp:
+            with urllib.request.urlopen(req, timeout=15) as resp:
                 elapsed_ms = round((time.time() - start_time) * 1000)
-                return {"ok": True, "latency_ms": elapsed_ms, "status": resp.status, "message": "OpenRouter verified"}
-
-        elif provider_id == "gemini_api_key":
-            key = env.get("GEMINI_API_KEY") or config.GEMINI_API_KEY
-            if not key:
-                return {"ok": False, "error": "No Gemini API key configured"}
-            req = urllib.request.Request(
-                config.GEMINI_BASE_URL + "models",
-                headers={"Authorization": f"Bearer {key}", "User-Agent": "CIDRA/1.0"},
-            )
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                elapsed_ms = round((time.time() - start_time) * 1000)
-                return {"ok": True, "latency_ms": elapsed_ms, "status": resp.status, "message": "Gemini verified"}
+                return {"ok": True, "latency_ms": elapsed_ms, "status": resp.status,
+                        "message": f"{urlsplit(base).hostname} answered with {model}"}
 
         elif provider_id in ("github_token", "github_token_ro"):
             token = (
@@ -298,7 +303,18 @@ def test_provider(provider_id: str) -> Dict[str, Any]:
 
     except urllib.error.HTTPError as e:
         elapsed_ms = round((time.time() - start_time) * 1000)
-        return {"ok": False, "latency_ms": elapsed_ms, "status": e.code, "error": f"HTTP {e.code}: {e.reason}"}
+        return {"ok": False, "latency_ms": elapsed_ms, "status": e.code, "error": f"HTTP {e.code}: {_provider_error(e)}"}
     except Exception as e:
         elapsed_ms = round((time.time() - start_time) * 1000)
         return {"ok": False, "latency_ms": elapsed_ms, "error": str(e)}
+
+
+def _provider_error(e: urllib.error.HTTPError) -> str:
+    """The provider's own message ("No endpoints found for ...", "Invalid API Key"),
+    which says what to fix; the HTTP reason phrase alone does not."""
+    try:
+        err = json.loads(e.read()).get("error")
+        msg = err.get("message") if isinstance(err, dict) else err
+        return str(msg)[:200] if msg else str(e.reason)
+    except Exception:  # noqa: BLE001 - any unreadable body falls back to the reason
+        return str(e.reason)

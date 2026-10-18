@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { 
   Play, 
-  RotateCcw, 
-  Cpu, 
   Sliders, 
   CheckCircle2, 
   Flame, 
@@ -11,11 +9,7 @@ import {
   ShieldCheck, 
   Check, 
   ExternalLink,
-  Bot,
   FileCode2,
-  Sparkles,
-  ArrowRight,
-  Layers,
   CircleDot
 } from 'lucide-react';
 import CodeDiffViewer from './CodeDiffViewer';
@@ -29,7 +23,7 @@ const PRESETS = [
     repo: 'local/dev',
     branch: 'HEAD',
     command: 'pytest -q tests/test_api.py',
-    model: 'nvidia/nemotron-3-super-120b-a12b:free',
+    model: 'claude-haiku-4-5',
     category: 'missing_dependency',
     iterations: 3,
     description: 'Intercepts ModuleNotFoundError and synthesizes clean requirements.txt patch.'
@@ -42,7 +36,7 @@ const PRESETS = [
     repo: 'local/dev',
     branch: 'HEAD',
     command: 'pytest -q tests/test_timing.py',
-    model: 'anthropic/claude-3.5-sonnet',
+    model: 'claude-haiku-4-5',
     category: 'flaky_test',
     iterations: 5,
     description: 'Runs 5 isolated container passes to detect non-deterministic race conditions.'
@@ -55,10 +49,10 @@ const PRESETS = [
     repo: 'abhishekKokadwar/CIDRA',
     branch: 'main',
     command: 'pytest -q tests/test_calc.py',
-    model: 'anthropic/claude-3.5-sonnet',
+    model: 'claude-haiku-4-5',
     category: 'assertion_error',
     iterations: 1,
-    description: 'Calculates expected vs actual values with Claude 3.5 Sonnet to repair test logic.'
+    description: 'Compares expected and actual values and asks the model for a fix to the logic.'
   }
 ];
 
@@ -71,12 +65,12 @@ const GRAPH_NODES = [
   { id: 'decision', step: '06', title: 'Decision Gate', desc: 'Verified fix ready or flaky test surfaced' }
 ];
 
-export default function OrchestratorView({ onRunCreated }) {
+export default function OrchestratorView() {
   const [selectedPresetId, setSelectedPresetId] = useState('f01');
   const [repo, setRepo] = useState('local/dev');
   const [branch, setBranch] = useState('HEAD');
   const [command, setCommand] = useState('pytest -q tests/test_api.py');
-  const [model, setModel] = useState('nvidia/nemotron-3-super-120b-a12b:free');
+  const [model, setModel] = useState('claude-haiku-4-5');
   const [iterations, setIterations] = useState(3);
 
   const [isRunning, setIsRunning] = useState(false);
@@ -379,10 +373,8 @@ export default function OrchestratorView({ onRunCreated }) {
               disabled={isRunning}
               style={{ width: '100%', background: 'var(--bg-dark)', border: '1px solid var(--border-light)', color: 'var(--text-main)', padding: '0.75rem 0.85rem', borderRadius: '8px', fontSize: '0.875rem' }}
             >
-              <option value="nvidia/nemotron-3-super-120b-a12b:free">nvidia/nemotron-3-super-120b (Free Tier)</option>
-              <option value="anthropic/claude-3.5-sonnet">anthropic/claude-3.5-sonnet (High Precision)</option>
-              <option value="openai/gpt-4o">openai/gpt-4o</option>
-              <option value="google/gemini-2.0-flash">google/gemini-2.0-flash</option>
+              <option value="claude-haiku-4-5">claude-haiku-4-5</option>
+              <option value="gemini-3.5-flash">gemini-3.5-flash</option>
             </select>
           </div>
         </div>

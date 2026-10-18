@@ -28,9 +28,9 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [authNeeded, setAuthNeeded] = useState(false);
 
+  // `loading` covers the first load; Refresh sets `refreshing` before calling this.
   const fetchTelemetry = async () => {
     try {
-      setRefreshing(true);
       const res = await apiFetch(`/telemetry.json?t=${Date.now()}`);
       setAuthNeeded(res.status === 401);
       if (res.ok) {
@@ -56,6 +56,8 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Sets state only after its first await, which this rule cannot see.
+    // oxlint-disable-next-line react/set-state-in-effect
     fetchTelemetry();
   }, []);
 
@@ -85,14 +87,14 @@ export default function App() {
             runs={telemetry.runs} 
             loading={loading}
             refreshing={refreshing}
-            onRefresh={fetchTelemetry}
+            onRefresh={() => { setRefreshing(true); fetchTelemetry(); }}
             onRunClick={handleRunClick}
             onOpenOrchestrator={() => setActiveTab('orchestrator')}
           />
         )}
 
         {activeTab === 'orchestrator' && (
-          <OrchestratorView onRunCreated={fetchTelemetry} />
+          <OrchestratorView />
         )}
         
         {activeTab === 'explorer' && (
@@ -129,7 +131,7 @@ function CommandCenter({ stats, runs, loading, refreshing, onRefresh, onRunClick
             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.45rem 0.85rem', fontSize: '0.8rem' }}
           >
             <Workflow size={13} />
-            Launch Pipeline
+            Watch demo
           </button>
           <button 
             className="btn-secondary" 

@@ -117,3 +117,19 @@
 - id: UI-TOKEN
   title: The dashboard works behind its access token
   accept: With CIDRA_DASHBOARD_TOKEN set, the runs and the API need the token; the link `cidra dashboard` prints carries it and the page sends it on every call; a page without it says how to get in instead of showing nothing or sample data.
+
+- id: UI-PROBE
+  title: Settings test the model setup CIDRA will use
+  accept: The primary key's test is a one-token completion with the configured fix model at the configured endpoint, so a wrong key, endpoint or model id fails it with the provider's own message; the key is labelled with that endpoint's host, not a fixed provider name.
+
+- id: UI-SETTINGS-HONEST
+  title: Settings never show sample credentials
+  accept: When the settings API cannot be read (the hosted demo, a stopped server), the page says where settings live and shows no keys, instead of a made-up configured set.
+
+- id: UI-MODELS
+  title: The model choice is one the endpoint serves
+  accept: The Models tab offers the models CIDRA is set up for, each with its endpoint, plus any id typed in; choosing one saves the model and its endpoint to .env together, and no catalogue of ids for another provider is offered.
+
+- id: UI-DEMO
+  title: The scripted demo is labelled as a demo
+  accept: The Command Center's button to the scripted walkthrough says it is a demo; nothing in the dashboard offers to launch a run it does not launch.
