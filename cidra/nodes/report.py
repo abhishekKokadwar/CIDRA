@@ -60,7 +60,8 @@ def _why_failed(state: DebugState) -> tuple[str, list[str]]:
     err = state.get("analysis_error")
     last = (state.get("repro_results") or [None])[-1]
     if state.get("env_ready") is False and last is not None and last.step == "install" and not last.passed:
-        cmd = state.get("install_command") or config.INSTALL_COMMAND
+        from cidra.nodes.environment import sandbox_install_command
+        cmd = sandbox_install_command(state)
         return "⚠️ **CIDRA — could not install the dependencies**", [
             "", f"The sandbox could not install the project with `{cmd}`, so CIDRA did not try to "
                 "reproduce or fix the failure.", "", "_Install output:_", *_fence(err, 600), "",

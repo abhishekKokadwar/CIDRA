@@ -173,8 +173,34 @@ def env_prefix(state: DebugState, skip: frozenset = frozenset()) -> str:
     )
 
 
+_EXTRA_REQUIREMENTS = ("requirements-dev.txt", "requirements-test.txt", "dev-requirements.txt", "test-requirements.txt")
+_TEST_EXTRAS = ("test", "tests", "testing", "dev")
+
+
+def detect_install(tree: pathlib.Path) -> str:
+    """One `pip install` for a repository nobody configured (ROADMAP M4): its
+    requirements files, else the package itself with its test extra, else
+    nothing. The sandbox appends `--target`, so this stays a single pip call."""
+    if (tree / "requirements.txt").is_file():
+        files = ["requirements.txt", *(f for f in _EXTRA_REQUIREMENTS if (tree / f).is_file())]
+        return "pip install --quiet " + " ".join(f"-r {f}" for f in files)
+    if (tree / "pyproject.toml").is_file() or (tree / "setup.py").is_file():
+        extras = {}
+        try:
+            import tomllib
+            with open(tree / "pyproject.toml", "rb") as f:
+                extras = tomllib.load(f).get("project", {}).get("optional-dependencies", {})
+        except (OSError, ValueError):
+            pass  # setup.py only, or a pyproject.toml that does not parse: install the package alone
+        extra = next((e for e in _TEST_EXTRAS if e in extras), None)
+        return f"pip install --quiet '.[{extra}]'" if extra else "pip install --quiet ."
+    return "true"  # nothing to install; `true` ignores the --target the sandbox appends
+
+
 def sandbox_install_command(state: DebugState) -> str:
-    return state.get("install_command") or config.INSTALL_COMMAND
+    """The run's install command: the operator's, else one detected from the checkout."""
+    return (state.get("install_command") or config.INSTALL_COMMAND
+            or detect_install(pathlib.Path(state.get("source_dir") or PRACTICE_REPO_DIR)))
 
 
 def sandbox_test_command(state: DebugState) -> str:

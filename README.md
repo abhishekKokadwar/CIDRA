@@ -283,7 +283,7 @@ jobs:
 
 ### Install and test commands
 
-The sandbox installs dependencies with `pip install --quiet -r requirements.txt` and runs `pytest -q`. If your repository does it differently, set both. With the composite action they are the `install_command` and `test_command` inputs; with `cidra action` they are `CIDRA_INSTALL_COMMAND` and `CIDRA_TEST_COMMAND`.
+Unless told otherwise, the sandbox installs `requirements.txt` (plus `requirements-dev.txt`, `requirements-test.txt`, `dev-requirements.txt` or `test-requirements.txt` beside it); without one, the package itself from `pyproject.toml` or `setup.py`, with its `test`, `tests`, `testing` or `dev` extra if it declares one; otherwise nothing. It runs `pytest -q`. If your repository does it differently, set them. With the composite action they are the `install_command` and `test_command` inputs; with `cidra action` they are `CIDRA_INSTALL_COMMAND` and `CIDRA_TEST_COMMAND`.
 
 - **Install** runs with network, in a throwaway container, and must be a single `pip install` of the dependencies: CIDRA appends `--target` to it. The project itself is not installed; tests import it from the source tree. Examples: `pip install --quiet -r requirements-dev.txt`, `pip install --quiet pytest httpx`.
 - **Test** runs with no network. Put `2>&1` at the end so the log CIDRA reads includes errors. For a `src/` layout: `PYTHONPATH=src pytest -q 2>&1`.
@@ -322,7 +322,7 @@ Copy [.env.example](.env.example) to `.env` to configure your environment:
 | `CIDRA_MAX_LLM_CALLS` | Most model requests one run may make (retries and fallbacks included) | `8` |
 | `CIDRA_MAX_LLM_TOKENS` | Most tokens one run may spend | `40000` |
 | `CIDRA_PRICE_IN` / `CIDRA_PRICE_OUT` | Your price per million prompt / completion tokens, for the cost line in reports. Unset: a list price for a model CIDRA knows (`claude-haiku-4-5`), else no cost | *Optional* |
-| `CIDRA_INSTALL_COMMAND` | One `pip install` of the dependencies, run in the sandbox (`--target` is appended) | `pip install --quiet -r requirements.txt` |
+| `CIDRA_INSTALL_COMMAND` | One `pip install` of the dependencies, run in the sandbox (`--target` is appended) | detected: requirements files, else `pyproject.toml` / `setup.py` |
 | `CIDRA_TEST_COMMAND` | Test command, run in the sandbox with no network | `pytest -q 2>&1` |
 | `CIDRA_WEBHOOK_SECRET` | HMAC SHA256 secret for webhook validation | *Optional (for webhook)* |
 | `CIDRA_DASHBOARD_TOKEN` | Token for the dashboard API; required to serve it on a non-loopback host | *Optional* |

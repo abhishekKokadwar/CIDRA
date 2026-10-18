@@ -83,7 +83,8 @@ RUN_HISTORY_PATH = os.environ.get("CIDRA_RUN_HISTORY", "cidra_run_history.jsonl"
 # Install and test commands. Set by whoever operates CIDRA (these variables, or
 # per run through the state); never assembled from LLM output or repo content.
 # The install command must be a `pip install ...`: the sandbox appends --target.
-INSTALL_COMMAND = os.environ.get("CIDRA_INSTALL_COMMAND") or "pip install --quiet -r requirements.txt"
+# Unset: chosen per repository from the files it has (environment.detect_install).
+INSTALL_COMMAND = os.environ.get("CIDRA_INSTALL_COMMAND") or None
 TEST_COMMAND = os.environ.get("CIDRA_TEST_COMMAND") or "pytest -q 2>&1"
 
 # Log isolation windows (lines around an error marker)

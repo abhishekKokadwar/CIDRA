@@ -70,8 +70,9 @@ def rerun_command(state: DebugState) -> str:
     shell-quoted: test ids and commands come from the repository, and a reviewer
     will paste this into a terminal."""
     from cidra import config
+    from cidra.nodes.environment import sandbox_install_command
     parts = ["cidra", "verify", "--sha", state.get("commit_sha") or "HEAD", "--patch", "fix.diff",
-             "--install", state.get("install_command") or config.INSTALL_COMMAND,
+             "--install", sandbox_install_command(state),
              "--test", state.get("test_command") or config.TEST_COMMAND]
     for target in state.get("target_tests") or []:
         parts += ["--target", target]

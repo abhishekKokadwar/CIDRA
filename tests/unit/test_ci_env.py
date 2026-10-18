@@ -101,10 +101,11 @@ def test_python_version_falls_back_to_the_default(tmp_path):
 
 # --- the install and test commands the sandbox runs ---
 
-def test_install_and_test_commands_default_and_per_run_override():
+def test_install_and_test_commands_default_and_per_run_override(tmp_path):
     from cidra import config
     from cidra.nodes.environment import sandbox_install_command, sandbox_test_command
-    assert sandbox_install_command({}) == config.INSTALL_COMMAND
+    (tmp_path / "requirements.txt").write_text("")
+    assert sandbox_install_command({"source_dir": str(tmp_path)}) == "pip install --quiet -r requirements.txt"
     junit = "rm -f /home/cidra/junit.xml; export PYTEST_ADDOPTS=--junitxml=/home/cidra/junit.xml; "
     assert sandbox_test_command({}) == junit + config.TEST_COMMAND
     state = {"install_command": "pip install --quiet .", "test_command": "pytest -q tests/unit 2>&1",
