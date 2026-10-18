@@ -189,6 +189,15 @@ cidra fix
 
 `cidra fix` repairs the last commit (`HEAD`), not uncommitted changes; it warns if there are any. Every step runs in Docker, including the first test run that produces the failure log, so the repository's code never runs on your machine. It never pushes or comments.
 
+To check a fix CIDRA proposed without trusting its report, rerun the verification yourself. The evidence block of every report with a patch prints this command with the run's own values:
+
+```bash
+gh pr diff <number> > fix.diff
+cidra verify --sha <failing commit> --patch fix.diff --target tests/test_calc.py::test_add
+```
+
+It reproduces the failure in the sandbox, applies the patch to a clean copy, reruns the tests and prints each test before and after. It exits 0 only when the targets go from failing to passing and no test that passed now fails.
+
 ### Option C: Terminal User Interface (Rich TUI)
 
 If you are working in a headless server environment without a browser:
