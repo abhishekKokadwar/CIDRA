@@ -54,8 +54,8 @@ manual command; `--twice` shows the idempotency no-op.
   and `routers.py` imported the constants at load time, so the engine never sees them.
 - `CIDRA_ENABLE_RATE_LIMIT_BACKOFF` (set by `action.yml`), `limits.AUTO_REMOVE` and the
   `model` input of `action.yml` are read by nothing.
-- The settings page's "test" button for the primary key always probes OpenRouter, whatever
-  `CIDRA_BASE_URL` is.
+- (Done 2026-10-19: the primary key's test is a one-token completion with the configured
+  model at `CIDRA_BASE_URL`; the Action's unused `model` input is removed.)
 - (Done 2026-10-17: the five-provider fallback chain, mostly retired or unknown models, was
   replaced by one optional Gemini fallback.)
 **Fix:** remove them, or read them at call time.

@@ -83,3 +83,13 @@ test('[UI-TOKEN] with a dashboard token, the link carrying it works and a page w
   await stranger.close();
   expect(problems).toEqual([]);  // the stranger's 401s are on its own page, which is not watched
 });
+
+test('[UI-MODELS] choosing a model saves it with its endpoint to the server\'s .env', async ({ page }) => {
+  await page.goto('/');
+  await nav(page, 'Settings');
+  await page.getByText('Model Catalog & Routing').click();
+  await page.getByRole('button', { name: 'Use this model' }).first().click();  // claude-haiku-4-5
+  await expect(page.getByRole('button', { name: '✓ In use' })).toBeVisible();
+  const saved = await (await page.request.get('/api/settings')).json();
+  expect(saved.models).toMatchObject({ model_fix: 'claude-haiku-4-5', base_url: 'https://api.anthropic.com/v1/' });
+});

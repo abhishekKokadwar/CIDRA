@@ -11,7 +11,6 @@ import {
   Eye, 
   EyeOff, 
   Zap, 
-  Search, 
   Sliders, 
   ShieldCheck, 
   Check, 
@@ -19,97 +18,21 @@ import {
   Flame
 } from 'lucide-react';
 
-const DEFAULT_CATALOG_MODELS = [
+// The models CIDRA is set up for. Any other id the endpoint serves can be typed in.
+const KNOWN_MODELS = [
   {
-    id: 'anthropic/claude-3.5-sonnet',
-    name: 'Claude 3.5 Sonnet',
-    provider: 'Anthropic / OpenRouter',
-    role: 'Coding SOTA & Complex Reasoning',
-    category: 'reasoning',
-    latency: '2.4s',
-    context: '200k',
-    isFree: false,
-    description: 'Gold standard for code synthesis, multi-file diff generation, and deep context evaluation.'
+    id: 'claude-haiku-4-5',
+    baseUrl: 'https://api.anthropic.com/v1/',
+    note: 'The model CIDRA is measured with (eval/results). $1 / $5 per million input / output tokens.',
   },
   {
-    id: 'anthropic/claude-haiku-4.5',
-    name: 'Claude Haiku 4.5',
-    provider: 'Anthropic / OpenRouter',
-    role: 'Ultra-Fast Trace Isolation',
-    category: 'fast',
-    latency: '0.8s',
-    context: '200k',
-    isFree: false,
-    description: 'Low-latency classification model for parsing stack traces and bounding error regions.'
+    id: 'gemini-3.5-flash',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+    note: 'The default when CIDRA_BASE_URL is unset, and the fallback model.',
   },
-  {
-    id: 'nvidia/nemotron-3-super-120b-a12b:free',
-    name: 'Nemotron 120B (Free Tier)',
-    provider: 'NVIDIA / OpenRouter',
-    role: 'High-Throughput Trace Analysis',
-    category: 'free',
-    latency: '1.2s',
-    context: '128k',
-    isFree: true,
-    description: 'Zero-cost inference model with high trace localization performance on Python errors.'
-  },
-  {
-    id: 'openai/gpt-4o',
-    name: 'GPT-4o (Omni)',
-    provider: 'OpenAI / OpenRouter',
-    role: 'Multi-Modal ANSI Parser',
-    category: 'reasoning',
-    latency: '1.8s',
-    context: '128k',
-    isFree: false,
-    description: 'Top-tier general model suited for complicated multi-step build failures and log coloring.'
-  },
-  {
-    id: 'google/gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    provider: 'Google Gemini',
-    role: 'Massive Monolithic Log Ingestion',
-    category: 'fast',
-    latency: '0.6s',
-    context: '1M',
-    isFree: false,
-    description: '1 Million token context window capable of ingesting whole multi-megabyte CI test runs.'
-  }
 ];
 
-const FALLBACK_SETTINGS = {
-  isCloudViewer: true,
-  keys: [
-    { id: 'cidra_api_key', provider: 'OpenRouter', label: 'Primary LLM Inference Gateway', envVar: 'CIDRA_API_KEY', masked: 'sk-or-v••••••••c4a2', configured: true, canTest: false, baseUrl: 'https://openrouter.ai/api/v1' },
-    { id: 'gemini_api_key', provider: 'Google Gemini', label: 'Fallback when the primary call fails', envVar: 'GEMINI_API_KEY', masked: 'AIza••••••••7c1d', configured: true, canTest: false, baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/' },
-    { id: 'github_token', provider: 'GitHub PAT (Read/Write)', label: 'Automated Pull Requests & Branches', envVar: 'CIDRA_GITHUB_TOKEN', masked: 'github_pat_••••••••3301', configured: true, canTest: false, baseUrl: 'https://api.github.com' },
-    { id: 'github_token_ro', provider: 'GitHub PAT (Read-Only)', label: 'Safe CI Log & Metadata Fetching', envVar: 'CIDRA_GITHUB_TOKEN_RO', masked: 'github_pat_••••••••5519', configured: true, canTest: false, baseUrl: 'https://api.github.com' },
-    { id: 'webhook_secret', provider: 'Webhook HMAC Secret', label: 'GitHub Webhook Delivery Verification', envVar: 'CIDRA_WEBHOOK_SECRET', masked: 'whsec_••••••••4120', configured: true, canTest: false, baseUrl: '' }
-  ],
-  models: {
-    model_analyze: 'anthropic/claude-3.5-sonnet',
-    model_fix: 'anthropic/claude-3.5-sonnet',
-    base_url: 'https://openrouter.ai/api/v1'
-  },
-  flakiness: {
-    flaky_runs: 5,
-    flaky_score_threshold: 1,
-    max_fix_attempts: 3,
-    container_timeout: 60,
-    enable_pr_creation: true,
-    practice_repo: 'helpmecode69/cidra-practice'
-  },
-  system: {
-    python_version: '3.11.0',
-    framework: 'LangGraph Core',
-    idempotency_db: 'cidra_idempotency.db',
-    worktree_root: 'worktrees',
-    fix_cache_path: 'cidra_fix_cache.json',
-    run_history_path: 'cidra_run_history.jsonl',
-    status: 'operational',
-    env_file: '.env'
-  }
-};
+const UNAVAILABLE_HELP = 'Settings are edited in the dashboard you run yourself: `cidra dashboard` reads and writes the .env of the directory you start it in. This page could not reach that server.';
 
 export default function SettingsView() {
   const [activeSubTab, setActiveSubTab] = useState('keys'); // 'keys' | 'models' | 'container' | 'runtime'
@@ -119,8 +42,8 @@ export default function SettingsView() {
   const [saveMessage, setSaveMessage] = useState(null);
 
   // Form States
-  const [selectedAnalysis, setSelectedAnalysis] = useState('anthropic/claude-3.5-sonnet');
-  const [selectedFix, setSelectedFix] = useState('anthropic/claude-3.5-sonnet');
+  const [selectedAnalysis, setSelectedAnalysis] = useState('');
+  const [selectedFix, setSelectedFix] = useState('');
   const [flakyRuns, setFlakyRuns] = useState(5);
   const [flakyThreshold, setFlakyThreshold] = useState(1);
   const [maxFixAttempts, setMaxFixAttempts] = useState(3);
@@ -139,14 +62,12 @@ export default function SettingsView() {
   const [newKeySecret, setNewKeySecret] = useState('');
   const [showNewSecret, setShowNewSecret] = useState(false);
 
-  // Model Catalog Search & Filters
-  const [modelSearch, setModelSearch] = useState('');
-  const [modelCategory, setModelCategory] = useState('all');
+  const [customModel, setCustomModel] = useState('');
+  const [unavailable, setUnavailable] = useState(false);
 
-  // Load Settings from Backend
+  // Load Settings from Backend. `loading` starts true; a reload sets it first.
   const loadSettings = async () => {
     try {
-      setLoading(true);
       const res = await apiFetch(`/api/settings?t=${Date.now()}`);
       if (res.status === 401) {
         setSaveMessage({ type: 'error', text: AUTH_HELP });
@@ -154,8 +75,8 @@ export default function SettingsView() {
         const data = await res.json();
         setSettings(data);
         if (data.models) {
-          setSelectedAnalysis(data.models.model_analyze || 'anthropic/claude-3.5-sonnet');
-          setSelectedFix(data.models.model_fix || 'anthropic/claude-3.5-sonnet');
+          setSelectedAnalysis(data.models.model_analyze || '');
+          setSelectedFix(data.models.model_fix || '');
         }
         if (data.flakiness) {
           setFlakyRuns(data.flakiness.flaky_runs ?? 5);
@@ -166,18 +87,18 @@ export default function SettingsView() {
           setPracticeRepo(data.flakiness.practice_repo || 'helpmecode69/cidra-practice');
         }
       } else {
-        // Fallback for cloud deployment (Vercel)
-        setSettings(FALLBACK_SETTINGS);
+        setUnavailable(true);  // e.g. the hosted demo, which has no API
       }
-    } catch (err) {
-      console.warn('API unreachable, using cloud settings snapshot:', err);
-      setSettings(FALLBACK_SETTINGS);
+    } catch {
+      setUnavailable(true);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Sets state only after its first await, which this rule cannot see.
+    // oxlint-disable-next-line react/set-state-in-effect
     loadSettings();
   }, []);
 
@@ -188,7 +109,8 @@ export default function SettingsView() {
       const payload = {
         models: {
           model_analyze: overrides.model_analyze || selectedAnalysis,
-          model_fix: overrides.model_fix || selectedFix
+          model_fix: overrides.model_fix || selectedFix,
+          ...(overrides.base_url ? { base_url: overrides.base_url } : {})
         },
         flakiness: {
           flaky_runs: overrides.flaky_runs ?? flakyRuns,
@@ -208,10 +130,7 @@ export default function SettingsView() {
       });
 
       if (res.ok) {
-        const data = await res.json();
-        if (data.settings) {
-          setSettings(data.settings);
-        }
+        setSettings(await res.json());  // the server answers with the settings as saved
         setSaveMessage({ type: 'success', text: 'Saved and persisted to .env' });
         setTimeout(() => setSaveMessage(null), 3000);
       } else {
@@ -281,23 +200,14 @@ export default function SettingsView() {
     setShowNewSecret(false);
   };
 
-  // Model filter
-  const filteredModels = DEFAULT_CATALOG_MODELS.filter(m => {
-    const matchesSearch = 
-      m.name.toLowerCase().includes(modelSearch.toLowerCase()) ||
-      m.id.toLowerCase().includes(modelSearch.toLowerCase()) ||
-      m.provider.toLowerCase().includes(modelSearch.toLowerCase()) ||
-      m.role.toLowerCase().includes(modelSearch.toLowerCase());
-    const matchesCategory = 
-      modelCategory === 'all' || 
-      (modelCategory === 'free' && m.isFree) || 
-      (modelCategory === m.category);
-    return matchesSearch && matchesCategory;
-  });
-
   return (
     <div className="animate-in" style={{ width: '100%', maxWidth: '100%', paddingBottom: '4rem' }}>
       
+      {unavailable && (
+        <div role="alert" style={{ padding: '0.75rem 1rem', marginBottom: '1.5rem', borderRadius: '8px', border: '1px solid rgba(245, 165, 36, 0.3)', background: 'rgba(245, 165, 36, 0.1)', color: 'var(--color-warning)' }}>
+          {UNAVAILABLE_HELP}
+        </div>
+      )}
       {/* Top Header */}
       <header style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
@@ -308,13 +218,13 @@ export default function SettingsView() {
               </h1>
               <span style={{ 
                 fontFamily: 'var(--font-code)', fontSize: '0.75rem', 
-                background: settings?.isCloudViewer ? 'rgba(56, 139, 253, 0.1)' : 'rgba(23, 201, 100, 0.1)', 
-                color: settings?.isCloudViewer ? 'var(--color-accent)' : 'var(--color-success)', 
-                border: settings?.isCloudViewer ? '1px solid rgba(56, 139, 253, 0.25)' : '1px solid rgba(23, 201, 100, 0.25)', 
+                background: settings ? 'rgba(23, 201, 100, 0.1)' : 'rgba(245, 165, 36, 0.1)', 
+                color: settings ? 'var(--color-success)' : 'var(--color-warning)',
+                border: settings ? '1px solid rgba(23, 201, 100, 0.25)' : '1px solid rgba(245, 165, 36, 0.25)', 
                 borderRadius: '4px',
                 padding: '0.2rem 0.5rem', fontWeight: 600
               }}>
-                {settings?.isCloudViewer ? 'Cloud Viewer Mode' : 'Live .env Wired'}
+                {settings ? 'Live .env' : 'Not connected'}
               </span>
             </div>
             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', maxWidth: '720px', lineHeight: 1.5 }}>
@@ -399,7 +309,7 @@ export default function SettingsView() {
               </div>
             </div>
             <button 
-              onClick={loadSettings}
+              onClick={() => { setLoading(true); loadSettings(); }}
               className="btn-secondary"
               style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
             >
@@ -590,7 +500,7 @@ export default function SettingsView() {
                   onChange={(e) => setNewKeyEnvVar(e.target.value)}
                   style={{ width: '100%', background: 'var(--bg-dark)', border: '1px solid var(--border-light)', color: 'var(--text-main)', padding: '0.6rem', borderRadius: '6px', fontSize: '0.825rem' }}
                 >
-                  <option value="CIDRA_API_KEY">CIDRA_API_KEY (OpenRouter Primary)</option>
+                  <option value="CIDRA_API_KEY">CIDRA_API_KEY (primary endpoint)</option>
                   <option value="GEMINI_API_KEY">GEMINI_API_KEY (Gemini Fallback)</option>
                   <option value="CIDRA_GITHUB_TOKEN">CIDRA_GITHUB_TOKEN (GitHub PAT)</option>
                   <option value="CIDRA_WEBHOOK_SECRET">CIDRA_WEBHOOK_SECRET (HMAC Secret)</option>
@@ -672,144 +582,59 @@ export default function SettingsView() {
 
           </div>
 
-          {/* Model Catalog & Search */}
+          {/* Models CIDRA is set up for, or any id the endpoint serves */}
           <section className="glass-panel" style={{ padding: '1.75rem', borderRadius: '10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <div>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Bot size={18} color="var(--color-accent)" /> Supported Model Catalog
-                </h2>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '0.2rem' }}>
-                  Click to assign models to analysis or fix nodes. Updates are synchronized with <code style={{ color: 'var(--text-muted)' }}>.env</code>.
-                </p>
-              </div>
-
-              {/* Search & Category Filter */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', background: 'var(--bg-dark)', borderRadius: '6px', padding: '0.2rem', border: '1px solid var(--border-light)' }}>
-                  {[
-                    { id: 'all', label: 'All' },
-                    { id: 'reasoning', label: 'Reasoning' },
-                    { id: 'fast', label: 'Ultra-Fast' },
-                    { id: 'free', label: 'Free Tier' }
-                  ].map(tab => (
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Bot size={18} color="var(--color-accent)" /> Models
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', margin: '0.2rem 0 1.25rem' }}>
+              CIDRA calls one OpenAI-compatible endpoint, <code style={{ color: 'var(--text-muted)' }}>{settings?.models?.base_url || 'CIDRA_BASE_URL'}</code>. A model id must be one that endpoint serves: use <strong>Test Ping</strong> on the primary key to check.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              {KNOWN_MODELS.map((m) => {
+                const active = selectedAnalysis === m.id && selectedFix === m.id && settings?.models?.base_url === m.baseUrl;
+                return (
+                  <div key={m.id} style={{ background: 'var(--bg-dark)', border: `1px solid ${active ? 'var(--color-accent)' : 'var(--border-light)'}`, borderRadius: '8px', padding: '1.1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)', fontFamily: 'var(--font-code)' }}>{m.id}</div>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.25rem 0' }}>{m.note}</p>
+                      <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-code)', color: 'var(--text-dim)' }}>Endpoint: {m.baseUrl}</div>
+                    </div>
                     <button
-                      key={tab.id}
-                      onClick={() => setModelCategory(tab.id)}
-                      style={{
-                        background: modelCategory === tab.id ? 'var(--bg-element)' : 'transparent',
-                        color: modelCategory === tab.id ? 'var(--text-main)' : 'var(--text-dim)',
-                        border: 'none', borderRadius: '4px', padding: '0.25rem 0.65rem',
-                        fontSize: '0.75rem', cursor: 'pointer', fontWeight: 500
+                      className={active ? 'btn' : 'btn-secondary'}
+                      disabled={active || !settings}
+                      onClick={() => {
+                        setSelectedAnalysis(m.id);
+                        setSelectedFix(m.id);
+                        saveAllSettings({ model_analyze: m.id, model_fix: m.id, base_url: m.baseUrl });
                       }}
                     >
-                      {tab.label}
+                      {active ? '✓ In use' : 'Use this model'}
                     </button>
-                  ))}
-                </div>
-
-                <div style={{ position: 'relative', width: '220px' }}>
-                  <Search size={14} color="var(--text-dim)" style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)' }} />
-                  <input
-                    type="text"
-                    placeholder="Search models..."
-                    value={modelSearch}
-                    onChange={(e) => setModelSearch(e.target.value)}
-                    style={{ width: '100%', background: 'var(--bg-dark)', border: '1px solid var(--border-light)', color: 'var(--text-main)', padding: '0.45rem 0.65rem 0.45rem 2rem', borderRadius: '6px', fontSize: '0.75rem' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Model Catalog Grid */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-              {filteredModels.map((m) => {
-                const isAnalysis = selectedAnalysis === m.id;
-                const isFix = selectedFix === m.id;
-
-                return (
-                  <div
-                    key={m.id}
-                    style={{
-                      background: 'var(--bg-dark)',
-                      border: `1px solid ${isAnalysis || isFix ? 'var(--color-accent)' : 'var(--border-light)'}`,
-                      borderRadius: '8px',
-                      padding: '1.1rem 1.25rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '1rem',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <div style={{ maxWidth: '650px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.3rem' }}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-main)' }}>
-                          {m.name}
-                        </span>
-                        <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: 'var(--bg-element)', color: 'var(--text-muted)' }}>
-                          {m.provider}
-                        </span>
-                        {m.isFree && (
-                          <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'rgba(23, 201, 100, 0.1)', color: 'var(--color-success)', fontWeight: 600 }}>
-                            Free Tier
-                          </span>
-                        )}
-                        <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-code)', color: 'var(--text-dim)' }}>
-                          Context: {m.context} • Latency: ~{m.latency}
-                        </span>
-                      </div>
-                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4, margin: 0 }}>
-                        {m.description}
-                      </p>
-                      <div style={{ fontSize: '0.75rem', fontFamily: 'var(--font-code)', color: 'var(--text-dim)', marginTop: '0.25rem' }}>
-                        ID: {m.id}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                      <button
-                        onClick={() => {
-                          setSelectedAnalysis(m.id);
-                          saveAllSettings({ model_analyze: m.id });
-                        }}
-                        style={{
-                          background: isAnalysis ? 'var(--color-accent)' : 'var(--bg-element)',
-                          color: isAnalysis ? '#ffffff' : 'var(--text-muted)',
-                          border: `1px solid ${isAnalysis ? 'var(--color-accent)' : 'var(--border-light)'}`,
-                          padding: '0.45rem 0.9rem',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {isAnalysis ? '✓ Active Analysis' : 'Set as Analysis'}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setSelectedFix(m.id);
-                          saveAllSettings({ model_fix: m.id });
-                        }}
-                        style={{
-                          background: isFix ? 'var(--text-main)' : 'var(--bg-element)',
-                          color: isFix ? 'var(--bg-dark)' : 'var(--text-muted)',
-                          border: `1px solid ${isFix ? 'var(--text-main)' : 'var(--border-light)'}`,
-                          padding: '0.45rem 0.9rem',
-                          borderRadius: '6px',
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {isFix ? '✓ Active Fix' : 'Set as Fix'}
-                      </button>
-                    </div>
                   </div>
                 );
               })}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const id = customModel.trim();
+                  if (!id) return;
+                  setSelectedAnalysis(id);
+                  setSelectedFix(id);
+                  saveAllSettings({ model_analyze: id, model_fix: id });
+                }}
+                style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}
+              >
+                <input
+                  type="text"
+                  aria-label="Model id"
+                  placeholder="Another model id the endpoint serves"
+                  value={customModel}
+                  onChange={(e) => setCustomModel(e.target.value)}
+                  style={{ flex: '1 1 260px', background: 'var(--bg-dark)', border: '1px solid var(--border-light)', color: 'var(--text-main)', padding: '0.5rem 0.75rem', borderRadius: '6px', fontSize: '0.8rem', fontFamily: 'var(--font-code)' }}
+                />
+                <button type="submit" className="btn-secondary" disabled={!settings || !customModel.trim()}>Use for analysis and fix</button>
+              </form>
             </div>
           </section>
         </div>
@@ -1105,7 +930,7 @@ export default function SettingsView() {
                 </thead>
                 <tbody>
                   {[
-                    { id: 'cidra_api_key', name: 'OpenRouter Gateway', role: 'Primary Inference Node', url: 'https://openrouter.ai/api/v1' },
+                    { id: 'cidra_api_key', name: 'Primary model endpoint', role: 'Analysis and fix calls', url: settings?.models?.base_url || '' },
                     { id: 'gemini_api_key', name: 'Google Gemini', role: 'Fallback When The Primary Fails', url: 'https://generativelanguage.googleapis.com/v1beta/openai/' },
                     { id: 'github_token', name: 'GitHub REST API', role: 'CI Log Extraction & PR Creation', url: 'https://api.github.com' }
                   ].map((p) => {
