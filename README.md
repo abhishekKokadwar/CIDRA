@@ -8,7 +8,7 @@
 
 *The autonomous, deterministic CI repair agent powered by LangGraph, Spectrum-Based Fault Localization (SBFL), and a hardened, zero-trust Docker execution sandbox.*
 
-[![PyPI version](https://img.shields.io/badge/pypi-v0.2.0-blue.svg)](https://pypi.org/project/cidra/)
+[![PyPI version](https://img.shields.io/badge/pypi-v0.3.0-blue.svg)](https://pypi.org/project/cidra/)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker Security](https://img.shields.io/badge/sandbox-network--isolated-green.svg)](#7-hardened-sandbox--threat-model-adv-01adv-08)
@@ -216,8 +216,7 @@ To diagnose and repair a failing codebase locally without pushing to GitHub:
 # Ensure local Docker daemon is running, then build the sandbox container.
 # From a clone:
 docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
-# From a pip install (the Dockerfile ships inside the package from the next release;
-# the 0.2.0 wheel on PyPI does not contain it, so build from a clone for now):
+# From a pip install (the Dockerfile ships inside the package):
 docker build -t cidra-sandbox:base "$(python -c 'import cidra, os; print(os.path.join(os.path.dirname(cidra.__file__), "sandbox"))')"
 
 # That image runs Python 3.11. If the repository's workflow asks actions/setup-python
@@ -295,9 +294,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install CIDRA
-        # From the repository until a release newer than 0.2.0 is on PyPI:
-        # the 0.2.0 wheel does not contain the sandbox Dockerfile used below.
-        run: pip install "git+https://github.com/abhishekKokadwar/CIDRA.git"
+        run: pip install "cidra>=0.3.0"
 
       - name: Build Sandbox Image
         # The Dockerfile ships inside the installed package
