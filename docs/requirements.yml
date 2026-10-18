@@ -72,3 +72,7 @@
 - id: M4-INSTALL
   title: Install a repository nobody configured
   accept: With no install command set, CIDRA installs requirements.txt (with dev/test companions), else the package from pyproject.toml or setup.py with its test extra, else nothing; an explicit command always wins, and an install that adds no packages still succeeds.
+
+- id: M4-PUBLISH
+  title: Report where people will see it, and say why when GitHub refuses
+  accept: A run with no pull request comments on the failing commit (updating its own earlier comment); a refused GitHub write never crashes the run and, on a 403, names the workflow permission to add, in the log and the job summary.

@@ -296,7 +296,8 @@ Unless told otherwise, the sandbox installs `requirements.txt` (plus `requiremen
 - **CI on CIDRA's pull requests.** GitHub does not start workflows for a PR opened with the built-in `GITHUB_TOKEN`, so the fix PR shows no checks until a person pushes to it or re-opens it. The fix has already been verified in the sandbox. To get checks automatically, pass a GitHub App installation token as `github_token`; the PR is then opened by that app's bot. A personal access token also works, but the PR then appears to come from that person, so it is not recommended.
 - **Where the PR goes.** A fix for a failure on a branch push is opened as a draft PR against that branch. A fix for a failure on an existing pull request is pushed to that PR's branch, and is never force-pushed.
 - **Every run leaves a job summary** on the Actions run page with the diagnosis, whatever the outcome. The job fails when the outcome is `failed`: no log, no usable diagnosis, no sandbox, dependencies that did not install, or a failure that did not reproduce in the sandbox. In the last two cases the summary currently says "could not produce a usable diagnosis" even though a diagnosis was made; check the install and test commands first.
-- **Without a pull request** (a failure on a branch push with PR creation off, or a run that ends without a fix) the job summary is the only output: CIDRA does not comment on the commit.
+- **Without a pull request** (a failure on a branch push with PR creation off, or a run that ends without a fix) CIDRA comments on the failing commit, updating its own comment on a rerun, and writes the job summary.
+- **If GitHub refuses a write** (a 403), the run still finishes; the log and the job summary say which `permissions:` the workflow job needs (`contents: write` to comment on a commit, `pull-requests: write` to comment on a PR, both to open one).
 
 ---
 
