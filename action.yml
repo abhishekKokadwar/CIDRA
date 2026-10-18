@@ -1,5 +1,8 @@
 name: 'CIDRA Debug & Repair'
 description: 'Autonomous CI Debugging and Repair Agent. Diagnoses failures and verifies fixes using a hardened Docker sandbox.'
+branding:
+  icon: 'tool'
+  color: 'green'
 inputs:
   api_key:
     description: 'API key for base_url'
@@ -55,8 +58,7 @@ runs:
     - name: Install CIDRA
       shell: bash
       run: |
-        # In a real release, this could simply be `pip install cidra`
-        # But for the action living in this repo, we install it from the action's source path
+        # The CIDRA at this action's own tag, so the action and the package always match
         pip install ${{ github.action_path }}
         
     - name: Pull Docker Base Image
