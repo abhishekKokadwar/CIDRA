@@ -83,7 +83,7 @@ def render(state: DebugState) -> list[str]:
     if not state.get("image_tag"):
         return []
     from cidra import config
-    from cidra.integrations.llm import usage_summary
+    from cidra.integrations.llm import run_cost, usage_summary
     from cidra.nodes.environment import sandbox_install_command, sandbox_test_command
 
     python = state.get("python_version") or "the image default"
@@ -101,8 +101,10 @@ def render(state: DebugState) -> list[str]:
         facts.append(("Dependency change", "; ".join(f"`{_cell(d)}`" for d in deps[:10]) if deps else "none"))
     used = usage_summary()
     if used["requests"]:
+        cost = run_cost()
         facts.append(("Model", f"`{_cell(config.MODEL_FIX)}`, {used['requests']} requests, "
-                               f"{used['prompt_tokens']:,} prompt + {used['completion_tokens']:,} completion tokens"))
+                               f"{used['prompt_tokens']:,} prompt + {used['completion_tokens']:,} completion tokens"
+                               + (f", about ${cost[0]:.4f} at {cost[1]}" if cost else "")))
 
     lines = ["", "<details><summary><b>Evidence</b>: what was run and what each test did</summary>", "",
              "| | |", "|---|---|", *(f"| {k} | {v} |" for k, v in facts)]

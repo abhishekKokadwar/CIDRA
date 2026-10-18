@@ -321,6 +321,7 @@ Copy [.env.example](.env.example) to `.env` to configure your environment:
 | `CIDRA_ENABLE_PR_CREATION` | Open a draft PR for a verified fix | `false` |
 | `CIDRA_MAX_LLM_CALLS` | Most model requests one run may make (retries and fallbacks included) | `8` |
 | `CIDRA_MAX_LLM_TOKENS` | Most tokens one run may spend | `40000` |
+| `CIDRA_PRICE_IN` / `CIDRA_PRICE_OUT` | Your price per million prompt / completion tokens, for the cost line in reports. Unset: a list price for a model CIDRA knows (`claude-haiku-4-5`), else no cost | *Optional* |
 | `CIDRA_INSTALL_COMMAND` | One `pip install` of the dependencies, run in the sandbox (`--target` is appended) | `pip install --quiet -r requirements.txt` |
 | `CIDRA_TEST_COMMAND` | Test command, run in the sandbox with no network | `pytest -q 2>&1` |
 | `CIDRA_WEBHOOK_SECRET` | HMAC SHA256 secret for webhook validation | *Optional (for webhook)* |

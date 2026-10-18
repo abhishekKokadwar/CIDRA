@@ -48,7 +48,7 @@ Each milestone ends when its exit criteria hold **and are checked by tests in CI
 
 **Order, as it actually went:** M1 was mostly done when the first real-bug run showed 0 of 12
 fixed, so M3's fix-rate work was pulled forward and its target met (5 of 12, 4 genuine on
-review). M1 is complete; M2 is done except the cost of a run.
+review). M1 and M2 are complete.
 
 ### M1 · Trustworthy "verified" (weeks 1 to 3)
 
@@ -72,7 +72,7 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 - [x] The install and test commands, exactly as run.
 - [x] Per-test before/after table: target test(s) red to green, counts for the rest, any test that was already failing.
 - [x] Audit gate verdict and any surfaced dependency change.
-- [ ] Model, requests, tokens and cost of the run. (Model, requests and tokens done; cost needs a price setting.)
+- [x] Model, requests, tokens and cost of the run: tokens times `CIDRA_PRICE_IN`/`OUT`, else a list price for a model CIDRA knows, labelled with its source; no cost rather than a guess.
 - [x] One command that reruns the verification locally: `cidra verify --sha <commit> --patch <diff>`, printed shell-quoted in every report with a patch.
 
 **Exit:** a reviewer can confirm a fix from the PR alone, and the rerun command reproduces it.
