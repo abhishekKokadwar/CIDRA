@@ -94,11 +94,11 @@ def test_install_and_test_command_inputs_reach_the_engine(monkeypatch):
         importlib.reload(config)
         assert config.INSTALL_COMMAND == "pip install --quiet -r requirements-dev.txt"
         assert config.TEST_COMMAND == "PYTHONPATH=src pytest -q 2>&1"
-        # an unset Action input arrives as an empty string: the default applies
+        # an unset Action input arrives as an empty string: install is then detected per repository
         monkeypatch.setenv("CIDRA_INSTALL_COMMAND", "")
         monkeypatch.setenv("CIDRA_TEST_COMMAND", "")
         importlib.reload(config)
-        assert config.INSTALL_COMMAND == "pip install --quiet -r requirements.txt"
+        assert config.INSTALL_COMMAND is None
         assert config.TEST_COMMAND == "pytest -q 2>&1"
     finally:
         monkeypatch.undo()

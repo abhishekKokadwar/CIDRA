@@ -68,3 +68,7 @@
 - id: M2-COST
   title: Cost of the run
   accept: The report's model line shows the run's cost from tokens times a known price (CIDRA_PRICE_IN/OUT, else a list price for a listed model), labelled with its source; an unknown model shows no cost rather than a guess.
+
+- id: M4-INSTALL
+  title: Install a repository nobody configured
+  accept: With no install command set, CIDRA installs requirements.txt (with dev/test companions), else the package from pyproject.toml or setup.py with its test extra, else nothing; an explicit command always wins, and an install that adds no packages still succeeds.

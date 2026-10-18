@@ -168,7 +168,7 @@ def _sandbox_log(run_id: str, source: str, sha: str) -> str:
         tree = prepare_checkout(log_run, source, sha)
         log.info("Running the tests in the sandbox to get the failure log...")
         with Session(tree, workflow_python(tree)) as session:
-            installed = session.install(sandbox_install_command({}))
+            installed = session.install(sandbox_install_command({"source_dir": str(tree)}))
             if not installed.passed:
                 log.error("Installing dependencies failed (set CIDRA_INSTALL_COMMAND):\n%s",
                           (installed.stdout_tail + installed.stderr_tail)[-2000:])

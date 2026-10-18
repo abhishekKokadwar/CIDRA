@@ -39,7 +39,8 @@ inputs:
       One pip command that installs the dependencies in the sandbox, for example
       "pip install --quiet -r requirements-dev.txt" or "pip install --quiet pytest httpx".
       CIDRA appends --target, so it must be a single pip install. The project itself is
-      imported from the source tree. Defaults to "pip install --quiet -r requirements.txt".
+      imported from the source tree. Unset: requirements.txt (with requirements-dev/test files beside it),
+      else the package itself from pyproject.toml or setup.py with its test extra, else nothing.
     required: false
   test_command:
     description: >-

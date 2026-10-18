@@ -97,7 +97,7 @@ $0.02 per run.
 
 ### M4 · Usable by a stranger (weeks 9 to 10)
 
-- [ ] A default install ladder: `requirements*.txt`, else `pyproject.toml` / `setup.py`.
+- [x] A default install ladder: `requirements*.txt`, else `pyproject.toml` / `setup.py` (with its test extra), else nothing.
 - [ ] A comment on the failing commit when there is no PR (G-08); a clear message on a 403.
 - [ ] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing.
 - [ ] README quick start that fits on one screen.

@@ -312,7 +312,10 @@ class Session:
                     duration_s=time.monotonic() - started,
                     timed_out=code is None,
                 )
-            blob = b"".join(installer.get_archive(limits.SITE)[0])
+            try:
+                blob = b"".join(installer.get_archive(limits.SITE)[0])
+            except NotFound:
+                blob = None  # the command installed nothing, so there is nothing to copy
         finally:
             if installer is not None:
                 try:
@@ -324,7 +327,8 @@ class Session:
         # attempt's dependency) must not linger and make a later attempt pass.
         _exec_with_timeout(self.container, ["rm", "-rf", limits.SITE], 60, limits.WORKDIR)
         # get_archive returns the directory itself, so unpack at its parent.
-        self.container.put_archive(str(Path(limits.SITE).parent.as_posix()), blob)
+        if blob is not None:
+            self.container.put_archive(str(Path(limits.SITE).parent.as_posix()), blob)
         return SandboxResult(
             step="install",
             exit_code=0,
