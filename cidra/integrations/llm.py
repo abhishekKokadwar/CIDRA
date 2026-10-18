@@ -55,6 +55,37 @@ def usage_summary() -> dict:
     }
 
 
+# List prices in USD per million (prompt, completion) tokens, only for models whose
+# price is confirmed. ponytail: a hand-kept table goes stale; CIDRA_PRICE_IN /
+# CIDRA_PRICE_OUT override it, and a model not listed shows no cost, never a guess.
+LIST_PRICES = {"claude-haiku-4-5": (1.0, 5.0)}
+
+
+def _price(model: str) -> tuple[tuple[float, float] | None, str | None]:
+    from cidra import config  # read at call time, like the model settings
+    if config.PRICE_IN is not None and config.PRICE_OUT is not None:
+        return (config.PRICE_IN, config.PRICE_OUT), "your price"
+    name = model.lower().rsplit("/", 1)[-1].replace(".", "-")  # "anthropic/claude-haiku-4.5" too
+    for key, price in LIST_PRICES.items():
+        if name.startswith(key):
+            return price, "list price"
+    return None, None
+
+
+def run_cost() -> tuple[float, str] | None:
+    """(USD, where the price came from) for this run's calls, or None when there
+    were none or any call's model has no known price: a partial sum would mislead."""
+    if not _latest_telemetry:
+        return None
+    total, source = 0.0, None
+    for call in _latest_telemetry:
+        price, source = _price(call["model"])
+        if price is None:
+            return None
+        total += call["tokens"]["prompt"] / 1e6 * price[0] + call["tokens"]["completion"] / 1e6 * price[1]
+    return total, source
+
+
 def _check_budget() -> None:
     """Refuse the next request once the run's cap is reached. The caps are per
     run (reset by clear_latest_telemetry) and bound the worst case: retries,

@@ -64,3 +64,7 @@
 - id: M2-RERUN
   title: Rerun a fix's verification locally
   accept: "`cidra verify --sha <commit> --patch <diff>` reruns reproduce, apply and verify in the sandbox (exit 0 only when the targets go red to green with no regression), and every report with a patch prints that command, shell-quoted."
+
+- id: M2-COST
+  title: Cost of the run
+  accept: The report's model line shows the run's cost from tokens times a known price (CIDRA_PRICE_IN/OUT, else a list price for a listed model), labelled with its source; an unknown model shows no cost rather than a guess.

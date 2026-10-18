@@ -36,6 +36,11 @@ FALLBACK_MODEL = os.environ.get("CIDRA_FALLBACK_MODEL") or "gemini-3.5-flash"
 MAX_LLM_CALLS = int(os.environ.get("CIDRA_MAX_LLM_CALLS") or 8)
 MAX_LLM_TOKENS = int(os.environ.get("CIDRA_MAX_LLM_TOKENS") or 40000)
 
+# Your price per million prompt / completion tokens, for the cost line of a report.
+# Unset: CIDRA uses a list price only for models it knows (integrations/llm.py).
+PRICE_IN = float(os.environ["CIDRA_PRICE_IN"]) if os.environ.get("CIDRA_PRICE_IN") else None
+PRICE_OUT = float(os.environ["CIDRA_PRICE_OUT"]) if os.environ.get("CIDRA_PRICE_OUT") else None
+
 MODEL_ANALYZE = os.environ.get("CIDRA_MODEL_ANALYZE") or "gemini-3.5-flash"
 MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX") or "gemini-3.5-flash"
 
