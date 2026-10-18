@@ -117,10 +117,44 @@ jobs:
         CIDRA_PRACTICE_REPO: ${{ runner.temp }}/cidra-practice
       run: python eval/measure.py --stub --check --out "$RUNNER_TEMP/stub.json"
 
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: npm
+        cache-dependency-path: dashboard/package-lock.json
+    - run: npm ci
+    - run: npm run lint
+    - name: Component tests
+      run: npx vitest run --reporter=default --reporter=json --outputFile.json=../req-frontend.json
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: req-frontend
+        path: req-frontend.json
+        if-no-files-found: ignore
+    - name: The dashboard CIDRA ships (cidra/static) is built from this source
+      run: |
+        npm run build
+        stale=$(git status --porcelain ../cidra/static)
+        if [ -n "$stale" ]; then
+          echo "$stale"
+          echo "::error::cidra/static is out of date. Run 'npm run build' in dashboard/ and commit cidra/static."
+          exit 1
+        fi
+
   requirements:
     # Every requirement in docs/requirements.yml has a test that passed in this run
     # (skipped does not count) and every CI job it names passed.
-    needs: [ changes, unit, sandbox, pipeline ]
+    needs: [ changes, unit, sandbox, pipeline, frontend ]
     if: always() && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -143,7 +177,7 @@ jobs:
         python scripts/check_requirements.py docs/requirements.yml req/*.json --jobs "$jobs"
 
   ci-ok:
-    needs: [ changes, unit, sandbox, pipeline, requirements ]
+    needs: [ changes, unit, sandbox, pipeline, frontend, requirements ]
     if: always()
     runs-on: ubuntu-latest
     steps:

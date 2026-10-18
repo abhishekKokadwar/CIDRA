@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function StatusBadge({ status }) {
+export default function StatusBadge({ status, label }) {
   const styles = {
     success: { bg: 'rgba(23, 201, 100, 0.1)', color: 'var(--color-success)', border: 'rgba(23, 201, 100, 0.2)' },
     error: { bg: 'rgba(243, 18, 96, 0.1)', color: 'var(--color-error)', border: 'rgba(243, 18, 96, 0.2)' },
@@ -22,7 +22,7 @@ export default function StatusBadge({ status }) {
           width: 6, height: 6, borderRadius: '50%', background: s.color
         }} />
       )}
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {label || status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
   );
 }

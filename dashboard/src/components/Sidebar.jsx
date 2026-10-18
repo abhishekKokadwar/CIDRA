@@ -165,13 +165,13 @@ export default function Sidebar({ activeTab, setActiveTab, collapsed, onToggleCo
         width: '100%'
       }}>
         {collapsed ? (
-          <span title="CIDRA Engine v0.2.0" style={{ fontFamily: 'var(--font-code)', fontSize: '0.7rem', display: 'block', margin: '0 auto' }}>
-            v1.0
+          <span title={`CIDRA Engine v${__CIDRA_VERSION__}`} style={{ fontFamily: 'var(--font-code)', fontSize: '0.7rem', display: 'block', margin: '0 auto' }}>
+            v{__CIDRA_VERSION__}
           </span>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
             <span style={{ fontWeight: 500, color: 'var(--text-muted)' }}>CIDRA Engine</span>
-            <span style={{ fontFamily: 'var(--font-code)', fontSize: '0.7rem' }}>v0.2.0</span>
+            <span style={{ fontFamily: 'var(--font-code)', fontSize: '0.7rem' }}>v{__CIDRA_VERSION__}</span>
           </div>
         )}
       </div>
