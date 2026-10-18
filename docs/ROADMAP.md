@@ -100,7 +100,7 @@ $0.02 per run.
 - [x] A default install ladder: `requirements*.txt`, else `pyproject.toml` / `setup.py` (with its test extra), else nothing.
 - [x] A comment on the failing commit when there is no PR (G-08); a clear message on a 403.
 - [ ] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing.
-- [ ] README quick start that fits on one screen.
+- [x] README quick start that fits on one screen.
 - [ ] Follow only the README on three Python repositories CIDRA was not built around, one with `pyproject.toml`. Every question needing the source becomes a fix.
 
 **Exit:** all three trial repositories get a verified fix or a clear diagnosis without help.

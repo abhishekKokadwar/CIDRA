@@ -76,3 +76,7 @@
 - id: M4-PUBLISH
   title: Report where people will see it, and say why when GitHub refuses
   accept: A run with no pull request comments on the failing commit (updating its own earlier comment); a refused GitHub write never crashes the run and, on a 403, names the workflow permission to add, in the log and the job summary.
+
+- id: M4-QUICKSTART
+  title: The README quick start works as written
+  accept: The quick start's workflow is valid YAML with the permissions CIDRA's writes need, every input it passes to the action exists in action.yml, and every action input is wired to CIDRA, so no setting in the quick start is silently ignored.
