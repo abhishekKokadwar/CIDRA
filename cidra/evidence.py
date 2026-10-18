@@ -7,6 +7,7 @@ repository, so they are cleaned before they go into a Markdown table.
 """
 
 import re
+import shlex
 
 from cidra.state import DebugState
 
@@ -64,6 +65,19 @@ def test_rows(state: DebugState) -> list[str]:
     return rows
 
 
+def rerun_command(state: DebugState) -> str:
+    """`cidra verify` with this run's commit, commands and targets. Every part is
+    shell-quoted: test ids and commands come from the repository, and a reviewer
+    will paste this into a terminal."""
+    from cidra import config
+    parts = ["cidra", "verify", "--sha", state.get("commit_sha") or "HEAD", "--patch", "fix.diff",
+             "--install", state.get("install_command") or config.INSTALL_COMMAND,
+             "--test", state.get("test_command") or config.TEST_COMMAND]
+    for target in state.get("target_tests") or []:
+        parts += ["--target", target]
+    return " ".join(shlex.quote(p) for p in parts)
+
+
 def render(state: DebugState) -> list[str]:
     """The block as Markdown lines, or [] when no sandbox ran."""
     if not state.get("image_tag"):
@@ -95,4 +109,8 @@ def render(state: DebugState) -> list[str]:
     rows = test_rows(state)
     if rows:
         lines += ["", "Tests before → after the patch:", "", *rows]
+    if state.get("fix_diff"):
+        lines += ["", "Rerun this verification in your own sandbox (`fix.diff` is this pull request's diff, "
+                      "e.g. `gh pr diff <number> > fix.diff`):", "",
+                  "```sh", rerun_command(state).replace("```", "'''"), "```"]
     return lines + ["", "</details>"]

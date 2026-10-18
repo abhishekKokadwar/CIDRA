@@ -60,3 +60,7 @@
 - id: M2-EVIDENCE
   title: Evidence in every report
   accept: Every report from a run that reached the sandbox shows the failing commit, the exact image, the install and test commands, the audit verdict, any dependency change, model usage, and each test's outcome before and after the patch.
+
+- id: M2-RERUN
+  title: Rerun a fix's verification locally
+  accept: "`cidra verify --sha <commit> --patch <diff>` reruns reproduce, apply and verify in the sandbox (exit 0 only when the targets go red to green with no regression), and every report with a patch prints that command, shell-quoted."

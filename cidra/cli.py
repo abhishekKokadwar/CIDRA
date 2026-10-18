@@ -188,6 +188,52 @@ def _sandbox_log(run_id: str, source: str, sha: str) -> str:
     return result.stdout_tail + "\n" + result.stderr_tail
 
 
+def verify_run(args) -> int:
+    """`cidra verify`: rerun a fix's verification in the sandbox, the way the
+    pipeline did (ROADMAP M2), so a reviewer can check a fix without trusting
+    the report. The failing tests must fail before the patch, pass after it,
+    and no test that passed may fail. Exit 0 when verified, 1 otherwise.
+    """
+    import pathlib
+    from cidra.evidence import test_rows
+    from cidra.nodes.checkout import prepare_checkout, remove_checkout
+    from cidra.nodes.environment import close_session, install_deps, prepare_sandbox, session_for, workflow_python
+    from cidra.nodes.fix import verify_fix
+    from cidra.nodes.reproduce import reproduce_once
+
+    patch = pathlib.Path(args.patch).read_text(encoding="utf-8")
+    run_id = f"verify-{uuid.uuid4().hex[:8]}"
+    state: dict = {"run_id": run_id, "install_command": args.install, "test_command": args.test,
+                   "ci_failing_tests": args.target or []}
+    try:
+        tree = prepare_checkout(run_id, args.source, args.sha)
+        state.update(source_dir=str(tree), python_version=workflow_python(tree))
+        state.update(prepare_sandbox(state))
+        if state.get("env_ready") is not False:
+            state.update(install_deps(state))
+        if state.get("env_ready") is False:
+            print(f"Could not set up the sandbox: {state.get('analysis_error')}")
+            return 1
+        state.update(reproduce_once(state))
+        if not state.get("reproduced"):
+            print(f"Not reproduced, so there is nothing to verify: {state.get('analysis_error')}")
+            return 1
+        applied = session_for(run_id).apply_patch(patch)
+        if not applied.passed:
+            print(f"The patch does not apply to {args.sha}:\n{(applied.stdout_tail or applied.stderr_tail)[-1000:]}")
+            return 1
+        state.update(verify_fix({**state, "patch_applied": True}))
+    except Exception as e:  # noqa: BLE001 - no Docker, no image, not a git repo
+        print(f"Could not run the verification: {e}")
+        return 1
+    finally:
+        close_session(run_id)
+        remove_checkout(run_id)
+    print("\n".join(test_rows(state)))
+    print("\nVerified." if state.get("verified") else f"\nNot verified: {state.get('verify_note')}")
+    return 0 if state.get("verified") else 1
+
+
 def dashboard_run(args):
     """Start the CIDRA web dashboard and FastAPI backend."""
     import uvicorn
@@ -225,6 +271,15 @@ def main():
     # 'action' command for GitHub Actions
     subparsers.add_parser("action", help="Run CIDRA as a GitHub Action (relies on env vars)")
     
+    # 'verify' command: rerun a fix's verification, as printed in the report's evidence
+    verify_parser = subparsers.add_parser("verify", help="Rerun the verification of a fix in the sandbox")
+    verify_parser.add_argument("--patch", required=True, help="Diff file of the fix (e.g. `gh pr diff <n> > fix.diff`)")
+    verify_parser.add_argument("--sha", default="HEAD", help="The failing commit the patch is made against")
+    verify_parser.add_argument("--source", default=".", help="Path to the repository (default: current directory)")
+    verify_parser.add_argument("--install", help="Install command (default: CIDRA_INSTALL_COMMAND)")
+    verify_parser.add_argument("--test", help="Test command (default: CIDRA_TEST_COMMAND)")
+    verify_parser.add_argument("--target", action="append", help="A test that must go from failing to passing (repeatable)")
+
     # 'dashboard' command for local web UI
     dash_parser = subparsers.add_parser("dashboard", help="Start the web dashboard & API server")
     dash_parser.add_argument("--port", type=int, default=8000, help="Port to serve on (default: 8000)")
@@ -233,10 +288,13 @@ def main():
     
     args = parser.parse_args()
     
-    if os.getenv("GITHUB_ACTIONS") == "true" or args.command == "action":
+    # Inside Actions a bare `cidra` is the Action; a named command still runs itself.
+    if args.command == "action" or (args.command is None and os.getenv("GITHUB_ACTIONS") == "true"):
         action_run()
     elif args.command == "fix":
         local_run(args)
+    elif args.command == "verify":
+        sys.exit(verify_run(args))
     elif args.command == "dashboard":
         dashboard_run(args)
     else:

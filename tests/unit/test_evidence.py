@@ -59,3 +59,28 @@ def test_no_sandbox_no_block_and_every_report_carries_it_otherwise():
     body = render_comment({**_state(), "outcome": "verified_fix", "verified": True, "analysis": a,
                            "fix_diff": "--- a/calc.py\n+++ b/calc.py\n"})
     assert "<b>Evidence</b>" in body and "(target) | failed | passed" in body
+
+
+@pytest.mark.req("M2-RERUN")
+def test_the_rerun_command_is_quoted_so_a_pasted_copy_runs_only_cidra():
+    import shlex
+    hostile = "tests/test_a.py::test_x[$(rm -rf ~)]"
+    cmd = evidence.rerun_command(_state(target_tests=[hostile], test_command="pytest -q | tee out.txt"))
+    assert shlex.split(cmd) == ["cidra", "verify", "--sha", "0123456789abcdef", "--patch", "fix.diff",
+                                "--install", "pip install -r requirements.txt", "--test", "pytest -q | tee out.txt",
+                                "--target", hostile]
+    block = "\n".join(evidence.render(_state(fix_diff="--- a/x.py\n+++ b/x.py\n")))
+    assert "```sh\ncidra verify --sha 0123456789abcdef" in block
+
+
+@pytest.mark.req("M2-RERUN")
+def test_verify_runs_itself_inside_github_actions(monkeypatch):
+    from cidra import cli
+    seen = []
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setattr(cli, "action_run", lambda: seen.append("action"))
+    monkeypatch.setattr(cli, "verify_run", lambda args: seen.append("verify") or 0)
+    monkeypatch.setattr("sys.argv", ["cidra", "verify", "--patch", "fix.diff"])
+    with pytest.raises(SystemExit) as exit_:
+        cli.main()
+    assert seen == ["verify"] and exit_.value.code == 0
