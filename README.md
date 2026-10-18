@@ -20,7 +20,7 @@
   <a href="#1-core-philosophy--the-triad-of-trust">Philosophy</a> •
   <a href="#2-langgraph-architecture--workflow">Architecture</a> •
   <a href="#3-interactive-web-dashboard--hitl-gate">Dashboard</a> •
-  <a href="#4-quick-start--installation">Quick Start</a> •
+  <a href="#quick-start">Quick Start</a> •
   <a href="#5-github-actions-integration">CI Integration</a> •
   <a href="#6-one-model-one-optional-fallback">LLM Fallback</a> •
   <a href="#7-hardened-sandbox--threat-model-adv-01adv-08">Threat Model</a> •
@@ -35,6 +35,47 @@
 ---
 
 </div>
+
+## Quick start
+
+CIDRA runs when your CI fails on a Python repository tested with pytest. It reproduces the failure in a Docker sandbox, posts a diagnosis and, with PR creation on, opens a draft pull request with a fix only after the fix passes the tests in the sandbox.
+
+1. Add your model provider's API key as a repository secret named `CIDRA_API_KEY` (Settings → Secrets and variables → Actions). Any OpenAI-compatible endpoint works; the [measured results](#measured-results) use `claude-haiku-4-5`.
+2. Add `.github/workflows/cidra.yml`:
+
+   ```yaml
+   name: CIDRA
+   on:
+     workflow_run:
+       workflows: ["CI"]          # the name of the workflow that runs your tests
+       types: [completed]
+   jobs:
+     repair:
+       if: github.event.workflow_run.conclusion == 'failure'
+       runs-on: ubuntu-latest
+       permissions:
+         contents: write          # comment on the failing commit, push a fix branch
+         pull-requests: write     # comment on or open a pull request
+         actions: read            # read the failed run's log
+       steps:
+         - uses: actions/checkout@v4
+           with:
+             ref: ${{ github.event.workflow_run.head_sha }}
+             persist-credentials: false
+         - uses: abhishekKokadwar/CIDRA@v1
+           with:
+             api_key: ${{ secrets.CIDRA_API_KEY }}
+             base_url: https://api.anthropic.com/v1/
+             model_analyze: claude-haiku-4-5
+             model_fix: claude-haiku-4-5
+             enable_pr_creation: 'true'   # leave out for a diagnosis only
+   ```
+
+3. Commit it to the default branch (GitHub only runs `workflow_run` workflows from there), then push a commit that fails CI.
+
+The report appears on the pull request, or on the failing commit when there is none, and in the run's job summary. For the draft PR, also turn on Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests". If your tests need more than the default install and `pytest -q`, set `install_command` and `test_command` ([details](#install-and-test-commands)).
+
+---
 
 ## 1. Core Philosophy & The Triad of Trust
 
@@ -147,7 +188,7 @@ cidra dashboard
 
 ---
 
-## 4. Quick Start & Installation
+## 4. Installation & Local Use
 
 ### Option A: Standard PyPI Installation (Recommended)
 

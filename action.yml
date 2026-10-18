@@ -2,20 +2,16 @@ name: 'CIDRA Debug & Repair'
 description: 'Autonomous CI Debugging and Repair Agent. Diagnoses failures and verifies fixes using a hardened Docker sandbox.'
 inputs:
   api_key:
-    description: 'LLM Provider API Key (e.g., OpenAI, Gemini, Anthropic)'
+    description: 'API key for base_url'
     required: true
-  model:
-    description: 'LLM Model to use'
-    required: false
-    default: 'gpt-4o'
   model_analyze:
-    description: 'LLM Model for analyze phase'
+    description: 'Model for the diagnosis, for example claude-haiku-4-5. Unset: gemini-3.5-flash.'
     required: false
   model_fix:
-    description: 'LLM Model for fix phase'
+    description: 'Model for the fix, for example claude-haiku-4-5. Unset: gemini-3.5-flash.'
     required: false
   base_url:
-    description: 'Base URL for the LLM API'
+    description: 'OpenAI-compatible endpoint of the model provider, for example https://api.anthropic.com/v1/. Unset: Gemini.'
     required: false
   github_token:
     description: 'GitHub token for posting comments'
