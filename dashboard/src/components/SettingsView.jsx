@@ -417,7 +417,7 @@ export default function SettingsView() {
                 </p>
               </div>
               <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-code)', color: 'var(--text-muted)' }}>
-                {settings?.keys?.length || 0} Configured
+                {settings?.keys?.filter((k) => k.configured).length || 0} of {settings?.keys?.length || 0} set
               </span>
             </div>
 

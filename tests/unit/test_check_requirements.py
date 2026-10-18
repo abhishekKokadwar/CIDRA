@@ -4,7 +4,7 @@ import pathlib
 
 import yaml
 
-from scripts.check_requirements import check
+from scripts.check_requirements import check, from_vitest
 
 REQS = [{"id": "R1", "title": "Auth"}, {"id": "R2", "title": "Sandbox"},
         {"id": "E2E", "title": "Pipeline", "jobs": ["pipeline"]}]
@@ -53,3 +53,16 @@ def test_the_projects_requirements_file_is_well_formed():
     ids = [r["id"] for r in reqs]
     assert len(ids) == len(set(ids)) and {"R1", "R8"} <= set(ids)
     assert all(r.get("title") and r.get("accept") for r in reqs)
+
+
+def test_a_vitest_report_counts_as_evidence_by_the_ids_in_test_titles():
+    report = {"testResults": [{"name": "src/a.test.jsx", "assertionResults": [
+        {"fullName": "runs [R1] shows the outcome", "status": "passed"},
+        {"fullName": "keys [R2] counts set keys", "status": "failed"},
+        {"fullName": "todo [R2] later", "status": "pending"},
+        {"fullName": "untagged", "status": "passed"}]}]}
+    results = from_vitest(report)
+    assert results["src/a.test.jsx::runs [R1] shows the outcome"] == {"req": ["R1"], "outcome": "passed"}
+    assert results["src/a.test.jsx::todo [R2] later"]["outcome"] == "skipped"
+    assert _problems(results) == ["R2: no passing test (2 tagged, 1 skipped)",
+                                  "R2: src/a.test.jsx::keys [R2] counts set keys failed"]

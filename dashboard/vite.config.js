@@ -8,6 +8,9 @@ import { defineConfig } from 'vite';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const envPath = path.resolve(__dirname, '../.env');
+// The UI shows the version of the package it ships in.
+const cidraVersion = fs.readFileSync(path.resolve(__dirname, '../pyproject.toml'), 'utf-8')
+  .match(/^version = "(.+)"/m)[1];
 
 function maskSecret(secret) {
   if (!secret) return '';
@@ -265,11 +268,14 @@ function cidraSettingsPlugin() {
 function syncToPythonStatic() {
   return {
     name: 'sync-to-python-static',
+    apply: 'build',  // not on dev or test runs: they would copy a stale dist
     closeBundle() {
       try {
         const distDir = path.resolve(__dirname, 'dist');
         const staticDir = path.resolve(__dirname, '../cidra/static');
         if (fs.existsSync(distDir)) {
+          // Replace the hashed bundles, or every build leaves the old one behind
+          fs.rmSync(path.join(staticDir, 'assets'), { recursive: true, force: true });
           fs.cpSync(distDir, staticDir, { recursive: true });
           console.log('[CIDRA] Successfully mirrored dist -> cidra/static');
         }
@@ -282,6 +288,8 @@ function syncToPythonStatic() {
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), cidraSettingsPlugin(), syncToPythonStatic()],
+  define: { __CIDRA_VERSION__: JSON.stringify(cidraVersion) },
+  test: { environment: 'jsdom' },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

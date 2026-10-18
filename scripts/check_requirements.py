@@ -12,6 +12,7 @@ and, in CI, to the job summary.
 import argparse
 import json
 import os
+import re
 import sys
 
 import yaml
@@ -43,10 +44,18 @@ def check(requirements: list[dict], results: dict[str, dict], jobs: dict[str, st
     return rows, problems
 
 
+def from_vitest(report: dict) -> dict[str, dict]:
+    """A vitest JSON report in the shape conftest.py writes. The dashboard's
+    tests name their requirements in the title, e.g. "[UI-KEYS] counts ..."."""
+    return {f"{f['name']}::{t['fullName']}": {"req": re.findall(r"\[([A-Z0-9-]+)\]", t["fullName"]),
+                                             "outcome": t["status"] if t["status"] in ("passed", "failed") else "skipped"}
+            for f in report["testResults"] for t in f["assertionResults"]}
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("requirements")
-    ap.add_argument("reports", nargs="*", help="JSON files written with CIDRA_REQ_REPORT")
+    ap.add_argument("reports", nargs="*", help="JSON files written with CIDRA_REQ_REPORT, or vitest JSON reports")
     ap.add_argument("--jobs", default="{}", help="JSON object: CI job name -> result")
     args = ap.parse_args()
     with open(args.requirements, encoding="utf-8") as f:
@@ -54,7 +63,8 @@ def main() -> int:
     results: dict[str, dict] = {}
     for path in args.reports:
         with open(path, encoding="utf-8") as f:
-            results.update(json.load(f))
+            report = json.load(f)
+        results.update(from_vitest(report) if "testResults" in report else report)
     rows, problems = check(requirements, results, json.loads(args.jobs))
     out = "\n".join(["## Requirements", "", "| | Id | Requirement | Evidence |", "|---|---|---|---|", *rows])
     if problems:

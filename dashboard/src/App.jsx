@@ -7,6 +7,7 @@ import CodeDiffViewer from './components/CodeDiffViewer';
 import TimelineNode from './components/TimelineNode';
 import OrchestratorView from './components/OrchestratorView';
 import SettingsView from './components/SettingsView';
+import { outcomeBadge } from './outcome';
 import { Play, CheckCircle2, Clock, ChevronRight, Bot, PlayCircle, Cpu, Zap, Activity, FileJson, RefreshCw, ExternalLink, ShieldCheck, Check, Workflow } from 'lucide-react';
 
 export default function App() {
@@ -206,7 +207,7 @@ function CommandCenter({ stats, runs, loading, refreshing, onRefresh, onRunClick
                     {run.model?.replace(':free', '') || '—'}
                   </td>
                   <td>
-                    <StatusBadge status={run.status} />
+                    <StatusBadge {...outcomeBadge(run)} />
                   </td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                     {run.fix}
@@ -277,7 +278,7 @@ function RunExplorer({ run, onBack }) {
               Target: <strong style={{ color: 'var(--text-main)' }}>{repoName}</strong> • Recorded: {run.time}
             </p>
           </div>
-          <StatusBadge status={run.status} />
+          <StatusBadge {...outcomeBadge(run)} />
         </div>
       </header>
 
