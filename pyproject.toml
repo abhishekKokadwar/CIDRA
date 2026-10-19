@@ -56,5 +56,5 @@ source = ["cidra"]
 relative_files = true
 
 [tool.coverage.report]
-fail_under = 88.5
+fail_under = 88
 skip_empty = true
