@@ -28,7 +28,10 @@ CORPUS = ROOT / "eval" / "corpus"
 EXCLUDED = CORPUS / "EXCLUDED.json"
 BUGSINPY_URL = "https://github.com/soarsmu/BugsInPy.git"
 NEEDS_BUILD = {"pandas", "matplotlib", "spacy"}  # C or Cython extensions
-KEEP_PER_PROJECT, TRIALS_PER_PROJECT, INSTALL_FAILURES_TO_ABANDON = 5, 12, 3
+# Batch 1 (2026-10-15) kept 5 and tried at most 12 per project; batch 2 (2026-10-19)
+# raised both, before any model ran on its cases (eval/corpus/README.md).
+BATCH = 2
+KEEP_PER_PROJECT, TRIALS_PER_PROJECT, INSTALL_FAILURES_TO_ABANDON = 10, 24, 3
 MAX_FILES, MAX_LINES = 3, 30
 
 _PIN = re.compile(r"^[A-Za-z0-9_.\-\[\]]+==[\w.!+*-]+$")
@@ -181,7 +184,7 @@ def build_project(bip: pathlib.Path, project: str, excluded: dict) -> None:
         out.mkdir(parents=True, exist_ok=True)
         (out / "raw.log").write_text(log, encoding="utf-8", newline="\n")
         (out / "meta.json").write_text(json.dumps({
-            "group": "bugsinpy", "source": f"BugsInPy {key}", "class": category, "known_fix": True,
+            "group": "bugsinpy", "batch": BATCH, "source": f"BugsInPy {key}", "class": category, "known_fix": True,
             "repo_url": url, "failing_ref": buggy, "fix_ref": fixed,
             "failing_tests_from_fix": test_side, "held_out_paths": test_side,
             "install_command": install, "test_command": test, "python_version": python,

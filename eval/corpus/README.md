@@ -34,10 +34,18 @@ Inclusion rules, applied in this order:
    on that file fails with ordinary test failures (exit code 1).
 6. Applying the fix's non-test changes makes the same command pass.
 
-Selection: projects in alphabetical order, bugs in ascending number. The first 3
-bugs of each project that pass every rule are kept. At most 8 bugs per project
-are tried in the sandbox, and a project is abandoned after 3 dependency-install
-failures in a row.
+Selection: projects in alphabetical order, bugs in ascending number, a project
+abandoned after 3 dependency-install failures in a row. Two batches, each fixed
+before any model ran on its cases:
+
+- **Batch 1** (2026-10-15, 18 cases): the first 5 bugs of each project that pass
+  every rule, at most 12 tried per project. (This README said 3 and 8 until
+  2026-10-19; the build script and the corpus always used 5 and 12.)
+- **Batch 2** (2026-10-19): the same rules 1 to 6, continuing the same walk with
+  up to 10 kept and at most 24 tried per project, counting batch 1. Its cases
+  carry `"batch": 2` in `meta.json`, and results report the batches apart as
+  well as together, because CIDRA was developed while batch 1 was being measured
+  and batch 2 is unseen.
 
 What each case records:
 
