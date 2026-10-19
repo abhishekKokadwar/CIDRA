@@ -227,7 +227,7 @@ jobs:
   requirements:
     # Every requirement in docs/requirements.yml has a test that passed in this run
     # (skipped does not count) and every CI job it names passed.
-    needs: [ changes, unit, sandbox, pipeline, frontend, e2e ]
+    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, coverage ]
     if: always() && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
