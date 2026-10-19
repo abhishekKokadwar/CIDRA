@@ -386,7 +386,7 @@ def verify_fix(state: DebugState) -> dict:
     verified_run = session.run("verify", sandbox_test_command(state))
     after = junit.read(session)  # per-test results with the patch applied
     results.append(verified_run)
-    verified, still_failing, regressions, note = judge_verification(state, verified_run)
+    verified, still_failing, regressions, note = judge_verification(state, verified_run, after)
 
     # Phase 11: cache a freshly verified fix (only on a genuine verify, and not
     # when the diff itself came from the cache — nothing new to learn). This is
@@ -410,24 +410,24 @@ def verify_fix(state: DebugState) -> dict:
     }
 
 
-def judge_verification(state: DebugState, run) -> tuple[bool, list[str], list[str], str | None]:
+def judge_verification(state: DebugState, run, report: dict[str, str] | None = None
+                       ) -> tuple[bool, list[str], list[str], str | None]:
     """(verified, still failing, regressions, why not) for the run after the patch.
 
     Verified means the CI's failing tests no longer fail and nothing fails that
     did not fail before the patch. Tests that were already failing for another
     reason may stay red: they no longer make a real fix unverifiable, and they
-    are reported. Only failures are listed in pytest's output, so the run must
-    complete normally (exit 0, or exit 1 with its failure list); anything else
-    proves nothing.
+    are reported. The failures come from the run's JUnit report, which lists
+    every test, else from the log's FAILED lines (G-25). The run must complete
+    normally (exit 0, or exit 1 with its failures); anything else proves nothing.
     """
     # ponytail: a target test the patch stops collecting would read as passing;
     # the audit gate refuses deleted tests, and G-22 covers edits to their setup.
-    from cidra.nodes.ingest import failing_tests
     from cidra.nodes.reproduce import _same_test
 
     if run.passed:
         return True, [], [], None
-    after = [] if run.timed_out or run.exit_code != 1 else failing_tests(run.stdout_tail + "\n" + run.stderr_tail)
+    after = [] if run.timed_out or run.exit_code != 1 else junit.failures(report, run.stdout_tail + "\n" + run.stderr_tail)
     if not after:
         why = "timed out" if run.timed_out else f"exit {run.exit_code}"
         return False, [], [], f"the test run after the patch did not complete normally ({why})"

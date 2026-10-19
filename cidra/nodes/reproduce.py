@@ -47,9 +47,7 @@ def _test_command(state: DebugState) -> str:
     return sandbox_test_command(state)
 
 
-def _same_test(a: str, b: str) -> bool:
-    """Two pytest ids name the same test, allowing for a different rootdir prefix."""
-    return a == b or a.endswith("/" + b) or b.endswith("/" + a)
+_same_test = junit.same_test
 
 
 def _targets(state: DebugState, sandbox_failed: list[str]) -> tuple[list[str], str, str | None]:
@@ -81,8 +79,6 @@ def reproduce_once(state: DebugState) -> dict:
     sandbox lacks, an unrelated broken test) passed as a reproduction, and a
     later green run passed as its fix (KNOWN_GAPS G-17).
     """
-    from cidra.nodes.ingest import failing_tests
-
     session = session_for(state["run_id"])
     if session is None:
         return {"reproduced": False}
@@ -97,7 +93,7 @@ def reproduce_once(state: DebugState) -> dict:
     if result.passed:
         return {"reproduced": False, "repro_results": results, "repro_junit": before,
                 "analysis_error": "not reproduced: the tests pass in the sandbox"}
-    sandbox_failed = failing_tests(result.stdout_tail + "\n" + result.stderr_tail)
+    sandbox_failed = junit.failures(before, result.stdout_tail + "\n" + result.stderr_tail)
     targets, evidence, reason = _targets(state, sandbox_failed)
     # Every test failing before the patch: verify_fix allows these, and only these, to stay red.
     out = {"reproduced": not reason, "repro_results": results, "target_tests": targets,
@@ -113,7 +109,7 @@ def reproduce_once(state: DebugState) -> dict:
         # to FLAKY_RUNS if a flaky test is ever patched in the corpus.
         again = session.run("test", _test_command(state))
         results.append(again)
-        again_failed = [] if again.passed else failing_tests(again.stdout_tail + "\n" + again.stderr_tail)
+        again_failed = [] if again.passed else junit.failures(junit.read(session), again.stdout_tail + "\n" + again.stderr_tail)
         still = [t for t in targets if any(_same_test(t, s) for s in again_failed)]
         if again.passed or still != targets:
             return {"reproduced": False, "repro_results": results, "target_tests": targets,

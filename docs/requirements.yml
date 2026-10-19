@@ -156,6 +156,10 @@
   accept: The built wheel carries pyproject's version, the sandbox Dockerfile and exactly the dashboard files its page loads (no missing file, no stale bundle); installed in a clean venv and run from outside the checkout, the CLI starts, the sandbox image builds from the package, the dashboard serves every file, and `cidra action` reports a verified fix on a failing practice commit through a stand-in GitHub API. A release runs these same checks on the files it uploads to PyPI, and its tag must match the version.
   jobs: [package]
 
+- id: G-25
+  title: The verdict is judged from every test, not the log's tail
+  accept: Reproduction (which tests fail, the second run's check for flakiness) and verification (target still failing, regressions) read the failed and errored tests from pytest's JUnit report of that run, which lists every test; a collection error counts by its module. Only a run with no readable report falls back to the FAILED lines of the log. Shown on the real sandbox with a target and a regression that the 16 KB log tail does not hold.
+
 - id: COMPAT
   title: Every Python CIDRA says it supports is tested
   accept: The unit and server tests pass on Linux with each Python from requires-python's floor to the newest release (3.10 to 3.14) and on Windows; the PyPI classifiers and the README badge list exactly those versions.

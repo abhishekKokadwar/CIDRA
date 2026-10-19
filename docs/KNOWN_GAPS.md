@@ -69,12 +69,6 @@ manual command; `--twice` shows the idempotency no-op.
 in the telemetry, and `cidra-bot.yml` commits `telemetry.json` to `main` of a public repo on
 every run. **Fix:** upload it as a workflow artifact instead, and stop the commit step.
 
-### G-25 · "Verified" is judged from the log, not the per-test report — 🐳 🛠
-Every sandbox test run records pytest's JUnit report (`repro_junit`, `verify_junit`), but
-`judge_verification` and `reproduce_once` still decide from the failure list parsed out of
-the log. The report is shown as evidence only. **Fix:** judge from the report, fall back to
-the log when it is missing, and test both on the real sandbox.
-
 ---
 
 ## Deferred by design (not bugs — scoped out, revisit when the phase arrives)
@@ -121,6 +115,7 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-25 · "Verified" was judged from the log, not the per-test report** — Closed 2026-10-19. Reproduction and verification read the failed tests from the run's pytest JUnit report, which lists every test; the log's FAILED lines, cut to a 16 KB tail, decide only when there is no readable report. Before, a run with many failures could push the target or a regression out of the tail: on the real sandbox, 400 already-failing tests made a genuine failure read as "not the CI failure". Tested there (`tests/integration/test_junit_results.py`) and in `tests/unit/test_junit_verdict.py`.
 - **G-21 · Release** — Closed 2026-10-19. `LICENSE` (MIT) is in the repository; 0.3.0 and 0.3.1 are on PyPI with `sandbox/Dockerfile`, the Action is tagged `v1` and listed on the Marketplace. CI's package job and the release job check every wheel for the Dockerfile before it can ship (`scripts/check_package.py`). The v0.2.0 release title ("Node.js Support") is left as published.
 - **G-24 · CI environment variables did not reach a command after `cd ... &&`** — Closed 2026-10-19. `env_prefix` exports the workflow's variables (`export K=V; ...`) instead of putting them inline, where they applied to `cd` only. Tested in the real sandbox with `cd sub && pytest` (`tests/integration/test_ci_env_sandbox.py`).
 - **G-23 · A crash mid-run leaves its sandbox container running** — Closed 2026-10-19. Every graph run (Action, CLI, server, `eval/measure.py`, the fixtures script) is wrapped in `publish.released`, which removes the container and checkouts in a `finally`. Tested on real Docker by raising inside a node after the sandbox started (`tests/integration/test_cleanup_on_crash.py`).
