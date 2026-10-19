@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "KeyError: 'dur'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "test/test_utils.py::TestUtil::test_dfxp2srt"
+  },
+  "Patch": {
+    "diff": "diff --git a/youtube_dl/utils.py b/youtube_dl/utils.py\nindex 91917fc96..ee20c3d9b 100644\n--- a/youtube_dl/utils.py\n+++ b/youtube_dl/utils.py\n@@ -1976,7 +1976,7 @@ def match_filter_func(filter_str):\n \n def parse_dfxp_time_expr(time_expr):\n     if not time_expr:\n-        return 0.0\n+        return\n \n     mobj = re.match(r'^(?P<time_offset>\\d+(?:\\.\\d+)?)s?$', time_expr)\n     if mobj:\n@@ -2020,10 +2020,15 @@ def dfxp2srt(dfxp_data):\n         raise ValueError('Invalid dfxp/TTML subtitle')\n \n     for para, index in zip(paras, itertools.count(1)):\n-        begin_time = parse_dfxp_time_expr(para.attrib['begin'])\n+        begin_time = parse_dfxp_time_expr(para.attrib.get('begin'))\n         end_time = parse_dfxp_time_expr(para.attrib.get('end'))\n+        dur = parse_dfxp_time_expr(para.attrib.get('dur'))\n+        if begin_time is None:\n+            continue\n         if not end_time:\n-            end_time = begin_time + parse_dfxp_time_expr(para.attrib['dur'])\n+            if not dur:\n+                continue\n+            end_time = begin_time + dur\n         out.append('%d\\n%s --> %s\\n%s\\n\\n' % (\n             index,\n             srt_subtitles_timecode(begin_time),\n",
+    "target_file": "youtube_dl/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "AttributeError: 'NoneType' object has no attribute 'type'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "test/test_YoutubeDL.py::TestFormatSelection::test_youtube_format_selection"
+  },
+  "Patch": {
+    "diff": "diff --git a/youtube_dl/YoutubeDL.py b/youtube_dl/YoutubeDL.py\nindex 5deb4848e..5a79e5f1d 100755\n--- a/youtube_dl/YoutubeDL.py\n+++ b/youtube_dl/YoutubeDL.py\n@@ -958,8 +958,7 @@ class YoutubeDL(object):\n                     elif string == '/':\n                         first_choice = current_selector\n                         second_choice = _parse_format_selection(tokens, inside_choice=True)\n-                        current_selector = None\n-                        selectors.append(FormatSelector(PICKFIRST, (first_choice, second_choice), []))\n+                        current_selector = FormatSelector(PICKFIRST, (first_choice, second_choice), [])\n                     elif string == '[':\n                         if not current_selector:\n                             current_selector = FormatSelector(SINGLE, 'best', [])\n",
+    "target_file": "youtube_dl/YoutubeDL.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

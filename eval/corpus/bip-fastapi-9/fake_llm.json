@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: assert {'content': {...quired': True} == {'content': {...quired': True}",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_request_body_parameters_media_type.py::test_openapi_schema"
+  },
+  "Patch": {
+    "diff": "diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py\nindex f9e42d0a8..7f0f59092 100644\n--- a/fastapi/dependencies/utils.py\n+++ b/fastapi/dependencies/utils.py\n@@ -559,6 +559,8 @@ def get_body_field(*, dependant: Dependant, name: str) -> Optional[Field]:\n     for f in flat_dependant.body_params:\n         BodyModel.__fields__[f.name] = get_schema_compatible_field(field=f)\n     required = any(True for f in flat_dependant.body_params if f.required)\n+\n+    BodySchema_kwargs: Dict[str, Any] = dict(default=None)\n     if any(isinstance(f.schema, params.File) for f in flat_dependant.body_params):\n         BodySchema: Type[params.Body] = params.File\n     elif any(isinstance(f.schema, params.Form) for f in flat_dependant.body_params):\n@@ -566,6 +568,14 @@ def get_body_field(*, dependant: Dependant, name: str) -> Optional[Field]:\n     else:\n         BodySchema = params.Body\n \n+        body_param_media_types = [\n+            getattr(f.schema, \"media_type\")\n+            for f in flat_dependant.body_params\n+            if isinstance(f.schema, params.Body)\n+        ]\n+        if len(set(body_param_media_types)) == 1:\n+            BodySchema_kwargs[\"media_type\"] = body_param_media_types[0]\n+\n     field = Field(\n         name=\"body\",\n         type_=BodyModel,\n@@ -574,6 +584,6 @@ def get_body_field(*, dependant: Dependant, name: str) -> Optional[Field]:\n         model_config=BaseConfig,\n         class_validators={},\n         alias=\"body\",\n-        schema=BodySchema(None),\n+        schema=BodySchema(**BodySchema_kwargs),\n     )\n     return field\n",
+    "target_file": "fastapi/dependencies/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

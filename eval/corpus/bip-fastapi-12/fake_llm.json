@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "assert 403 == 200",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_security_http_bearer_optional.py::test_security_http_bearer_incorrect_scheme_credentials"
+  },
+  "Patch": {
+    "diff": "diff --git a/fastapi/security/http.py b/fastapi/security/http.py\nindex f41d8d944..362390b7a 100644\n--- a/fastapi/security/http.py\n+++ b/fastapi/security/http.py\n@@ -112,10 +112,13 @@ class HTTPBearer(HTTPBase):\n             else:\n                 return None\n         if scheme.lower() != \"bearer\":\n-            raise HTTPException(\n-                status_code=HTTP_403_FORBIDDEN,\n-                detail=\"Invalid authentication credentials\",\n-            )\n+            if self.auto_error:\n+                raise HTTPException(\n+                    status_code=HTTP_403_FORBIDDEN,\n+                    detail=\"Invalid authentication credentials\",\n+                )\n+            else:\n+                return None\n         return HTTPAuthorizationCredentials(scheme=scheme, credentials=credentials)\n \n \n",
+    "target_file": "fastapi/security/http.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

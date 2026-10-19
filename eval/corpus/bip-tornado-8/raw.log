@@ -1,0 +1,62 @@
+............F...................s...                                     [100%]
+=================================== FAILURES ===================================
+___________________ WebSocketTest.test_missing_websocket_key ___________________
+
+self = <tornado.test.websocket_test.WebSocketTest testMethod=test_missing_websocket_key>
+
+    def test_missing_websocket_key(self):
+        response = self.fetch('/echo',
+                              headers={'Connection': 'Upgrade',
+                                       'Upgrade': 'WebSocket',
+                                       'Sec-WebSocket-Version': '13'})
+>       self.assertEqual(response.code, 400)
+E       AssertionError: 500 != 400
+
+tornado/test/websocket_test.py:201: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    tornado.application:web.py:1607 Uncaught exception GET /echo (127.0.0.1)
+HTTPServerRequest(protocol='http', host='localhost:40431', method='GET', uri='/echo', version='HTTP/1.1', remote_ip='127.0.0.1')
+Traceback (most recent call last):
+  File "/work/tornado/websocket.py", line 618, in accept_connection
+    self._handle_websocket_headers()
+  File "/work/tornado/websocket.py", line 634, in _handle_websocket_headers
+    raise ValueError("Missing/Invalid WebSocket headers")
+ValueError: Missing/Invalid WebSocket headers
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/work/tornado/web.py", line 1488, in _stack_context_handle_exception
+    raise_exc_info((type, value, traceback))
+  File "<string>", line 4, in raise_exc_info
+  File "/work/tornado/web.py", line 1686, in wrapper
+    result = method(self, *args, **kwargs)
+  File "/work/tornado/websocket.py", line 196, in get
+    self.ws_connection.accept_connection()
+  File "/work/tornado/websocket.py", line 623, in accept_connection
+    self._abort()
+  File "/work/tornado/websocket.py", line 512, in _abort
+    self.stream.close()  # forcibly tear down the connection
+AttributeError: 'NoneType' object has no attribute 'close'
+ERROR    tornado.access:web.py:2080 500 GET /echo (127.0.0.1) 0.61ms
+=============================== warnings summary ===============================
+tornado/util.py:262
+  /work/tornado/util.py:262: DeprecationWarning: invalid escape sequence \d
+    """
+
+tornado/httputil.py:106
+  /work/tornado/httputil.py:106: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
+    class HTTPHeaders(collections.MutableMapping):
+
+tornado/web.py:1889
+  /work/tornado/web.py:1889: DeprecationWarning: invalid escape sequence \.
+    """
+
+tornado/test/websocket_test.py:36
+  /work/tornado/test/websocket_test.py:36: PytestCollectionWarning: cannot collect test class 'TestWebSocketHandler' because it has a __init__ constructor (from: tornado/test/websocket_test.py)
+    class TestWebSocketHandler(WebSocketHandler):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tornado/test/websocket_test.py::WebSocketTest::test_missing_websocket_key
+1 failed, 34 passed, 1 skipped, 4 warnings in 0.41s

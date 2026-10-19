@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "TypeError: object Future can't be used in 'await' expression",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/ioloop_test.py::TestIOLoopFutures::test_run_in_executor_native"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/ioloop.py b/tornado/ioloop.py\nindex 5686576c..a60632e4 100644\n--- a/tornado/ioloop.py\n+++ b/tornado/ioloop.py\n@@ -44,7 +44,7 @@ import time\n import traceback\n import math\n \n-from tornado.concurrent import TracebackFuture, is_future\n+from tornado.concurrent import TracebackFuture, is_future, chain_future\n from tornado.log import app_log, gen_log\n from tornado.platform.auto import set_close_exec, Waker\n from tornado import stack_context\n@@ -655,8 +655,12 @@ class IOLoop(Configurable):\n                 from tornado.process import cpu_count\n                 self._executor = ThreadPoolExecutor(max_workers=(cpu_count() * 5))\n             executor = self._executor\n-\n-        return executor.submit(func, *args)\n+        c_future = executor.submit(func, *args)\n+        # Concurrent Futures are not usable with await. Wrap this in a\n+        # Tornado Future instead, using self.add_future for thread-safety.\n+        t_future = TracebackFuture()\n+        self.add_future(c_future, lambda f: chain_future(f, t_future))\n+        return t_future\n \n     def set_default_executor(self, executor):\n         \"\"\"Sets the default executor to use with :meth:`run_in_executor`.\"\"\"\n",
+    "target_file": "tornado/ioloop.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

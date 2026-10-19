@@ -1,0 +1,84 @@
+.....s...............................F..............s                    [100%]
+=================================== FAILURES ===================================
+________________ TestIOLoopFutures.test_run_in_executor_native _________________
+
+self = <tornado.test.ioloop_test.TestIOLoopFutures testMethod=test_run_in_executor_native>
+
+    @skipBefore35
+    @gen_test
+    def test_run_in_executor_native(self):
+        event1 = threading.Event()
+        event2 = threading.Event()
+    
+        def sync_func(self_event, other_event):
+            self_event.set()
+            other_event.wait()
+            return self_event
+    
+        # Go through an async wrapper to ensure that the result of
+        # run_in_executor works with await and not just gen.coroutine
+        # (simply passing the underlying concurrrent future would do that).
+        namespace = exec_test(globals(), locals(), """
+            async def async_wrapper(self_event, other_event):
+                return await IOLoop.current().run_in_executor(
+                    None, sync_func, self_event, other_event)
+        """)
+    
+        res = yield [
+            namespace["async_wrapper"](event1, event2),
+>           namespace["async_wrapper"](event2, event1)
+            ]
+
+tornado/test/ioloop_test.py:646: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tornado/gen.py:1049: in run
+    value = future.result()
+tornado/concurrent.py:238: in result
+    raise_exc_info(self._exc_info)
+<string>:4: in raise_exc_info
+    ???
+tornado/gen.py:823: in callback
+    result_list.append(f.result())
+tornado/concurrent.py:238: in result
+    raise_exc_info(self._exc_info)
+<string>:4: in raise_exc_info
+    ???
+tornado/gen.py:303: in wrapper
+    yielded = next(result)
+<string>:6: in _wrap_awaitable
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self_event = <threading.Event object at 0x78367f0fffd0>
+other_event = <threading.Event object at 0x78367f0ff690>
+
+>   ???
+E   TypeError: object Future can't be used in 'await' expression
+
+<string>:4: TypeError
+------------------------------ Captured log call -------------------------------
+ERROR    tornado.application:gen.py:828 Multiple exceptions in yield list
+Traceback (most recent call last):
+  File "/work/tornado/gen.py", line 823, in callback
+    result_list.append(f.result())
+  File "/work/tornado/concurrent.py", line 238, in result
+    raise_exc_info(self._exc_info)
+  File "<string>", line 4, in raise_exc_info
+  File "/work/tornado/gen.py", line 303, in wrapper
+    yielded = next(result)
+  File "<string>", line 6, in _wrap_awaitable
+  File "<string>", line 4, in async_wrapper
+TypeError: object Future can't be used in 'await' expression
+=============================== warnings summary ===============================
+tornado/util.py:262
+  /work/tornado/util.py:262: DeprecationWarning: invalid escape sequence \d
+    """
+
+tornado/httputil.py:106
+  /work/tornado/httputil.py:106: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
+    class HTTPHeaders(collections.MutableMapping):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tornado/test/ioloop_test.py::TestIOLoopFutures::test_run_in_executor_native
+1 failed, 50 passed, 2 skipped, 2 warnings in 0.79s

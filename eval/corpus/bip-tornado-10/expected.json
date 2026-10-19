@@ -1,0 +1,7 @@
+{
+  "expected_outcome": "verified_fix",
+  "expected_analysis": {
+    "category": "assertion_error"
+  },
+  "note": "Set mechanically from the log; see eval/corpus/README.md."
+}

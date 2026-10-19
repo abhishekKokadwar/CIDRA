@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "assert 7 == 6",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/keras/preprocessing/sequence_test.py::test_TimeSeriesGenerator_doesnt_miss_any_sample"
+  },
+  "Patch": {
+    "diff": "diff --git a/keras/preprocessing/sequence.py b/keras/preprocessing/sequence.py\nindex 03906c04a..7bfe97a95 100644\n--- a/keras/preprocessing/sequence.py\n+++ b/keras/preprocessing/sequence.py\n@@ -326,9 +326,15 @@ class TimeseriesGenerator(Sequence):\n         self.reverse = reverse\n         self.batch_size = batch_size\n \n+        if self.start_index > self.end_index:\n+            raise ValueError('`start_index+length=%i > end_index=%i` '\n+                             'is disallowed, as no part of the sequence '\n+                             'would be left to be used as current step.'\n+                             % (self.start_index, self.end_index))\n+\n     def __len__(self):\n         return int(np.ceil(\n-            (self.end_index - self.start_index) /\n+            (self.end_index - self.start_index + 1) /\n             (self.batch_size * self.stride)))\n \n     def _empty_batch(self, num_rows):\n@@ -341,11 +347,11 @@ class TimeseriesGenerator(Sequence):\n     def __getitem__(self, index):\n         if self.shuffle:\n             rows = np.random.randint(\n-                self.start_index, self.end_index, size=self.batch_size)\n+                self.start_index, self.end_index + 1, size=self.batch_size)\n         else:\n             i = self.start_index + self.batch_size * self.stride * index\n             rows = np.arange(i, min(i + self.batch_size *\n-                                    self.stride, self.end_index), self.stride)\n+                                    self.stride, self.end_index + 1), self.stride)\n \n         samples, targets = self._empty_batch(len(rows))\n         for j, row in enumerate(rows):\n",
+    "target_file": "keras/preprocessing/sequence.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

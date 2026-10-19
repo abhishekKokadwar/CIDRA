@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "TypeError: __init__() missing 1 required positional argument: 'model'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_union_body.py::test_item_openapi_schema"
+  },
+  "Patch": {
+    "diff": "diff --git a/fastapi/dependencies/utils.py b/fastapi/dependencies/utils.py\nindex 28c57c296..c898ab7db 100644\n--- a/fastapi/dependencies/utils.py\n+++ b/fastapi/dependencies/utils.py\n@@ -131,12 +131,17 @@ def get_flat_dependant(dependant: Dependant) -> Dependant:\n \n \n def is_scalar_field(field: Field) -> bool:\n-    return (\n+    if not (\n         field.shape == Shape.SINGLETON\n         and not lenient_issubclass(field.type_, BaseModel)\n         and not lenient_issubclass(field.type_, sequence_types + (dict,))\n         and not isinstance(field.schema, params.Body)\n-    )\n+    ):\n+        return False\n+    if field.sub_fields:\n+        if not all(is_scalar_field(f) for f in field.sub_fields):\n+            return False\n+    return True\n \n \n def is_scalar_sequence_field(field: Field) -> bool:\n",
+    "target_file": "fastapi/dependencies/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

@@ -1,0 +1,46 @@
+.........FF                                                              [100%]
+=================================== FAILURES ===================================
+________ test_get_new_command[command1-hdfs dfs -mkdir -p foo/bar/baz] _________
+
+command = Command(script='hdfs dfs -mkdir foo/bar/baz', stdout='', stderr='')
+new_command = 'hdfs dfs -mkdir -p foo/bar/baz'
+
+    @pytest.mark.parametrize('command, new_command', [
+        (Command('mkdir foo/bar/baz'), 'mkdir -p foo/bar/baz'),
+        (Command('hdfs dfs -mkdir foo/bar/baz'), 'hdfs dfs -mkdir -p foo/bar/baz'),
+        (Command('./bin/hdfs dfs -mkdir foo/bar/baz'), './bin/hdfs dfs -mkdir -p foo/bar/baz')])
+    def test_get_new_command(command, new_command):
+>       assert get_new_command(command, None) == new_command
+E       AssertionError: assert 'hdfs dfs -mkdir foo/bar/baz' == 'hdfs dfs -mk...p foo/bar/baz'
+E         - hdfs dfs -mkdir -p foo/bar/baz
+E         ?                ---
+E         + hdfs dfs -mkdir foo/bar/baz
+
+tests/rules/test_mkdir_p.py:30: AssertionError
+_____ test_get_new_command[command2-./bin/hdfs dfs -mkdir -p foo/bar/baz] ______
+
+command = Command(script='./bin/hdfs dfs -mkdir foo/bar/baz', stdout='', stderr='')
+new_command = './bin/hdfs dfs -mkdir -p foo/bar/baz'
+
+    @pytest.mark.parametrize('command, new_command', [
+        (Command('mkdir foo/bar/baz'), 'mkdir -p foo/bar/baz'),
+        (Command('hdfs dfs -mkdir foo/bar/baz'), 'hdfs dfs -mkdir -p foo/bar/baz'),
+        (Command('./bin/hdfs dfs -mkdir foo/bar/baz'), './bin/hdfs dfs -mkdir -p foo/bar/baz')])
+    def test_get_new_command(command, new_command):
+>       assert get_new_command(command, None) == new_command
+E       AssertionError: assert './bin/hdfs d...r foo/bar/baz' == './bin/hdfs d...p foo/bar/baz'
+E         - ./bin/hdfs dfs -mkdir -p foo/bar/baz
+E         ?                      ---
+E         + ./bin/hdfs dfs -mkdir foo/bar/baz
+
+tests/rules/test_mkdir_p.py:30: AssertionError
+=============================== warnings summary ===============================
+thefuck/conf.py:2
+  /work/thefuck/conf.py:2: DeprecationWarning: the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses
+    from imp import load_source
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs dfs -mkdir -p foo/bar/baz]
+FAILED tests/rules/test_mkdir_p.py::test_get_new_command[command2-./bin/hdfs dfs -mkdir -p foo/bar/baz]
+2 failed, 9 passed, 1 warning in 0.05s

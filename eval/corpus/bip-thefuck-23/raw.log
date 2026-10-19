@@ -1,0 +1,118 @@
+....................FFF                                                  [100%]
+=================================== FAILURES ===================================
+_______________________ TestCache.test_with_blank_cache ________________________
+
+self = <tests.test_utils.TestCache object at 0x783840d7db90>, shelve = {}
+fn = <function TestCache.fn.<locals>.fn at 0x783840db6320>
+key = 'tests.test_utils.<function TestCache.fn.<locals>.fn '
+
+    def test_with_blank_cache(self, shelve, fn, key):
+        assert shelve == {}
+>       assert fn() == 'test'
+
+tests/test_utils.py:170: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/home/cidra/site/decorator.py:232: in fun
+    return caller(func, *(extras + args), **kw)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+fn = <function TestCache.fn.<locals>.fn at 0x783840db60e0>, args = ()
+kwargs = {}, cache_path = '/tmp/.thefuck-cache'
+key = 'tests.test_utils.<function TestCache.fn.<locals>.fn ', etag = '0'
+
+    @decorator
+    def _cache(fn, *args, **kwargs):
+        if cache.disabled:
+            return fn(*args, **kwargs)
+    
+        cache_path = os.path.join(tempfile.gettempdir(), '.thefuck-cache')
+        key = '{}.{}'.format(fn.__module__, repr(fn).split('at')[0])
+    
+        etag = '.'.join(_get_mtime(name) for name in depends_on)
+    
+>       with shelve.open(cache_path) as db:
+E       AttributeError: __enter__
+
+thefuck/utils.py:183: AttributeError
+_______________________ TestCache.test_with_filled_cache _______________________
+
+self = <tests.test_utils.TestCache object at 0x783840d7dfd0>
+shelve = {'tests.test_utils.<function TestCache.fn.<locals>.fn ': {'etag': '0', 'value': 'new-value'}}
+fn = <function TestCache.fn.<locals>.fn at 0x783840d495f0>
+key = 'tests.test_utils.<function TestCache.fn.<locals>.fn '
+
+    def test_with_filled_cache(self, shelve, fn, key):
+        cache_value = {key: {'etag': '0', 'value': 'new-value'}}
+        shelve.update(cache_value)
+>       assert fn() == 'new-value'
+
+tests/test_utils.py:176: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/home/cidra/site/decorator.py:232: in fun
+    return caller(func, *(extras + args), **kw)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+fn = <function TestCache.fn.<locals>.fn at 0x783840ea1680>, args = ()
+kwargs = {}, cache_path = '/tmp/.thefuck-cache'
+key = 'tests.test_utils.<function TestCache.fn.<locals>.fn ', etag = '0'
+
+    @decorator
+    def _cache(fn, *args, **kwargs):
+        if cache.disabled:
+            return fn(*args, **kwargs)
+    
+        cache_path = os.path.join(tempfile.gettempdir(), '.thefuck-cache')
+        key = '{}.{}'.format(fn.__module__, repr(fn).split('at')[0])
+    
+        etag = '.'.join(_get_mtime(name) for name in depends_on)
+    
+>       with shelve.open(cache_path) as db:
+E       AttributeError: __enter__
+
+thefuck/utils.py:183: AttributeError
+_______________________ TestCache.test_when_etag_changed _______________________
+
+self = <tests.test_utils.TestCache object at 0x783840d7db50>
+shelve = {'tests.test_utils.<function TestCache.fn.<locals>.fn ': {'etag': '-1', 'value': 'old-value'}}
+fn = <function TestCache.fn.<locals>.fn at 0x783840d49560>
+key = 'tests.test_utils.<function TestCache.fn.<locals>.fn '
+
+    def test_when_etag_changed(self, shelve, fn, key):
+        shelve.update({key: {'etag': '-1', 'value': 'old-value'}})
+>       assert fn() == 'test'
+
+tests/test_utils.py:181: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/home/cidra/site/decorator.py:232: in fun
+    return caller(func, *(extras + args), **kw)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+fn = <function TestCache.fn.<locals>.fn at 0x783840cf44d0>, args = ()
+kwargs = {}, cache_path = '/tmp/.thefuck-cache'
+key = 'tests.test_utils.<function TestCache.fn.<locals>.fn ', etag = '0'
+
+    @decorator
+    def _cache(fn, *args, **kwargs):
+        if cache.disabled:
+            return fn(*args, **kwargs)
+    
+        cache_path = os.path.join(tempfile.gettempdir(), '.thefuck-cache')
+        key = '{}.{}'.format(fn.__module__, repr(fn).split('at')[0])
+    
+        etag = '.'.join(_get_mtime(name) for name in depends_on)
+    
+>       with shelve.open(cache_path) as db:
+E       AttributeError: __enter__
+
+thefuck/utils.py:183: AttributeError
+=============================== warnings summary ===============================
+thefuck/conf.py:2
+  /work/thefuck/conf.py:2: DeprecationWarning: the imp module is deprecated in favour of importlib; see the module's documentation for alternative uses
+    from imp import load_source
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_utils.py::TestCache::test_with_blank_cache - AttributeError...
+FAILED tests/test_utils.py::TestCache::test_with_filled_cache - AttributeErro...
+FAILED tests/test_utils.py::TestCache::test_when_etag_changed - AttributeErro...
+3 failed, 20 passed, 1 warning in 0.11s

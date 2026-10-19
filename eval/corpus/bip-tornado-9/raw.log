@@ -1,0 +1,62 @@
+.......F...............................                                  [100%]
+=================================== FAILURES ===================================
+__________________ TestUrlConcat.test_url_concat_none_params ___________________
+
+self = <tornado.test.httputil_test.TestUrlConcat testMethod=test_url_concat_none_params>
+
+    def test_url_concat_none_params(self):
+        url = url_concat(
+            "https://localhost/path?r=1&t=2",
+>           None,
+        )
+
+tornado/test/httputil_test.py:72: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+url = 'https://localhost/path?r=1&t=2', args = None
+
+    def url_concat(url, args):
+        """Concatenate url and arguments regardless of whether
+        url has existing query parameters.
+    
+        ``args`` may be either a dictionary or a list of key-value pairs
+        (the latter allows for multiple values with the same key.
+    
+        >>> url_concat("http://example.com/foo", dict(c="d"))
+        'http://example.com/foo?c=d'
+        >>> url_concat("http://example.com/foo?a=b", dict(c="d"))
+        'http://example.com/foo?a=b&c=d'
+        >>> url_concat("http://example.com/foo?a=b", [("c", "d"), ("c", "d2")])
+        'http://example.com/foo?a=b&c=d&c=d2'
+        """
+        parsed_url = urlparse(url)
+        if isinstance(args, dict):
+            parsed_query = parse_qsl(parsed_url.query, keep_blank_values=True)
+            parsed_query.extend(args.items())
+        elif isinstance(args, list) or isinstance(args, tuple):
+            parsed_query = parse_qsl(parsed_url.query, keep_blank_values=True)
+            parsed_query.extend(args)
+        else:
+            err = "'args' parameter should be dict, list or tuple. Not {0}".format(
+                type(args))
+>           raise TypeError(err)
+E           TypeError: 'args' parameter should be dict, list or tuple. Not <class 'NoneType'>
+
+tornado/httputil.py:616: TypeError
+=============================== warnings summary ===============================
+tornado/util.py:252
+  /work/tornado/util.py:252: DeprecationWarning: invalid escape sequence \d
+    """
+
+tornado/httputil.py:106
+  /work/tornado/httputil.py:106: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
+    class HTTPHeaders(collections.MutableMapping):
+
+tornado/test/httputil_test.py::HTTPHeadersTest::test_string
+  /work/tornado/test/httputil_test.py:363: DeprecationWarning: Please use assertEqual instead.
+    self.assertEquals(headers, headers2)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tornado/test/httputil_test.py::TestUrlConcat::test_url_concat_none_params
+1 failed, 38 passed, 3 warnings in 0.13s

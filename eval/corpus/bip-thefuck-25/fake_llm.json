@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: assert 'hdfs dfs -mkdir foo/bar/baz' == 'hdfs dfs -mk...p foo/bar/baz'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs"
+  },
+  "Patch": {
+    "diff": "diff --git a/thefuck/rules/mkdir_p.py b/thefuck/rules/mkdir_p.py\nindex 03b40ce..a62b447 100644\n--- a/thefuck/rules/mkdir_p.py\n+++ b/thefuck/rules/mkdir_p.py\n@@ -10,4 +10,4 @@ def match(command, settings):\n \n @sudo_support\n def get_new_command(command, settings):\n-    return re.sub('^mkdir (.*)', 'mkdir -p \\\\1', command.script)\n+    return re.sub('\\\\bmkdir (.*)', 'mkdir -p \\\\1', command.script)\n",
+    "target_file": "thefuck/rules/mkdir_p.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

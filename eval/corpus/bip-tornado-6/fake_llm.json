@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: 10 != 1",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/asyncio_test.py::LeakTest::test_asyncio_close_leak"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/ioloop.py b/tornado/ioloop.py\nindex 839e7ee5..f6ec177b 100644\n--- a/tornado/ioloop.py\n+++ b/tornado/ioloop.py\n@@ -47,7 +47,6 @@ import threading\n import time\n import traceback\n import math\n-import weakref\n \n from tornado.concurrent import Future, is_future, chain_future, future_set_exc_info, future_add_done_callback  # noqa: E501\n from tornado.log import app_log, gen_log\n@@ -185,7 +184,7 @@ class IOLoop(Configurable):\n     _current = threading.local()\n \n     # In Python 3, _ioloop_for_asyncio maps from asyncio loops to IOLoops.\n-    _ioloop_for_asyncio = weakref.WeakKeyDictionary()\n+    _ioloop_for_asyncio = dict()\n \n     @classmethod\n     def configure(cls, impl, **kwargs):\ndiff --git a/tornado/platform/asyncio.py b/tornado/platform/asyncio.py\nindex b2ad9fe6..b6a490af 100644\n--- a/tornado/platform/asyncio.py\n+++ b/tornado/platform/asyncio.py\n@@ -38,6 +38,20 @@ class BaseAsyncIOLoop(IOLoop):\n         self.readers = set()\n         self.writers = set()\n         self.closing = False\n+        # If an asyncio loop was closed through an asyncio interface\n+        # instead of IOLoop.close(), we'd never hear about it and may\n+        # have left a dangling reference in our map. In case an\n+        # application (or, more likely, a test suite) creates and\n+        # destroys a lot of event loops in this way, check here to\n+        # ensure that we don't have a lot of dead loops building up in\n+        # the map.\n+        #\n+        # TODO(bdarnell): consider making self.asyncio_loop a weakref\n+        # for AsyncIOMainLoop and make _ioloop_for_asyncio a\n+        # WeakKeyDictionary.\n+        for loop in list(IOLoop._ioloop_for_asyncio):\n+            if loop.is_closed():\n+                del IOLoop._ioloop_for_asyncio[loop]\n         IOLoop._ioloop_for_asyncio[asyncio_loop] = self\n         super(BaseAsyncIOLoop, self).initialize(**kwargs)\n \n@@ -49,6 +63,7 @@ class BaseAsyncIOLoop(IOLoop):\n             if all_fds:\n                 self.close_fd(fileobj)\n         self.asyncio_loop.close()\n+        del IOLoop._ioloop_for_asyncio[self.asyncio_loop]\n \n     def add_handler(self, fd, handler, events):\n         fd, fileobj = self.split_fd(fd)\n",
+    "target_file": "tornado/ioloop.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

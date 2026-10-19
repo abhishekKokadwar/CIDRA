@@ -1,0 +1,91 @@
+.........F.............F............................                     [100%]
+=================================== FAILURES ===================================
+____________________________ TestUtil.test_dfxp2srt ____________________________
+
+self = <test.test_utils.TestUtil testMethod=test_dfxp2srt>
+
+        def test_dfxp2srt(self):
+            dfxp_data = '''<?xml version="1.0" encoding="UTF-8"?>
+                <tt xmlns="http://www.w3.org/ns/ttml" xml:lang="en" xmlns:tts="http://www.w3.org/ns/ttml#parameter">
+                <body>
+                    <div xml:lang="en">
+                        <p begin="0" end="1">The following line contains Chinese characters and special symbols</p>
+                        <p begin="1" end="2">第二行<br/>♪♪</p>
+                        <p begin="2" dur="1"><span>Third<br/>Line</span></p>
+                        <p begin="3" end="-1">Lines with invalid timestamps are ignored</p>
+                        <p begin="-1" end="-1">Ignore, two</p>
+                        <p begin="3" dur="-1">Ignored, three</p>
+                    </div>
+                </body>
+                </tt>'''
+            srt_data = '''1
+    00:00:00,000 --> 00:00:01,000
+    The following line contains Chinese characters and special symbols
+    
+    2
+    00:00:01,000 --> 00:00:02,000
+    第二行
+    ♪♪
+    
+    3
+    00:00:02,000 --> 00:00:03,000
+    Third
+    Line
+    
+    '''
+>           self.assertEqual(dfxp2srt(dfxp_data), srt_data)
+
+test/test_utils.py:700: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+dfxp_data = '<?xml version="1.0" encoding="UTF-8"?>\n            <tt xmlns="http://www.w3.org/ns/ttml" xml:lang="en" xmlns:tts="ht...              <p begin="3" dur="-1">Ignored, three</p>\n                </div>\n            </body>\n            </tt>'
+
+    def dfxp2srt(dfxp_data):
+        _x = functools.partial(xpath_with_ns, ns_map={
+            'ttml': 'http://www.w3.org/ns/ttml',
+            'ttaf1': 'http://www.w3.org/2006/10/ttaf1',
+        })
+    
+        def parse_node(node):
+            str_or_empty = functools.partial(str_or_none, default='')
+    
+            out = str_or_empty(node.text)
+    
+            for child in node:
+                if child.tag in (_x('ttml:br'), _x('ttaf1:br'), 'br'):
+                    out += '\n' + str_or_empty(child.tail)
+                elif child.tag in (_x('ttml:span'), _x('ttaf1:span'), 'span'):
+                    out += str_or_empty(parse_node(child))
+                else:
+                    out += str_or_empty(xml.etree.ElementTree.tostring(child))
+    
+            return out
+    
+        dfxp = compat_etree_fromstring(dfxp_data.encode('utf-8'))
+        out = []
+        paras = dfxp.findall(_x('.//ttml:p')) or dfxp.findall(_x('.//ttaf1:p')) or dfxp.findall('.//p')
+    
+        if not paras:
+            raise ValueError('Invalid dfxp/TTML subtitle')
+    
+        for para, index in zip(paras, itertools.count(1)):
+            begin_time = parse_dfxp_time_expr(para.attrib['begin'])
+            end_time = parse_dfxp_time_expr(para.attrib.get('end'))
+            if not end_time:
+>               end_time = begin_time + parse_dfxp_time_expr(para.attrib['dur'])
+E               KeyError: 'dur'
+
+youtube_dl/utils.py:2026: KeyError
+______________________ TestUtil.test_parse_dfxp_time_expr ______________________
+
+self = <test.test_utils.TestUtil testMethod=test_parse_dfxp_time_expr>
+
+    def test_parse_dfxp_time_expr(self):
+>       self.assertEqual(parse_dfxp_time_expr(None), None)
+E       AssertionError: 0.0 != None
+
+test/test_utils.py:664: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_utils.py::TestUtil::test_dfxp2srt - KeyError: 'dur'
+FAILED test/test_utils.py::TestUtil::test_parse_dfxp_time_expr - AssertionErr...
+2 failed, 50 passed in 0.43s
