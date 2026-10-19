@@ -25,10 +25,13 @@ Two rules keep the claim honest:
 **Audiences, in order:** real users (developers adding it to a Python repository),
 interviewers, research (optional).
 
-**Out of scope for this plan:** languages other than Python, the dashboard, webhook mode
-beyond what exists, SBFL, the semantic fix cache, and merging without a human.
+**Out of scope for this plan:** languages other than Python, webhook mode beyond what
+exists, SBFL, the semantic fix cache, and merging without a human. The dashboard was out
+of scope until 2026-10-19, when it was brought up to the same standard as the rest: it
+shows only real results, and it is tested in CI by component and browser tests. New
+dashboard features stay out of scope.
 
-## 2. Where it stands (2026-10-17)
+## 2. Where it stands (2026-10-19)
 
 | Requirement | Status |
 |---|---|
@@ -39,7 +42,7 @@ beyond what exists, SBFL, the semantic fix cache, and merging without a human.
 | 5. Reject test-weakening or unsafe patches | Done: a test file may change only in its asserts' expected values (G-22 closed) |
 | 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
 | 7. Original failure fixed, no unrelated regressions | Done: the CI's failing tests must pass and no test may go from passing to failing; tests already failing are listed, not blocking |
-| 8. Draft PR with evidence of what was tested | Weak: diff and "suite passed" only |
+| 8. Draft PR with evidence of what was tested | Done (M2): commit, image digest, commands, per-test before/after, audit verdict, dependency changes, model cost, and a rerun command |
 
 ## 3. Milestones
 
@@ -53,13 +56,13 @@ review). M1 and M2 are complete.
 ### M1 · Trustworthy "verified" (weeks 1 to 3)
 
 - [x] Run the 15 sandbox safety tests in CI (they skip on a practice-repo check they do not need).
-- [x] Record per-test results (pytest JUnit XML) before and after the patch: every sandbox test run asks pytest for a report, read whole from the container; kept as `repro_junit` / `verify_junit` and in `measure.py` results (`tests_before` / `tests_after`). The pass/fail judgement still reads the log; switching it to the report is M2 work.
+- [x] Record per-test results (pytest JUnit XML) before and after the patch: every sandbox test run asks pytest for a report, read whole from the container; kept as `repro_junit` / `verify_junit` and in `measure.py` results (`tests_before` / `tests_after`). The pass/fail judgement still reads the log; switching it to the report is open (KNOWN_GAPS G-25).
 - [x] G-17: the test the CI log names must be among the sandbox's failures, or the run is "not reproduced".
 - [x] No regressions: verified means the target test went red to green **and** no test went green to red. Tests already failing before the patch do not block a verification but are listed.
 - [x] G-22: on an `assertion_error` fix, the failing test file may change only in assert expected values.
 - [x] G-16: reproduce at least twice for every fixable category; a disagreement means flaky.
 - [x] G-18: an install failure or a non-reproduction says why, and points to `install_command` / `test_command`.
-- [x] An end-to-end test in CI (done with the 7 practice fixtures and the stub model, `measure.py --check`, instead of a repository built in the test): a small repository created in the test, the stub model, and the full graph to `verified_fix`, `diagnosis_only` and `flaky_detected`.
+- [x] An end-to-end test in CI: the full graph runs on the 7 practice fixtures with the stub model (`measure.py --stub --check` in the pipeline job), and each must reach its expected outcome, covering `verified_fix`, `diagnosis_only` and `flaky_detected`.
 - [x] The adversarial and security suites run in CI (G-05).
 
 **Exit:** each item above has a CI test that fails on the old behaviour.
@@ -97,9 +100,9 @@ $0.02 per run.
 
 ### M4 · Usable by a stranger (weeks 9 to 10)
 
-- [x] A default install ladder: `requirements*.txt`, else `pyproject.toml` / `setup.py` (with its test extra), else nothing.
+- [x] A default install ladder: `requirements.txt` (plus `requirements-dev.txt`, `requirements-test.txt`, `dev-requirements.txt` or `test-requirements.txt` beside it), else `pyproject.toml` / `setup.py` (with its `test`, `tests`, `testing` or `dev` extra), else nothing. A dev or test requirements file without a `requirements.txt` is not read.
 - [x] A comment on the failing commit when there is no PR (G-08); a clear message on a 403.
-- [ ] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing.
+- [x] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing. (0.3.1 is current; every release's wheel is checked for the Dockerfile before upload.)
 - [x] README quick start that fits on one screen.
 - [ ] Follow only the README on three Python repositories CIDRA was not built around, one with `pyproject.toml`. Every question needing the source becomes a fix.
 

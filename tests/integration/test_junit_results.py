@@ -2,6 +2,7 @@
 (ROADMAP M1). Needs Docker and the sandbox image (CI builds both)."""
 
 import pathlib
+import re
 
 import pytest
 
@@ -33,7 +34,8 @@ def state(tmp_path: pathlib.Path):
     s = {"run_id": "it-junit", "source_dir": str(tmp_path),
          "test_command": "cd /work && python -m pytest -q 2>&1",  # behind a cd on purpose
          "ci_failing_tests": ["tests/test_calc.py::test_add"]}
-    assert prepare_sandbox(s)["image_tag"].startswith("cidra-sandbox:")
+    # The exact image for the evidence block: its tag and its content digest.
+    assert re.fullmatch(r"cidra-sandbox:[\w.]+@sha256:[0-9a-f]{64}", prepare_sandbox(s)["image_tag"])
     yield s
     close_session("it-junit")
 
