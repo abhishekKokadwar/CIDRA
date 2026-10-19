@@ -24,13 +24,15 @@ This file says how changes are made, so the history stays readable and every cha
    | PR changes | Runs |
    |---|---|
    | only docs (`*.md`, `docs/`, `eval/results/`) | nothing but the `ci-ok` gate |
-   | anything else, including `docs/requirements.yml` | unit and server tests; integration tests, adversarial and security suites in the real sandbox; the full pipeline on the 7 practice fixtures with the stub model; the dashboard's lint, component tests and build; browser tests of the dashboard against the real server; then the requirements check |
+   | anything else, including `docs/requirements.yml` | unit and server tests; integration tests, adversarial and security suites in the real sandbox; the full pipeline on the 7 practice fixtures with the stub model; the dashboard's lint, component tests and build; browser tests of the dashboard against the real server; the built package installed and run; a dependency audit and CodeQL; then the requirements check |
 
    The requirements check fails unless every requirement in [docs/requirements.yml](docs/requirements.yml)
    has a test tagged `@pytest.mark.req("<id>")` (or, in the dashboard, a test whose title starts with `[<id>]`)
    that ran and passed (skipped does not count), and every
    CI job it names passed. A new requirement or roadmap item goes in that file with the tests that prove it.
    A push to `main` runs every tier. The paid-model BugsInPy run is never in CI.
+   Third-party Actions are pinned to a commit (a test fails otherwise); Dependabot proposes their
+   updates, and the pip and npm ones, weekly, and each update PR runs the full CI.
    Coverage has floors: the unit, server and integration runs together must cover `cidra/` at least
    as much as `fail_under` in `pyproject.toml`, and the dashboard's component tests at least the
    thresholds in `dashboard/vite.config.js`. Raise a floor when coverage rises; never lower one to

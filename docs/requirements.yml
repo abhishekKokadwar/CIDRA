@@ -160,3 +160,8 @@
   title: No Python errors, likely bugs or type errors merge
   accept: ruff checks cidra/, scripts/, eval/ and tests/ for pyflakes errors, import and syntax errors and bugbear patterns, and mypy type-checks cidra/ (settings in pyproject.toml); the unit job fails on any finding of either.
   jobs: [unit]
+
+- id: SEC-CI
+  title: The build's supply chain is checked
+  accept: Every third-party Action in the workflows and in action.yml is pinned to a commit, every CI job has a time limit, CIDRA's Python dependencies and the dashboard's npm packages have no known vulnerability (npm high and up), and CodeQL analyses the Python and JavaScript code on every code change. Dependabot proposes weekly updates for Actions, pip and npm.
+  jobs: [audit, codeql]
