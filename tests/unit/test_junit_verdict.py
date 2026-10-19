@@ -57,3 +57,24 @@ def test_an_unreadable_report_falls_back_to_the_log():
     session = SimpleNamespace(read_file=lambda path: b"<testsuites><testcase")
     assert junit.read(session) is None
     assert junit.failures(None, "FAILED tests/test_a.py::test_x - boom") == ["tests/test_a.py::test_x"]
+
+
+def test_a_parametrized_id_with_spaces_is_read_whole_and_matches_the_report():
+    # thefuck-1 and -25 (corpus v5): the log id was cut at its first space, so the
+    # report's full id no longer matched and a real failure read as "not the CI failure".
+    from cidra.nodes.ingest import failing_tests
+    log = ("FAILED tests/rules/test_pip_unknown_command.py::test_get_new_command[pip un+install thefuck-un+install]\n"
+           "FAILED tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs dfs -mkdir -p foo/bar/baz] - assert 'a' == 'b'\n"
+           "FAILED tests/test_calc.py::test_add - assert -1 == 3")
+    ids = failing_tests(log)
+    assert ids == ["tests/rules/test_pip_unknown_command.py::test_get_new_command[pip un+install thefuck-un+install]",
+                   "tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs dfs -mkdir -p foo/bar/baz]",
+                   "tests/test_calc.py::test_add"]
+    assert junit.same_test(ids[1], "tests.rules.test_mkdir_p::test_get_new_command[command1-hdfs dfs -mkdir -p foo/bar/baz]")
+
+
+def test_a_log_id_cut_inside_its_parameters_still_matches_its_test():
+    full = "tests.rules.test_mkdir_p::test_get_new_command[command1-hdfs dfs -mkdir -p foo/bar/baz]"
+    assert junit.same_test("tests/rules/test_mkdir_p.py::test_get_new_command[command1-hdfs", full)
+    assert not junit.same_test("tests/rules/test_mkdir_p.py::test_get_new_command[command2-./bin", full)
+    assert not junit.same_test("tests/rules/test_mkdir_p.py::test_other[command1-hdfs", full)

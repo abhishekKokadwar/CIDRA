@@ -55,8 +55,15 @@ def junit_id(nodeid: str) -> str:
 
 def same_test(a: str, b: str) -> bool:
     """Two test ids, from a log or a report, name the same test, allowing for a
-    different rootdir prefix ("sub/tests/test_a.py::x" and "tests.test_a::x")."""
+    different rootdir prefix ("sub/tests/test_a.py::x" and "tests.test_a::x").
+    A log id cut inside its parameters ("test_x[a b" from a wrapped line) is
+    compared with the same length of the other's parameters."""
     a, b = junit_id(a), junit_id(b)
+    for cut, full in ((a, b), (b, a)):
+        if cut.count("[") > cut.count("]") and "[" in full:
+            keep = len(cut) - cut.index("[")
+            full = full[:full.index("[") + keep]
+            return cut == full or cut.endswith("." + full) or full.endswith("." + cut)
     return a == b or a.endswith("." + b) or b.endswith("." + a)
 
 

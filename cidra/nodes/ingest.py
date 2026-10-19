@@ -69,7 +69,9 @@ def fetch_log(state: DebugState) -> dict:
     return out
 
 
-_FAILURE_LINE = re.compile(r"^(?:FAILED|ERROR) (\S+)")
+# A parametrized id can hold spaces ("test_x[pip un+install thefuck]"): read it to
+# the "]" that ends the line or comes before " - <message>".
+_FAILURE_LINE = re.compile(r"^(?:FAILED|ERROR) (\S+?\[.*?\](?= - |$)|\S+)")
 
 
 def failing_tests(log: str) -> list[str]:
