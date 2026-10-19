@@ -35,7 +35,8 @@ jobs:
         GEMINI_API_KEY: ""             # the measured model only, no fallback
         CIDRA_MAX_LLM_CALLS: "6"       # per fixture run: the spend cap
         CIDRA_MAX_LLM_TOKENS: "15000"
-      run: python eval/measure.py F-01 F-02 N-01 --check --out "$RUNNER_TEMP/real-model.json"
+      # list price of claude-haiku-4-5 per million tokens, so the results record the cost
+      run: python eval/measure.py F-01 F-02 N-01 --check --price-in 1 --price-out 5 --out "$RUNNER_TEMP/real-model.json"
     - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
       if: always()
       with:
