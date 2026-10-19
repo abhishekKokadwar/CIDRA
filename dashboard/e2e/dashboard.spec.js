@@ -18,6 +18,12 @@ const test = base.extend({
 
 const nav = (page, name) => page.getByRole('navigation').getByText(name, { exact: true }).click();
 
+// Buttons on screen whose label is drawn in the colour of their own background.
+const unreadableButtons = (page) => page.evaluate(() => [...document.querySelectorAll('button')]
+  .filter((b) => b.offsetParent && b.textContent.trim())
+  .filter((b) => { const s = getComputedStyle(b); return s.color === s.backgroundColor; })
+  .map((b) => b.textContent.trim()));
+
 test('[UI-SCREENS] every screen opens without an error', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Command Center' })).toBeVisible();
@@ -29,6 +35,9 @@ test('[UI-SCREENS] every screen opens without an error', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Pull Requests' })).toBeVisible();
   await nav(page, 'Settings');
   await expect(page.getByRole('heading', { name: 'Engine Settings & Configuration' })).toBeVisible();
+  expect(await unreadableButtons(page)).toEqual([]);
+  await nav(page, 'Pipeline Orchestrator');
+  expect(await unreadableButtons(page)).toEqual([]);
 });
 
 test('[UI-OWN-RUNS] the Command Center lists this directory\'s runs with their outcomes', async ({ page }) => {

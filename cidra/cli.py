@@ -155,7 +155,7 @@ def _sandbox_log(run_id: str, source: str, sha: str) -> str:
     """
     from cidra.git_ops import git
     from cidra.nodes.checkout import prepare_checkout, remove_checkout
-    from cidra.nodes.environment import sandbox_install_command, sandbox_test_command, workflow_python
+    from cidra.nodes.environment import sandbox_install_command, sandbox_test_command, workflow_env, workflow_python
     from cidra.sandbox.runner import Session
 
     try:
@@ -173,7 +173,9 @@ def _sandbox_log(run_id: str, source: str, sha: str) -> str:
                 log.error("Installing dependencies failed (set CIDRA_INSTALL_COMMAND):\n%s",
                           (installed.stdout_tail + installed.stderr_tail)[-2000:])
                 sys.exit(1)
-            result = session.run("test", sandbox_test_command({}))
+            # The CI env the pipeline's reproduce step uses too: without it a test that
+            # reads a CI variable fails only here, and the model reads a false failure.
+            result = session.run("test", sandbox_test_command({"ci_env": workflow_env(tree)}))
     except SystemExit:
         raise
     except Exception as e:  # noqa: BLE001 - no Docker, no image, not a git repo
