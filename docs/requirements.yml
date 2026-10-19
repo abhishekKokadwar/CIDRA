@@ -150,3 +150,8 @@
   title: Coverage cannot drop unnoticed
   accept: CI combines the unit, server and integration coverage of cidra/ and fails below the floor in pyproject.toml; the dashboard's component tests fail below the floors in dashboard/vite.config.js. The combined report is in the job summary.
   jobs: [coverage, frontend]
+
+- id: PKG
+  title: What users install works
+  accept: The built wheel carries pyproject's version, the sandbox Dockerfile and exactly the dashboard files its page loads (no missing file, no stale bundle); installed in a clean venv and run from outside the checkout, the CLI starts, the sandbox image builds from the package, the dashboard serves every file, and `cidra action` reports a verified fix on a failing practice commit through a stand-in GitHub API.
+  jobs: [package]
