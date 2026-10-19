@@ -201,6 +201,27 @@ jobs:
         path: dashboard/test-results
         if-no-files-found: ignore
 
+  package:
+    # What users install, not the source tree: the built wheel in a clean venv,
+    # run from outside the checkout (scripts/check_package.py, smoke_installed.sh).
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+        cache: pip
+    - run: pip install build && python -m build
+    - name: The wheel holds what users need
+      run: python scripts/check_package.py dist/*.whl
+    - name: Install the wheel in a clean environment
+      run: python -m venv "$RUNNER_TEMP/user" && "$RUNNER_TEMP/user/bin/pip" install --quiet dist/*.whl
+    - run: git clone --quiet https://github.com/helpmecode69/cidra-practice "$RUNNER_TEMP/cidra-practice"
+    - name: The installed package works (CLI, sandbox image, dashboard, cidra action)
+      run: bash scripts/smoke_installed.sh "$RUNNER_TEMP/user/bin/python" "$RUNNER_TEMP/cidra-practice"
+
   coverage:
     # The unit, server and integration runs together, against the floor in
     # pyproject.toml ([tool.coverage.report] fail_under).
@@ -227,7 +248,7 @@ jobs:
   requirements:
     # Every requirement in docs/requirements.yml has a test that passed in this run
     # (skipped does not count) and every CI job it names passed.
-    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, coverage ]
+    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, package, coverage ]
     if: always() && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -250,7 +271,7 @@ jobs:
         python scripts/check_requirements.py docs/requirements.yml req/*.json --jobs "$jobs"
 
   ci-ok:
-    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, coverage, requirements ]
+    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, package, coverage, requirements ]
     if: always()
     runs-on: ubuntu-latest
     steps:
