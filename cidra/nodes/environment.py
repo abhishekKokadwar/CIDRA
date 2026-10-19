@@ -165,12 +165,13 @@ def workflow_env(tree: pathlib.Path, workflow_file: str | None = None) -> dict[s
 
 
 def env_prefix(state: DebugState, skip: frozenset = frozenset()) -> str:
-    """`K=V ` pairs to put in front of the test command. CIDRA-authored: names are
-    validated and values quoted, so repo-supplied text is data, never shell syntax."""
+    """`export K=V ...; ` to put in front of the test command. Exported, not inline:
+    an inline `K=V cd sub && pytest` sets K for `cd` only (KNOWN_GAPS G-24).
+    CIDRA-authored: names are validated and values quoted, so repo-supplied text is
+    data, never shell syntax."""
     env = state.get("ci_env") or {}
-    return "".join(
-        f"{k}={shlex.quote(str(v))} " for k, v in sorted(env.items()) if _ENV_NAME.match(k) and k not in skip
-    )
+    pairs = [f"{k}={shlex.quote(str(v))}" for k, v in sorted(env.items()) if _ENV_NAME.match(k) and k not in skip]
+    return f"export {' '.join(pairs)}; " if pairs else ""
 
 
 _EXTRA_REQUIREMENTS = ("requirements-dev.txt", "requirements-test.txt", "dev-requirements.txt", "test-requirements.txt")

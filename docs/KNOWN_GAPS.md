@@ -73,13 +73,6 @@ Support"; Node.js is log parsing only.
 
 ---
 
-### G-24 · CI environment variables do not reach a command after `cd ... &&` — 🛠 (small)
-**What:** `env_prefix` puts the CI workflow's `env:` values inline (`CI=1 cd sub && pytest`), so
-they apply to `cd` only and the test run never sees them. The JUnit setting is exported for this
-reason; the CI's own variables are not yet.
-**Fix:** export them (`export K=V; ...`), as `sandbox_test_command` does for `PYTEST_ADDOPTS`.
-**Done when:** a test command of the form `cd sub && pytest` sees the workflow's variables.
-
 ## Deferred by design (not bugs — scoped out, revisit when the phase arrives)
 
 ### G-06 · Security benchmark: SEC-02/03/05/08 still PENDING — 🛠
@@ -124,6 +117,7 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-24 · CI environment variables did not reach a command after `cd ... &&`** — Closed 2026-10-19. `env_prefix` exports the workflow's variables (`export K=V; ...`) instead of putting them inline, where they applied to `cd` only. Tested in the real sandbox with `cd sub && pytest` (`tests/integration/test_ci_env_sandbox.py`).
 - **G-23 · A crash mid-run leaves its sandbox container running** — Closed 2026-10-19. Every graph run (Action, CLI, server, `eval/measure.py`, the fixtures script) is wrapped in `publish.released`, which removes the container and checkouts in a `finally`. Tested on real Docker by raising inside a node after the sandbox started (`tests/integration/test_cleanup_on_crash.py`).
 - **G-08 · Commit-comment fallback for no-PR runs** — Closed 2026-10-19. With no pull request, `publish` comments on the failing commit (updating its own comment by marker); every GitHub write is guarded, and a 403 names the workflow permission to add. Tested against a local server that answers like the GitHub API (`tests/integration/test_publish_github_api.py`).
 - **G-18 · Install failure and non-reproduction reported as "could not diagnose"** — Closed 2026-10-17. `install_deps` records the exit code and install output; the report names the step that stopped the run (install, or diagnosed but not reproduced, with the reason), the command it ran, and the input to change (`install_command` / `test_command`). Untrusted output is shown in a code block it cannot close. Tested on the real sandbox in `tests/integration/test_failed_reasons_sandbox.py`.

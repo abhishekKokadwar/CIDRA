@@ -35,7 +35,8 @@ def test_workflow_env_without_workflows_is_empty(tmp_path):
 
 def test_env_prefix_quotes_values_and_drops_bad_names():
     prefix = env_prefix({"ci_env": {"A": "x; rm -rf /", "B": "ok", "bad;name": "y"}})
-    assert prefix == "A='x; rm -rf /' B=ok "
+    assert prefix == "export A='x; rm -rf /' B=ok; "
+    assert env_prefix({"ci_env": {}}) == ""
 
 
 def test_malformed_identifiers_are_refused_before_anything_runs():
@@ -111,11 +112,11 @@ def test_install_and_test_commands_default_and_per_run_override(tmp_path):
     state = {"install_command": "pip install --quiet .", "test_command": "pytest -q tests/unit 2>&1",
              "ci_env": {"API_TOKEN": "tok value"}}
     assert sandbox_install_command(state) == "pip install --quiet ."
-    assert sandbox_test_command(state) == junit + "API_TOKEN='tok value' pytest -q tests/unit 2>&1"
+    assert sandbox_test_command(state) == junit + "export API_TOKEN='tok value'; pytest -q tests/unit 2>&1"
 
 
 def test_the_repos_own_pytest_addopts_are_kept_beside_the_junit_report():
     from cidra.nodes.environment import sandbox_test_command
     cmd = sandbox_test_command({"ci_env": {"PYTEST_ADDOPTS": "-x --tb=short", "CI": "1"}, "test_command": "cd sub && pytest"})
     assert cmd == ("rm -f /home/cidra/junit.xml; export PYTEST_ADDOPTS='-x --tb=short --junitxml=/home/cidra/junit.xml'; "
-                   "CI=1 cd sub && pytest")
+                   "export CI=1; cd sub && pytest")

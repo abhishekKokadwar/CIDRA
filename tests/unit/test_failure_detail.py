@@ -34,7 +34,7 @@ def test_target_tests_are_rerun_with_vv_and_shown_to_the_model(tmp_path, monkeyp
     monkeypatch.setattr(fix, "structured", lambda **k: seen.append(k["user"]) or fix.Patch(rationale="r"))
     out = fix.generate_fix(_state(tmp_path, ci_env={"CI": "true"}))
     # The sandbox's id, quoted; the unrelated already-failing test is not rerun.
-    assert session.commands == ["CI=true python -m pytest -vv -p no:cacheprovider -p no:warnings "
+    assert session.commands == ["export CI=true; python -m pytest -vv -p no:cacheprovider -p no:warnings "
                                 "'tests/test_a.py::test_x[a b]' 2>&1"]
     assert out["failure_detail"] == FULL_DIFF
     assert "<failing_test_output>" in seen[0] and "'extra': 2" in seen[0]
