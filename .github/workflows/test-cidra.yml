@@ -62,7 +62,12 @@ jobs:
     - name: Unit and server tests
       env:
         CIDRA_REQ_REPORT: req-unit.json
-      run: pytest -q tests/unit tests/server
+        COVERAGE_FILE: coverage-unit
+      run: pytest -q tests/unit tests/server --cov --cov-report=
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cov-unit
+        path: coverage-unit
     - uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -85,7 +90,12 @@ jobs:
     - name: Integration tests (real sandbox)
       env:
         CIDRA_REQ_REPORT: req-integration.json
-      run: pytest -q tests/integration
+        COVERAGE_FILE: coverage-integration
+      run: pytest -q tests/integration --cov --cov-report=
+    - uses: actions/upload-artifact@v4
+      with:
+        name: cov-integration
+        path: coverage-integration
     - uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -191,6 +201,29 @@ jobs:
         path: dashboard/test-results
         if-no-files-found: ignore
 
+  coverage:
+    # The unit, server and integration runs together, against the floor in
+    # pyproject.toml ([tool.coverage.report] fail_under).
+    needs: [ changes, unit, sandbox ]
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - run: pip install coverage
+    - uses: actions/download-artifact@v4
+      with:
+        pattern: cov-*
+        merge-multiple: true
+        path: cov
+    - name: Combined coverage, against the floor
+      run: |
+        coverage combine cov/coverage-unit cov/coverage-integration
+        coverage report --precision=1 --format=markdown --sort=cover >> "$GITHUB_STEP_SUMMARY"
+        coverage report --precision=1
+
   requirements:
     # Every requirement in docs/requirements.yml has a test that passed in this run
     # (skipped does not count) and every CI job it names passed.
@@ -217,7 +250,7 @@ jobs:
         python scripts/check_requirements.py docs/requirements.yml req/*.json --jobs "$jobs"
 
   ci-ok:
-    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, requirements ]
+    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, coverage, requirements ]
     if: always()
     runs-on: ubuntu-latest
     steps:

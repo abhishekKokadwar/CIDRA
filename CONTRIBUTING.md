@@ -31,6 +31,10 @@ This file says how changes are made, so the history stays readable and every cha
    that ran and passed (skipped does not count), and every
    CI job it names passed. A new requirement or roadmap item goes in that file with the tests that prove it.
    A push to `main` runs every tier. The paid-model BugsInPy run is never in CI.
+   Coverage has floors: the unit, server and integration runs together must cover `cidra/` at least
+   as much as `fail_under` in `pyproject.toml`, and the dashboard's component tests at least the
+   thresholds in `dashboard/vite.config.js`. Raise a floor when coverage rises; never lower one to
+   get a change through.
 5. **Merge with "Rebase and merge"**, so each commit lands on `main` as written and keeps its author.
    Use "Squash and merge" only for a branch whose commits are work-in-progress noise.
 6. Delete the branch after merging.
