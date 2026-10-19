@@ -59,6 +59,8 @@ jobs:
         python-version: "3.11"
         cache: pip
     - run: pip install ".[dev]"
+    - name: Lint (ruff; rules in pyproject.toml)
+      run: ruff check --output-format=github .
     - name: Unit and server tests
       env:
         CIDRA_REQ_REPORT: req-unit.json

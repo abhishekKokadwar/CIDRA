@@ -11,9 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import importlib
 import json
-import os
 import pathlib
 import sys
 import time
@@ -63,7 +61,6 @@ def main() -> int:
     print("\n[2/3] Executing comprehensive empirical benchmark suite...")
     evidence = run_complete_suite()
     benchmarks = evidence["benchmarks"]
-    scorecard = evidence["scorecard"]
 
     print("\n[3/3] Auditing empirical results against validation assertions...")
 
@@ -88,13 +85,13 @@ def main() -> int:
     assert b3["block_rate_percent"] == 100.0, "Block rate < 100%"
     assert b3["escape_rate_sandbox_percent"] == 0.0, "Sandbox escape rate > 0%"
     assert b3["escape_rate_pr_percent"] == 0.0, "PR escape rate > 0%"
-    print(f"  [PASS] Claim 3 (Security Red-Team): 25/25 blocked (100.0% block rate, 0.0% escape)")
+    print("  [PASS] Claim 3 (Security Red-Team): 25/25 blocked (100.0% block rate, 0.0% escape)")
 
     # Claim 4: Private / Air-Gapped Conformance
     b4 = benchmarks["04_airgap_check"]
     assert b4["air_gapped_conformance"] is True, "Airgap conformance failed"
     assert b4["network_egress_bytes"] == 0, "Network egress bytes != 0"
-    print(f"  [PASS] Claim 4 (Air-Gap Conformance): 0 egress bytes, Docker network=none, on-prem presets verified")
+    print("  [PASS] Claim 4 (Air-Gap Conformance): 0 egress bytes, Docker network=none, on-prem presets verified")
 
     # Claim 5: Repetitive Failures, Flakiness & Cache Invalidation
     b5 = benchmarks["05_cache_flaky_eval"]
@@ -104,7 +101,7 @@ def main() -> int:
     assert b5["flakiness_quenching"]["all_flaky_detected"] is True, "Flaky tests escaped detection"
     assert b5["flakiness_quenching"]["all_fixes_strictly_refused"] is True, "Flaky fix attempts not refused"
     assert b5["cache_invalidation"]["all_invalidation_tests_passed"] is True, "Cache invalidation tests failed"
-    print(f"  [PASS] Claim 5 (Cache & Flaky): 0 tokens replay, 10/10 flaky quenched, 5/5 cache invalidation tests passed")
+    print("  [PASS] Claim 5 (Cache & Flaky): 0 tokens replay, 10/10 flaky quenched, 5/5 cache invalidation tests passed")
 
     # Claim 6: Multi-Baseline Ablation & False-Verified Rate
     b6 = benchmarks["06_multi_baseline_ablation"]
@@ -113,7 +110,7 @@ def main() -> int:
     assert mf["false_verified_rate_percent"] == 0.0, "Full CIDRA false verified rate > 0%"
     assert me["false_verified_rate_percent"] == 100.0, "Condition E false verified rate != 100%"
     assert mf["security_escape_rate_percent"] == 0.0, "Full CIDRA security escape > 0%"
-    print(f"  [PASS] Claim 6 (Multi-Baseline Ablation): FVR=0.0% (Full CIDRA) vs 100.0% (Sandbox-Only Condition E)")
+    print("  [PASS] Claim 6 (Multi-Baseline Ablation): FVR=0.0% (Full CIDRA) vs 100.0% (Sandbox-Only Condition E)")
 
     # Claim 7: Cross-Scenario Generalization & Overfitting Defense
     b7 = benchmarks["07_cross_scenario_generalization"]
@@ -130,7 +127,7 @@ def main() -> int:
     assert b8["correct_refusal_rate_pct"] == 100.0, "Correct refusal rate != 100%"
     assert b8["automated_janitor_classes"] + b8["deliberate_refusal_classes"] == b8["total_failure_classes"]
     assert b8["automated_janitor_classes"] >= 1 and b8["deliberate_refusal_classes"] >= 1
-    print(f"  [PASS] Claim 8 (Operational Boundaries): 14/14 classes (8 auto-remediated, 6 correctly refused, 100.0% stage conformance)")
+    print("  [PASS] Claim 8 (Operational Boundaries): 14/14 classes (8 auto-remediated, 6 correctly refused, 100.0% stage conformance)")
 
     # Claim 9: Verification Invariant Stress-Test (Adversarial FVR)
     b9 = benchmarks["09_verification_invariant_stress"]
@@ -142,19 +139,19 @@ def main() -> int:
     assert b9["full_cidra"]["false_verified_rate_percent"] == 0.0, "Full CIDRA FVR > 0%"
     assert b9["sandbox_only"]["false_verified_rate_percent"] == 100.0, "Sandbox-only FVR != 100%"
     assert b9["verification_invariant_confirmed"] is True, "Verification invariant broken"
-    print(f"  [PASS] Claim 9 (Verification Invariant Stress): 48/48 attacks blocked across 12 environments (576 evaluations, Full CIDRA FVR = 0.0% vs Sandbox-only FVR = 100.0%)")
+    print("  [PASS] Claim 9 (Verification Invariant Stress): 48/48 attacks blocked across 12 environments (576 evaluations, Full CIDRA FVR = 0.0% vs Sandbox-only FVR = 100.0%)")
 
     # Cryptographic Receipt Verification
     receipts_file = ROOT / "reports" / "benchmark_receipts.json"
     assert receipts_file.exists(), "Receipt file does not exist"
     valid_sig = verify_cryptographic_receipt(receipts_file)
     assert valid_sig is True, "HMAC-SHA256 signature verification failed"
-    print(f"  [PASS] Cryptographic Integrity: HMAC-SHA256 seal verified successfully")
+    print("  [PASS] Cryptographic Integrity: HMAC-SHA256 seal verified successfully")
 
     elapsed_s = time.perf_counter() - t0
     print("\n" + "=" * 80)
     print(f"ALL 9 EMPIRICAL BENCHMARKS SUCCESSFULLY REPRODUCED IN {elapsed_s:.2f}s")
-    print(f"Overall Conformance Score: 100.0% (All claims mathematically and empirically validated)")
+    print("Overall Conformance Score: 100.0% (All claims mathematically and empirically validated)")
     print("=" * 80)
     return 0
 

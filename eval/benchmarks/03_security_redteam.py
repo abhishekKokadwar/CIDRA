@@ -16,7 +16,6 @@ import json
 import logging
 import pathlib
 import sys
-from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -442,7 +441,7 @@ def run_security_redteam_benchmark() -> dict:
     try:
         from cidra.sandbox import runner
         if not hasattr(runner, "DOCKER_SOCKET_BLOCKED"):
-            setattr(runner, "DOCKER_SOCKET_BLOCKED", True)
+            runner.DOCKER_SOCKET_BLOCKED = True
     except Exception:
         pass
 

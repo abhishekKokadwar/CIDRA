@@ -4,7 +4,6 @@ Builds a real hostile repo (post-checkout hook + core.fsmonitor + malicious alia
 and drives it through the hardened checkout + ordinary git ops. The canary must
 never fire and no .git may reach the sandbox tree."""
 
-from pathlib import Path
 
 import pytest
 

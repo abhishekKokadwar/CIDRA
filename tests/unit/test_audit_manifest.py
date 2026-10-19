@@ -4,7 +4,7 @@ import pytest
 import json
 from pathlib import Path
 from cidra.state import DebugState, Analysis, SandboxResult
-from cidra.policy import PolicyEngine, PolicyDecision
+from cidra.policy import PolicyEngine
 from cidra.audit_manifest import generate_manifest, verify_manifest, save_manifest
 
 

@@ -1,6 +1,5 @@
 """Unit tests for the Enterprise Policy Engine (cidra/policy.py)."""
 
-import pytest
 from pathlib import Path
 from cidra.policy import PolicyEngine, PolicyDecision, PolicyRule, ContainmentLimits
 

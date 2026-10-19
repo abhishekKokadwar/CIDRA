@@ -22,7 +22,6 @@ import json
 import logging
 import pathlib
 import sys
-import time
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -30,8 +29,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from cidra.nodes.audit import audit_diff
-from cidra.nodes.ingest import isolate_error
-from cidra.nodes.sbfl import Spectrum, rank
+from cidra.nodes.sbfl import rank
 from cidra.policy import PolicyDecision, PolicyEngine
 from eval.benchmarks.corpus_45 import FAILURE_CORPUS_45
 
@@ -181,7 +179,6 @@ def evaluate_approach_metrics() -> dict[str, Any]:
     # Evaluates what happens when LLM cheats or deletes assertions:
     # Pytest in container exits 0 -> Condition E marks verified: True!
     cheating_cases = [c for c in FAILURE_CORPUS_45 if c["family"] == "adversarial_unsafe"]
-    escape_count_e = len(cheating_cases)  # All 5 adversarial cheats exit 0 in sandbox without AST gate!
 
     metric_e = {
         "condition": "E",
@@ -361,13 +358,13 @@ def main():
     print("-" * 85)
     print(f"{'Failure Family':<32} | {'Count':<5} | {'Top-Frame Acc':<14} | {'SBFL Acc':<10} | {'SBFL Delta'}")
     print("-" * 85)
-    for fam, d in summary["family_matrix_breakdown"].items():
+    for d in summary["family_matrix_breakdown"].values():
         print(f"{d['label']:<32} | {d['count']:>5} | {d['topframe_top1_acc_percent']:>12.1f}% | "
               f"{d['sbfl_top1_acc_percent']:>8.1f}% | +{d['sbfl_delta_percent']:>5.1f}%")
     print("-" * 85)
 
     print("\nCORE RESEARCH FINDINGS:")
-    for rq, val in summary["research_findings"].items():
+    for val in summary["research_findings"].values():
         print(f"\n* {val['question']}")
         print(f"  -> {val['verdict']}")
 

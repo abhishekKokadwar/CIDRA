@@ -225,7 +225,7 @@ def _expected_values_only(f: FileDiff) -> bool:
     # costs a diagnosis-only report, never a false "verified".
     if f.is_new or f.is_deletion or len(f.removed) != len(f.added):
         return False
-    for old, new in zip(f.removed, f.added):
+    for old, new in zip(f.removed, f.added, strict=True):  # same length: checked above
         shape = _assert_shape(old)
         if shape is None or shape != _assert_shape(new):
             return False

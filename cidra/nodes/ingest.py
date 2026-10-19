@@ -5,7 +5,7 @@ isolate_error is pure — the free/instant Tier 1 eval surface (docs/5_fixtures.
 
 import re
 
-from cidra.config import ERROR_MARKERS, LOG_LINES_AFTER, LOG_LINES_BEFORE
+from cidra.config import ERROR_MARKERS
 from cidra.state import DebugState
 
 _ANSI = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]")

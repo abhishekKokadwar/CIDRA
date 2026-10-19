@@ -32,7 +32,7 @@ CORPUS = ROOT / "eval" / "corpus"
 def changed_lines(edit: dict) -> list[str]:
     """The lines a reference edit removes, or for a pure addition its context."""
     old, new = edit["old"].splitlines(), set(edit["new"].splitlines())
-    return [l for l in old if l not in new and l.strip()] or [l for l in old if l.strip()]
+    return [line for line in old if line not in new and line.strip()] or [line for line in old if line.strip()]
 
 
 def check(case: pathlib.Path) -> tuple[bool, int]:

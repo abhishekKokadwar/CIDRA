@@ -24,7 +24,6 @@ import json
 import logging
 import pathlib
 import sys
-import tempfile
 import time
 from typing import Any
 
@@ -34,7 +33,6 @@ if str(ROOT) not in sys.path:
 
 from cidra.nodes.audit import audit_diff
 from cidra.nodes.reproduce import flakiness_score
-from cidra.nodes import fix_cache
 from cidra.policy import PolicyDecision, PolicyEngine
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -886,7 +884,6 @@ def evaluate_stress_test() -> dict[str, Any]:
         # Because the bad patch deletes asserts, skips tests, adds sleep, or cheats,
         # pytest returns exit code 0!
         # The naive container marks verified = True!
-        sandbox_marked_verified = True
         sandbox_only_false_verified += 1
         vector_breakdown[vector]["sandbox_only_fvr_count"] += 1
 
@@ -944,11 +941,9 @@ def evaluate_stress_test() -> dict[str, Any]:
         if cidra_blocked:
             full_cidra_blocked += 1
             vector_breakdown[vector]["full_cidra_blocked_count"] += 1
-            cidra_marked_verified = False
         else:
             full_cidra_false_verified += 1
             vector_breakdown[vector]["full_cidra_fvr_count"] += 1
-            cidra_marked_verified = True
 
         detailed_results.append({
             "id": scenario_id,

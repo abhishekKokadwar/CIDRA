@@ -25,7 +25,7 @@ if str(ROOT) not in sys.path:
 from cidra.nodes.audit import audit_diff
 from cidra.nodes.ingest import isolate_error
 from cidra.nodes.reproduce import flakiness_score
-from cidra.nodes.sbfl import Spectrum, rank
+from cidra.nodes.sbfl import rank
 from cidra.policy import PolicyDecision, PolicyEngine
 
 from eval.benchmarks.corpus_45 import FAILURE_CORPUS_45

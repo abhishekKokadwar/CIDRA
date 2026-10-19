@@ -1,5 +1,8 @@
 """Phase 4 exit criterion: every fixture must reproduce RED in the sandbox."""
-import json, pathlib, subprocess, sys
+import json
+import pathlib
+import subprocess
+import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from cidra.config import PRACTICE_REPO_DIR
 from cidra.sandbox.runner import Session

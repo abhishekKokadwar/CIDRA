@@ -1,5 +1,6 @@
 """Phase 9.6 — draft-PR generation. REST mocked; git side on a real local remote."""
 
+import subprocess
 from pathlib import Path
 
 import httpx
@@ -189,7 +190,7 @@ def test_existing_pr_branch_is_never_force_pushed(repo_and_remote, monkeypatch):
     git("push", "-q", str(remote), "feature:feature", cwd=src, allow_file=True)
     theirs = git("rev-parse", "HEAD", cwd=src).stdout.strip()
 
-    with pytest.raises(Exception):  # non-fast-forward push is rejected
+    with pytest.raises(subprocess.CalledProcessError):  # git rejects the non-fast-forward push
         pr.build_fix_branch("run4", src, _FIX, "o/r", "tok", "https://api.github.com",
                             base_sha=base, branch_name="feature")
     remote_head = git("ls-remote", str(remote), "refs/heads/feature", cwd=src,
