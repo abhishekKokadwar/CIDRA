@@ -1,0 +1,25 @@
+{
+  "group": "bugsinpy",
+  "batch": 2,
+  "source": "BugsInPy tornado/7",
+  "class": "unknown",
+  "known_fix": true,
+  "repo_url": "https://github.com/tornadoweb/tornado",
+  "failing_ref": "fa3409179588536f2f743d16e537f6f9827fa92f",
+  "fix_ref": "a3b44cd701e0e82693363701bc0346b0125d2362",
+  "failing_tests_from_fix": [
+    "tornado/test/ioloop_test.py"
+  ],
+  "held_out_paths": [
+    "tornado/test/ioloop_test.py"
+  ],
+  "install_command": "pip install --quiet pytest",
+  "test_command": "python -m pytest -q tornado/test/ioloop_test.py 2>&1",
+  "python_version": "3.7",
+  "dependencies": "pinned",
+  "log_origin": "pytest output of the failing state in the sandbox, not a CI log",
+  "fix_size": {
+    "files": 1,
+    "lines": 10
+  }
+}

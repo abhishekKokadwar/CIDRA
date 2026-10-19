@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "assert 1 == 2",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/keras/layers/wrappers_test.py::test_Bidirectional_updates"
+  },
+  "Patch": {
+    "diff": "diff --git a/keras/layers/wrappers.py b/keras/layers/wrappers.py\nindex c4afab1b3..3bf489d11 100644\n--- a/keras/layers/wrappers.py\n+++ b/keras/layers/wrappers.py\n@@ -487,12 +487,24 @@ class Bidirectional(Wrapper):\n             return self.forward_layer.updates + self.backward_layer.updates\n         return []\n \n+    def get_updates_for(self, inputs=None):\n+        forward_updates = self.forward_layer.get_updates_for(inputs)\n+        backward_updates = self.backward_layer.get_updates_for(inputs)\n+        return (super(Wrapper, self).get_updates_for(inputs) +\n+                forward_updates + backward_updates)\n+\n     @property\n     def losses(self):\n         if hasattr(self.forward_layer, 'losses'):\n             return self.forward_layer.losses + self.backward_layer.losses\n         return []\n \n+    def get_losses_for(self, inputs=None):\n+        forward_losses = self.forward_layer.get_losses_for(inputs)\n+        backward_losses = self.backward_layer.get_losses_for(inputs)\n+        return (super(Wrapper, self).get_losses_for(inputs) +\n+                forward_losses + backward_losses)\n+\n     @property\n     def constraints(self):\n         constraints = {}\n",
+    "target_file": "keras/layers/wrappers.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

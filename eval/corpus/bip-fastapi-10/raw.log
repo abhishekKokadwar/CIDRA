@@ -1,0 +1,31 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________________ test_return_defaults _____________________________
+
+    def test_return_defaults():
+        response = client.get("/")
+>       assert response.json() == {"sub": {}}
+E       AssertionError: assert {'sub': {'a':...'}, 'x': None} == {'sub': {}}
+E         Differing items:
+E         {'sub': {'a': 'foo'}} != {'sub': {}}
+E         Left contains 1 more item:
+E         {'x': None}
+E         Full diff:
+E         - {'sub': {}}
+E         + {'sub': {'a': 'foo'}, 'x': None}
+
+tests/test_skip_defaults.py:29: AssertionError
+=============================== warnings summary ===============================
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+  /home/cidra/site/aiofiles/os.py:10: DeprecationWarning: "@coroutine" decorator is deprecated since Python 3.8, use "async def" instead
+    def run(*args, loop=None, executor=None, **kwargs):
+
+-- Docs: https://docs.pytest.org/en/latest/warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_skip_defaults.py::test_return_defaults - AssertionError: as...
+1 failed, 6 warnings in 0.39s

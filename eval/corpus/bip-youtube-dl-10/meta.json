@@ -1,0 +1,25 @@
+{
+  "group": "bugsinpy",
+  "batch": 2,
+  "source": "BugsInPy youtube-dl/10",
+  "class": "unknown",
+  "known_fix": true,
+  "repo_url": "https://github.com/ytdl-org/youtube-dl",
+  "failing_ref": "85d586617750d38d742a24f141b099f6b898d269",
+  "fix_ref": "d305dd73a3d6927f0a2c63d08662a183fa173833",
+  "failing_tests_from_fix": [
+    "test/test_utils.py"
+  ],
+  "held_out_paths": [
+    "test/test_utils.py"
+  ],
+  "install_command": "pip install --quiet pytest",
+  "test_command": "python -m pytest -q -p no:warnings test/test_utils.py 2>&1",
+  "python_version": "3.7",
+  "dependencies": "pinned",
+  "log_origin": "pytest output of the failing state in the sandbox, not a CI log",
+  "fix_size": {
+    "files": 1,
+    "lines": 4
+  }
+}

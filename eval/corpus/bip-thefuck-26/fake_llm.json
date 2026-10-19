@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: assert 'vagrant up  && vagrant ssh' == 'vagrant up && vagrant ssh'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/rules/test_vagrant_up.py::test_get_new_command[command0-vagrant"
+  },
+  "Patch": {
+    "diff": "diff --git a/thefuck/rules/vagrant_up.py b/thefuck/rules/vagrant_up.py\nindex 1c27db4..9c0a1e4 100644\n--- a/thefuck/rules/vagrant_up.py\n+++ b/thefuck/rules/vagrant_up.py\n@@ -7,7 +7,12 @@ def match(command, settings):\n \n def get_new_command(command, settings):\n     cmds = command.script.split(' ')\n-    machine = \"\"\n+    machine = None\n     if len(cmds) >= 3:\n         machine = cmds[2]\n-    return shells.and_(\"vagrant up \" +  machine, command.script)\n+\n+    startAllInstances = shells.and_(\"vagrant up\", command.script)\n+    if machine is None: \n+        return startAllInstances\n+    else:\n+        return [ shells.and_(\"vagrant up \" +  machine, command.script), startAllInstances]\n",
+    "target_file": "thefuck/rules/vagrant_up.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

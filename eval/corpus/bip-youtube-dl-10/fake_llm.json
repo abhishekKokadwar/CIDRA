@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "json.decoder.JSONDecodeError: Extra data: line 1 column 3 (char 2)",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "test/test_utils.py::TestUtil::test_js_to_json_realworld"
+  },
+  "Patch": {
+    "diff": "diff --git a/youtube_dl/utils.py b/youtube_dl/utils.py\nindex 3eb6bc6d4..4358137a0 100644\n--- a/youtube_dl/utils.py\n+++ b/youtube_dl/utils.py\n@@ -1560,8 +1560,8 @@ def js_to_json(code):\n         return '\"%s\"' % v\n \n     res = re.sub(r'''(?x)\n-        \"(?:[^\"\\\\]*(?:\\\\\\\\|\\\\\")?)*\"|\n-        '(?:[^'\\\\]*(?:\\\\\\\\|\\\\')?)*'|\n+        \"(?:[^\"\\\\]*(?:\\\\\\\\|\\\\['\"nu]))*[^\"\\\\]*\"|\n+        '(?:[^'\\\\]*(?:\\\\\\\\|\\\\['\"nu]))*[^'\\\\]*'|\n         [a-zA-Z_][.a-zA-Z_0-9]*\n         ''', fix_kv, code)\n     res = re.sub(r',(\\s*\\])', lambda m: m.group(1), res)\n",
+    "target_file": "youtube_dl/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

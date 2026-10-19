@@ -1,0 +1,33 @@
+................F.................................                       [100%]
+=================================== FAILURES ===================================
+______________________ TestUtil.test_js_to_json_realworld ______________________
+
+self = <test.test_utils.TestUtil testMethod=test_js_to_json_realworld>
+
+    def test_js_to_json_realworld(self):
+        inp = '''{
+            'clip':{'provider':'pseudo'}
+        }'''
+        self.assertEqual(js_to_json(inp), '''{
+            "clip":{"provider":"pseudo"}
+        }''')
+        json.loads(js_to_json(inp))
+    
+        inp = '''{
+            'playlist':[{'controls':{'all':null}}]
+        }'''
+        self.assertEqual(js_to_json(inp), '''{
+            "playlist":[{"controls":{"all":null}}]
+        }''')
+    
+        inp = '''"The CW\\'s \\'Crazy Ex-Girlfriend\\'"'''
+>       self.assertEqual(js_to_json(inp), '''"The CW's 'Crazy Ex-Girlfriend'"''')
+E       AssertionError: '"The CW\\\'s \\\'Crazy Ex-Girlfriend\\\'"' != '"The CW\'s \'Crazy Ex-Girlfriend\'"'
+E       - "The CW\'s \'Crazy Ex-Girlfriend\'"
+E       ?        -   -                    -
+E       + "The CW's 'Crazy Ex-Girlfriend'"
+
+test/test_utils.py:499: AssertionError
+=========================== short test summary info ============================
+FAILED test/test_utils.py::TestUtil::test_js_to_json_realworld - AssertionErr...
+1 failed, 49 passed in 0.41s

@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: assert {'sub': {'a':...'}, 'x': None} == {'sub': {}}",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_skip_defaults.py::test_return_defaults"
+  },
+  "Patch": {
+    "diff": "diff --git a/fastapi/routing.py b/fastapi/routing.py\nindex 3c6774ceb..930cbe001 100644\n--- a/fastapi/routing.py\n+++ b/fastapi/routing.py\n@@ -52,6 +52,8 @@ def serialize_response(\n             errors.extend(errors_)\n         if errors:\n             raise ValidationError(errors)\n+        if skip_defaults and isinstance(response, BaseModel):\n+            value = response.dict(skip_defaults=skip_defaults)\n         return jsonable_encoder(\n             value,\n             include=include,\n",
+    "target_file": "fastapi/routing.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

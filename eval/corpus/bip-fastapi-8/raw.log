@@ -1,0 +1,27 @@
+....F                                                                    [100%]
+=================================== FAILURES ===================================
+______________________________ test_route_classes ______________________________
+
+    def test_route_classes():
+        routes = {}
+        r: APIRoute
+        for r in app.router.routes:
+            routes[r.path] = r
+>       assert routes["/a/"].x_type == "A"
+E       AttributeError: 'APIRoute' object has no attribute 'x_type'
+
+tests/test_custom_route_class.py:112: AttributeError
+=============================== warnings summary ===============================
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+/home/cidra/site/aiofiles/os.py:10
+  /home/cidra/site/aiofiles/os.py:10: DeprecationWarning: "@coroutine" decorator is deprecated since Python 3.8, use "async def" instead
+    def run(*args, loop=None, executor=None, **kwargs):
+
+-- Docs: https://docs.pytest.org/en/latest/warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_custom_route_class.py::test_route_classes - AttributeError:...
+1 failed, 4 passed, 6 warnings in 0.56s

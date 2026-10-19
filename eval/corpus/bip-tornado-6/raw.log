@@ -1,0 +1,51 @@
+....FF..                                                                 [100%]
+=================================== FAILURES ===================================
+_______________________ LeakTest.test_asyncio_close_leak _______________________
+
+self = <tornado.test.asyncio_test.LeakTest testMethod=test_asyncio_close_leak>
+
+    def test_asyncio_close_leak(self):
+        orig_count = len(IOLoop._ioloop_for_asyncio)
+        for i in range(10):
+            # Create and close an AsyncIOMainLoop using asyncio interfaces.
+            loop = asyncio.new_event_loop()
+            loop.call_soon(IOLoop.current)
+            loop.call_soon(loop.stop)
+            loop.run_forever()
+            loop.close()
+        new_count = len(IOLoop._ioloop_for_asyncio) - orig_count
+        # Because the cleanup is run on new loop creation, we have one
+        # dangling entry in the map (but only one).
+>       self.assertEqual(new_count, 1)
+E       AssertionError: 10 != 1
+
+tornado/test/asyncio_test.py:160: AssertionError
+_______________________ LeakTest.test_ioloop_close_leak ________________________
+
+self = <tornado.test.asyncio_test.LeakTest testMethod=test_ioloop_close_leak>
+
+    def test_ioloop_close_leak(self):
+        orig_count = len(IOLoop._ioloop_for_asyncio)
+        for i in range(10):
+            # Create and close an AsyncIOLoop using Tornado interfaces.
+            loop = AsyncIOLoop()
+            loop.close()
+        new_count = len(IOLoop._ioloop_for_asyncio) - orig_count
+>       self.assertEqual(new_count, 0)
+E       AssertionError: 10 != 0
+
+tornado/test/asyncio_test.py:146: AssertionError
+=============================== warnings summary ===============================
+tornado/util.py:262
+  /work/tornado/util.py:262: DeprecationWarning: invalid escape sequence \d
+    """
+
+tornado/httputil.py:105
+  /work/tornado/httputil.py:105: DeprecationWarning: Using or importing the ABCs from 'collections' instead of from 'collections.abc' is deprecated since Python 3.3,and in 3.9 it will stop working
+    class HTTPHeaders(collections.MutableMapping):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tornado/test/asyncio_test.py::LeakTest::test_asyncio_close_leak - Asse...
+FAILED tornado/test/asyncio_test.py::LeakTest::test_ioloop_close_leak - Asser...
+2 failed, 6 passed, 2 warnings in 0.12s

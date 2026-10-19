@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: '\"The CW\\\\\\'s \\\\\\'Crazy Ex-Girlfriend\\\\\\'\"' != '\"The CW\\'s \\'Crazy Ex-Girlfriend\\'\"'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "test/test_utils.py::TestUtil::test_js_to_json_realworld"
+  },
+  "Patch": {
+    "diff": "diff --git a/youtube_dl/utils.py b/youtube_dl/utils.py\nindex db5b3698e..a61e47646 100644\n--- a/youtube_dl/utils.py\n+++ b/youtube_dl/utils.py\n@@ -1701,8 +1701,8 @@ def js_to_json(code):\n         if v in ('true', 'false', 'null'):\n             return v\n         if v.startswith('\"'):\n-            return v\n-        if v.startswith(\"'\"):\n+            v = re.sub(r\"\\\\'\", \"'\", v[1:-1])\n+        elif v.startswith(\"'\"):\n             v = v[1:-1]\n             v = re.sub(r\"\\\\\\\\|\\\\'|\\\"\", lambda m: {\n                 '\\\\\\\\': '\\\\\\\\',\n",
+    "target_file": "youtube_dl/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

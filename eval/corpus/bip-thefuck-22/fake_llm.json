@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "IndexError: list index out of range",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_types.py::TestSortedCorrectedCommandsSequence::test_with_blank"
+  },
+  "Patch": {
+    "diff": "diff --git a/thefuck/types.py b/thefuck/types.py\nindex 69b174e..cf09137 100644\n--- a/thefuck/types.py\n+++ b/thefuck/types.py\n@@ -81,9 +81,10 @@ class SortedCorrectedCommandsSequence(object):\n \n     def _realise(self):\n         \"\"\"Realises generator, removes duplicates and sorts commands.\"\"\"\n-        commands = self._remove_duplicates(self._commands)\n-        self._cached = [self._cached[0]] + sorted(\n-            commands, key=lambda corrected_command: corrected_command.priority)\n+        if self._cached:\n+            commands = self._remove_duplicates(self._commands)\n+            self._cached = [self._cached[0]] + sorted(\n+                commands, key=lambda corrected_command: corrected_command.priority)\n         self._realised = True\n         debug('SortedCommandsSequence was realised with: {}, after: {}'.format(\n             self._cached, '\\n'.join(format_stack())), self._settings)\n",
+    "target_file": "thefuck/types.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

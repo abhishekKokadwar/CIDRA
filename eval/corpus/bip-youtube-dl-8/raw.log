@@ -1,0 +1,82 @@
+......F.......                                                           [100%]
+=================================== FAILURES ===================================
+______________ TestFormatSelection.test_youtube_format_selection _______________
+
+self = <test.test_YoutubeDL.TestFormatSelection testMethod=test_youtube_format_selection>
+
+    def test_youtube_format_selection(self):
+        order = [
+            '38', '37', '46', '22', '45', '35', '44', '18', '34', '43', '6', '5', '36', '17', '13',
+            # Apple HTTP Live Streaming
+            '96', '95', '94', '93', '92', '132', '151',
+            # 3D
+            '85', '84', '102', '83', '101', '82', '100',
+            # Dash video
+            '137', '248', '136', '247', '135', '246',
+            '245', '244', '134', '243', '133', '242', '160',
+            # Dash audio
+            '141', '172', '140', '171', '139',
+        ]
+    
+        def format_info(f_id):
+            info = YoutubeIE._formats[f_id].copy()
+            info['format_id'] = f_id
+            info['url'] = 'url:' + f_id
+            return info
+        formats_order = [format_info(f_id) for f_id in order]
+    
+        info_dict = _make_result(list(formats_order), extractor='youtube')
+        ydl = YDL({'format': 'bestvideo+bestaudio'})
+        yie = YoutubeIE(ydl)
+        yie._sort_formats(info_dict['formats'])
+        ydl.process_ie_result(info_dict)
+        downloaded = ydl.downloaded_info_dicts[0]
+        self.assertEqual(downloaded['format_id'], '137+141')
+        self.assertEqual(downloaded['ext'], 'mp4')
+    
+        info_dict = _make_result(list(formats_order), extractor='youtube')
+        ydl = YDL({'format': 'bestvideo[height>=999999]+bestaudio/best'})
+        yie = YoutubeIE(ydl)
+        yie._sort_formats(info_dict['formats'])
+        ydl.process_ie_result(info_dict)
+        downloaded = ydl.downloaded_info_dicts[0]
+        self.assertEqual(downloaded['format_id'], '38')
+    
+        info_dict = _make_result(list(formats_order), extractor='youtube')
+        ydl = YDL({'format': 'bestvideo/best,bestaudio'})
+        yie = YoutubeIE(ydl)
+        yie._sort_formats(info_dict['formats'])
+>       ydl.process_ie_result(info_dict)
+
+test/test_YoutubeDL.py:260: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+youtube_dl/YoutubeDL.py:713: in process_ie_result
+    return self.process_video_result(ie_result, download=download)
+youtube_dl/YoutubeDL.py:1272: in process_video_result
+    format_selector = self.build_format_selector(req_format)
+youtube_dl/YoutubeDL.py:1129: in build_format_selector
+    return _build_selector_function(parsed_selector)
+youtube_dl/YoutubeDL.py:987: in _build_selector_function
+    fs = [_build_selector_function(s) for s in selector]
+youtube_dl/YoutubeDL.py:987: in <listcomp>
+    fs = [_build_selector_function(s) for s in selector]
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+selector = None
+
+    def _build_selector_function(selector):
+        if isinstance(selector, list):
+            fs = [_build_selector_function(s) for s in selector]
+    
+            def selector_function(formats):
+                for f in fs:
+                    for format in f(formats):
+                        yield format
+            return selector_function
+>       elif selector.type == GROUP:
+E       AttributeError: 'NoneType' object has no attribute 'type'
+
+youtube_dl/YoutubeDL.py:994: AttributeError
+=========================== short test summary info ============================
+FAILED test/test_YoutubeDL.py::TestFormatSelection::test_youtube_format_selection
+1 failed, 13 passed in 1.29s

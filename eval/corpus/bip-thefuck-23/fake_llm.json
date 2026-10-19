@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "AttributeError: __enter__",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tests/test_utils.py::TestCache::test_with_blank_cache"
+  },
+  "Patch": {
+    "diff": "diff --git a/thefuck/utils.py b/thefuck/utils.py\nindex 14ca1df..2736e85 100644\n--- a/thefuck/utils.py\n+++ b/thefuck/utils.py\n@@ -2,6 +2,7 @@ from difflib import get_close_matches\n from functools import wraps\n import shelve\n from decorator import decorator\n+from contextlib import closing\n import tempfile\n \n import os\n@@ -176,11 +177,13 @@ def cache(*depends_on):\n             return fn(*args, **kwargs)\n \n         cache_path = os.path.join(tempfile.gettempdir(), '.thefuck-cache')\n+        # A bit obscure, but simplest way to generate unique key for\n+        # functions and methods in python 2 and 3:\n         key = '{}.{}'.format(fn.__module__, repr(fn).split('at')[0])\n \n         etag = '.'.join(_get_mtime(name) for name in depends_on)\n \n-        with shelve.open(cache_path) as db:\n+        with closing(shelve.open(cache_path)) as db:\n             if db.get(key, {}).get('etag') == etag:\n                 return db[key]['value']\n             else:\n",
+    "target_file": "thefuck/utils.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

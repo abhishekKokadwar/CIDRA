@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: 500 != 400",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/websocket_test.py::WebSocketTest::test_missing_websocket_key"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/websocket.py b/tornado/websocket.py\nindex d5a7fa89..c6804ca0 100644\n--- a/tornado/websocket.py\n+++ b/tornado/websocket.py\n@@ -616,6 +616,14 @@ class WebSocketProtocol13(WebSocketProtocol):\n     def accept_connection(self):\n         try:\n             self._handle_websocket_headers()\n+        except ValueError:\n+            self.handler.set_status(400)\n+            log_msg = \"Missing/Invalid WebSocket headers\"\n+            self.handler.finish(log_msg)\n+            gen_log.debug(log_msg)\n+            return\n+\n+        try:\n             self._accept_connection()\n         except ValueError:\n             gen_log.debug(\"Malformed WebSocket request received\",\n",
+    "target_file": "tornado/websocket.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

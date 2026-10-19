@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "unknown",
+    "confidence": 0.9,
+    "evidence": "TypeError: 'args' parameter should be dict, list or tuple. Not <class 'NoneType'>",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/httputil_test.py::TestUrlConcat::test_url_concat_none_params"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/httputil.py b/tornado/httputil.py\nindex dc206fc8..818ea914 100644\n--- a/tornado/httputil.py\n+++ b/tornado/httputil.py\n@@ -603,6 +603,8 @@ def url_concat(url, args):\n     >>> url_concat(\"http://example.com/foo?a=b\", [(\"c\", \"d\"), (\"c\", \"d2\")])\n     'http://example.com/foo?a=b&c=d&c=d2'\n     \"\"\"\n+    if args is None:\n+        return url\n     parsed_url = urlparse(url)\n     if isinstance(args, dict):\n         parsed_query = parse_qsl(parsed_url.query, keep_blank_values=True)\n",
+    "target_file": "tornado/httputil.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "Analysis": {
+    "category": "assertion_error",
+    "confidence": 0.9,
+    "evidence": "AssertionError: None != '<b>hello</b>'",
+    "proposed_action": "Apply the project's own fix.",
+    "failing_test": "tornado/test/websocket_test.py::WebSocketTest::test_render_message"
+  },
+  "Patch": {
+    "diff": "diff --git a/tornado/web.py b/tornado/web.py\nindex 8ff52e9c..d79889fa 100644\n--- a/tornado/web.py\n+++ b/tornado/web.py\n@@ -993,6 +993,9 @@ class RequestHandler(object):\n         self._log()\n         self._finished = True\n         self.on_finish()\n+        self._break_cycles()\n+\n+    def _break_cycles(self):\n         # Break up a reference cycle between this handler and the\n         # _ui_module closures to allow for faster GC on CPython.\n         self.ui = None\ndiff --git a/tornado/websocket.py b/tornado/websocket.py\nindex ce13d262..69437ee4 100644\n--- a/tornado/websocket.py\n+++ b/tornado/websocket.py\n@@ -434,6 +434,16 @@ class WebSocketHandler(tornado.web.RequestHandler):\n         if not self._on_close_called:\n             self._on_close_called = True\n             self.on_close()\n+            self._break_cycles()\n+\n+    def _break_cycles(self):\n+        # WebSocketHandlers call finish() early, but we don't want to\n+        # break up reference cycles (which makes it impossible to call\n+        # self.render_string) until after we've really closed the\n+        # connection (if it was established in the first place,\n+        # indicated by status code 101).\n+        if self.get_status() != 101 or self._on_close_called:\n+            super(WebSocketHandler, self)._break_cycles()\n \n     def send_error(self, *args, **kwargs):\n         if self.stream is None:\n",
+    "target_file": "tornado/web.py",
+    "rationale": "Reference patch: the project's own fix, non-test files only."
+  }
+}
