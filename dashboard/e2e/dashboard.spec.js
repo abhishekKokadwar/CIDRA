@@ -50,11 +50,16 @@ test('[UI-OWN-RUNS] the Command Center lists this directory\'s runs with their o
   await expect(page.getByText('37226464198')).toHaveCount(0);  // the sample bundled in the package
 });
 
-test('[UI-SCREENS] a run opens in the explorer with its patch, and approval is recorded', async ({ page }) => {
+test('[UI-EVIDENCE] a run opens in the explorer with its patch and evidence, and approval is recorded', async ({ page }) => {
   await page.goto('/');
   await page.locator('tbody tr', { hasText: 'e2e-fix' }).click();
   await expect(page.getByRole('heading', { name: 'Run: e2e-fix' })).toBeVisible();
   await expect(page.getByText('return a + b')).toBeVisible();
+  const evidence = page.getByRole('region', { name: 'Evidence' });
+  await expect(evidence.getByRole('row', { name: /test_add/ })).toContainText('(target)failedpassed');
+  await expect(evidence).toContainText('1 other tests, unchanged');
+  await expect(evidence).toContainText('$0.0060');
+  await expect(evidence).toContainText("cidra verify --sha f1x0000 --patch fix.diff --install 'pip install --quiet -r requirements.txt'");
   await page.getByRole('button', { name: /Record approval/ }).click();
   await expect(page.getByRole('button', { name: 'Approval recorded' })).toBeDisabled();
 });

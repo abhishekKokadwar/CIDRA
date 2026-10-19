@@ -80,3 +80,26 @@ def test_a_run_leaves_no_dashboard_folders_in_the_repository_it_ran_in(client, t
     assert not (tmp_path / "dashboard").exists() and not (tmp_path / "cidra").exists()
     assert not (tmp_path / "cidra_telemetry.json").exists()
     assert [r["id"] for r in client.get("/telemetry.json").json()["runs"]] == ["mine-2"]
+
+
+@pytest.mark.req("UI-EVIDENCE")
+def test_each_run_carries_its_evidence_for_the_explorer(client):
+    history.record({
+        "run_id": "ev-1", "repo": "me/proj", "outcome": "verified_fix", "commit_sha": "abc123",
+        "fix_diff": "--- a/x.py\n+++ b/x.py\n", "install_command": "pip install --quiet -r requirements.txt",
+        "target_tests": ["tests/test_calc.py::test_add"],
+        "repro_junit": {"tests.test_calc::test_add": "failed", "tests.test_calc::test_sub": "passed"},
+        "verify_junit": {"tests.test_calc::test_add": "passed", "tests.test_calc::test_sub": "passed"},
+        "llm_telemetry": [{"model": "claude-haiku-4-5", "tokens": {"prompt": 4000, "completion": 400, "total": 4400}}],
+    })
+    history.record({"run_id": "ev-2", "repo": "me/proj", "outcome": "verified_fix", "fix_diff": "x"})
+    runs = {r["id"]: r["evidence"] for r in client.get("/telemetry.json").json()["runs"]}
+    ev = runs["ev-1"]
+    assert ev["tests"] == [{"test": "tests.test_calc::test_add", "before": "failed", "after": "passed", "note": "target"}]
+    assert ev["unchanged"] == {"passed": 1}
+    assert ev["cost_usd"] == 0.006 and ev["price_source"] == "list price"
+    assert ev["rerun_command"].startswith("cidra verify --sha abc123 --patch fix.diff --install ")
+    assert "'pip install --quiet -r requirements.txt'" in ev["rerun_command"]
+    assert "--target tests/test_calc.py::test_add" in ev["rerun_command"]
+    # No recorded install command (an older run): no rerun command, rather than a wrong one.
+    assert runs["ev-2"]["rerun_command"] is None and runs["ev-2"]["tests"] == []

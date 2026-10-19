@@ -63,7 +63,7 @@ class DebugState(TypedDict, total=False):
     pr_branch: Optional[str]  # head branch of the existing PR the failure is on, if any
     ci_env: dict  # env the workflow sets; replicated in the sandbox
     python_version: str  # the Python the repo's CI uses; picks the sandbox image
-    install_command: str  # operator-supplied; else config.INSTALL_COMMAND, else detected from the checkout
+    install_command: str  # operator-supplied; else config.INSTALL_COMMAND, else detected; install_deps records the one it ran
     test_command: str  # operator-supplied override of config.TEST_COMMAND
 
     # Ingestion

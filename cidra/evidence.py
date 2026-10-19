@@ -40,28 +40,40 @@ def dependency_changes(diff: str | None) -> list[str]:
     return out
 
 
-def test_rows(state: DebugState) -> list[str]:
-    """The before/after table: targets first, then every test whose outcome
-    changed, then tests already failing; the unchanged rest as one count."""
+def test_changes(state: DebugState) -> tuple[list[dict], dict[str, int]]:
+    """(shown, rest): targets first, then every test whose outcome changed, then
+    tests already failing, each {test, before, after, note}; and the count per
+    outcome of the unchanged rest. The report's table and the dashboard read this."""
     before, after = state.get("repro_junit") or {}, state.get("verify_junit") or {}
     if not before:
-        return []
+        return [], {}
     targets = [junit_id(t) for t in state.get("target_tests") or []]
     changed = [t for t in sorted(before.keys() | after.keys()) if after and before.get(t) != after.get(t)]
     already = [t for t in sorted(before) if before[t] in ("failed", "error")]
-    shown = list(dict.fromkeys([*targets, *changed, *already]))
-    rows = ["| Test | Before | After |", "|---|---|---|"]
-    for t in shown[:MAX_ROWS]:
+    shown = []
+    for t in dict.fromkeys([*targets, *changed, *already]):
         b, a = before.get(t, "absent"), after.get(t, "not run") if after else "not run"
-        note = " (target)" if t in targets else " **(now failing)**" if b == "passed" and a in ("failed", "error") else ""
-        rows.append(f"| `{_cell(t)}`{note} | {b} | {a} |")
+        note = "target" if t in targets else "now failing" if b == "passed" and a in ("failed", "error") else ""
+        shown.append({"test": t, "before": b, "after": a, "note": note})
+    rest = [t for t in before if t not in {r["test"] for r in shown}]
+    counts = {o: n for o in ("passed", "skipped", "failed", "error") if (n := sum(before[t] == o for t in rest))}
+    return shown, counts
+
+
+def test_rows(state: DebugState) -> list[str]:
+    """test_changes() as the report's Markdown table."""
+    shown, rest = test_changes(state)
+    if not shown and not rest:
+        return []
+    rows = ["| Test | Before | After |", "|---|---|---|"]
+    for r in shown[:MAX_ROWS]:
+        note = {"target": " (target)", "now failing": " **(now failing)**"}.get(r["note"], "")
+        rows.append(f"| `{_cell(r['test'])}`{note} | {r['before']} | {r['after']} |")
     if len(shown) > MAX_ROWS:
         rows.append(f"| … {len(shown) - MAX_ROWS} more | | |")
-    rest = [t for t in before if t not in shown]
     if rest:
-        counts = {o: sum(before[t] == o for t in rest) for o in ("passed", "skipped", "failed", "error")}
-        rows.append(f"| {len(rest)} other tests, unchanged | "
-                    + ", ".join(f"{n} {o}" for o, n in counts.items() if n) + " | same |")
+        rows.append(f"| {sum(rest.values())} other tests, unchanged | "
+                    + ", ".join(f"{n} {o}" for o, n in rest.items()) + " | same |")
     return rows
 
 
