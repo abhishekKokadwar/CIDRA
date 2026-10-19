@@ -21,7 +21,6 @@ import pathlib
 import sys
 import tempfile
 import time
-from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -128,7 +127,7 @@ def run_cache_deduplication_experiment() -> dict:
         category = "missing_dependency"
 
         # Initial write to cache
-        put_ok = fix_cache.put(fingerprint, diff, category, path=cache_file)
+        fix_cache.put(fingerprint, diff, category, path=cache_file)
 
         # 2. Execute 10 consecutive replays
         replays = []
@@ -315,7 +314,7 @@ def main():
 
     print("EXPERIMENT A: FIX CACHE DEDUPLICATION (10 Replays)")
     print(f"  All 10 Cache Hits        : {ea['all_cache_hits']}")
-    print(f"  Tokens Consumed (Runs 2-11): 0 tokens (100% reduction)")
+    print("  Tokens Consumed (Runs 2-11): 0 tokens (100% reduction)")
     print(f"  Average Replay Latency   : {ea['average_replay_duration_s']:.6f}s (Target: < 1.5s)")
 
     print(f"\nEXPERIMENT B: FLAKINESS QUENCHING ({eb['total_scenarios']} Scenarios)")
@@ -331,7 +330,7 @@ def main():
 
     print("-" * 70)
     print(f"Flakiness Detection Rate   : 100.0% ({eb['total_scenarios']}/{eb['total_scenarios']} detected)")
-    print(f"False Patch Rate           : 0.0% (0 attempts escaped to PR)")
+    print("False Patch Rate           : 0.0% (0 attempts escaped to PR)")
     print(f"Cache Invalidation Passed  : {ec['all_invalidation_tests_passed']} ({ec['total_invalidation_tests']}/{ec['total_invalidation_tests']} passed)")
     print(f"Claim 5 Validation Status  : {'CONFIRMED' if summary['claim_5_validated'] else 'FAILED'}")
     print(f"Results written to         : {RESULTS_JSON}")

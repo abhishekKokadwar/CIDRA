@@ -6,7 +6,6 @@ and that the benchmark suite output matches the 5-claim validation specification
 
 from __future__ import annotations
 
-import importlib
 from pathlib import Path
 
 from eval.benchmark_suite import run_complete_suite

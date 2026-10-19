@@ -9,7 +9,6 @@ Verifies that the backend correctly wires up with the React dashboard:
 """
 
 import json
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pytest

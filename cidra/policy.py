@@ -15,7 +15,7 @@ import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Optional, Union
 
 import yaml
 
@@ -215,7 +215,6 @@ class PolicyEngine:
         removed_lines = 0
         deletions: list[str] = []
 
-        cur_file: Optional[str] = None
         cur_old_path: Optional[str] = None
         for line in diff.splitlines():
             if line.startswith("--- "):
@@ -238,7 +237,6 @@ class PolicyEngine:
                     for prefix in ("b/", "a/"):
                         if path.startswith(prefix):
                             path = path[len(prefix):]
-                    cur_file = path
                     if path not in changed_files:
                         changed_files.append(path)
             elif line.startswith("+") and not line.startswith("+++"):

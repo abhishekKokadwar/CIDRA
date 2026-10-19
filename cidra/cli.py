@@ -43,7 +43,7 @@ def _run_graph(state: dict) -> dict:
         if final_state.get("pr_url"):
             log.info(f"PR created: {final_state.get('pr_url')}")
         return final_state
-    except Exception as e:
+    except Exception:
         log.exception("Graph execution failed")
         sys.exit(1)
 

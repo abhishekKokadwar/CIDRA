@@ -24,7 +24,6 @@ from __future__ import annotations
 import json
 import logging
 import math
-import os
 import pathlib
 import sys
 import time
@@ -256,7 +255,7 @@ def main():
     print("-" * 80)
     print(f"{'Failure Family':<32} | {'Count':<5} | {'Manual Avg':<10} | {'Wall-Clock':<10} | {'Labor Saved'}")
     print("-" * 80)
-    for fam, d in summary["family_breakdown"].items():
+    for d in summary["family_breakdown"].values():
         print(f"{d['label']:<32} | {d['count']:>5} | {d['avg_manual_duration_min']:>6.1f} min | "
               f"{d['avg_wall_clock_s']:>8.2f}s | -{d['avg_labor_reduction_percent']:>5.1f}%")
     print("-" * 80)

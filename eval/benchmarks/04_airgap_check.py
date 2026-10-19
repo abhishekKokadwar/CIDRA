@@ -18,14 +18,12 @@ import logging
 import os
 import pathlib
 import sys
-from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from cidra.audit_manifest import generate_manifest, verify_manifest
-from cidra.config import AIR_GAPPED, MODEL_ANALYZE, MODEL_FIX
 
 HERE = pathlib.Path(__file__).resolve().parent
 RESULTS_JSON = HERE / "04_airgap_check.json"

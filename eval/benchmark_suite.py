@@ -22,9 +22,7 @@ import logging
 import os
 import pathlib
 import sys
-import time
 from datetime import datetime, timezone
-from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -64,7 +62,7 @@ def generate_markdown_report(
         "",
         "> **Evaluation Specification:** [docs/EMPIRICAL_VALIDATION_PLAN.md](file:///docs/EMPIRICAL_VALIDATION_PLAN.md)  ",
         f"> **Generated:** {timestamp}  ",
-        f"> **Overall Conformance Status:** **100% VALIDATED (ALL CLAIMS PROVEN + VERIFICATION INVARIANT STRESS-TESTED)**  ",
+        "> **Overall Conformance Status:** **100% VALIDATED (ALL CLAIMS PROVEN + VERIFICATION INVARIANT STRESS-TESTED)**  ",
         f"> **Cryptographic HMAC Seal:** `{seal[:24]}...`  ",
         "",
         "---",
@@ -80,9 +78,9 @@ def generate_markdown_report(
         f"| **Core Engine Overhead** | In-Memory Static Pipeline | N/A (Manual process) | **{b1['engine_internal_overhead_s']:.4f}s** (Compute slice) | **< 5 milliseconds** overhead |",
         f"| **Manual Step Count** | Touchpoints & Context Switches | {b2['manual_steps_total']} steps / {b2['manual_context_switches']} switches | **{b2['cidra_steps_total']} step / {b2['cidra_context_switches']} switches** | **-{b2['step_reduction_percent']:.1f}% steps**, -{b2['context_switch_reduction_percent']:.1f}% context |",
         f"| **Unsafe Fix Defense** | Adversarial Block Rate | 0% (Blind LLM execution) | **{b3['block_rate_percent']:.1f}% ({b3['attacks_blocked']}/{b3['total_attacks']} blocked)** | **0.0% Escape Rate** ({b3['attacks_blocked']}/{b3['total_attacks']} blocked) |",
-        f"| **Private / Air-Gapped** | Network Egress Bytes | Cloud API Dependency | **0 Egress Bytes** / Docker `none` | **CERTIFIED** (Ollama/vLLM/Azure) |",
-        f"| **Repetitive & Flaky** | Cache Replay & Flaky Quenching | Re-runs full LLM / False fixes | **0 tokens cache hit** / **0 false patches** | **100% Flaky Quenched**, <1.5s replay |",
-        f"| **Architectural Ablation** | Multi-Baseline Superiority | Naive LLM: 15% fix, 100% escape | **Full CIDRA: 95% fix, 0% escape** | **SBFL + Dual-Gate Validated** |",
+        "| **Private / Air-Gapped** | Network Egress Bytes | Cloud API Dependency | **0 Egress Bytes** / Docker `none` | **CERTIFIED** (Ollama/vLLM/Azure) |",
+        "| **Repetitive & Flaky** | Cache Replay & Flaky Quenching | Re-runs full LLM / False fixes | **0 tokens cache hit** / **0 false patches** | **100% Flaky Quenched**, <1.5s replay |",
+        "| **Architectural Ablation** | Multi-Baseline Superiority | Naive LLM: 15% fix, 100% escape | **Full CIDRA: 95% fix, 0% escape** | **SBFL + Dual-Gate Validated** |",
         f"| **Cross-Scenario Generalization** | Held-Out Unseen Test Set | Risk of benchmark memorization | **{b7['generalization_gaps']['max_observed_gap_percent']:.2f}% Max Gap** (Target <= 5%) | **CONFIRMED (Zero Overfitting)** |",
         f"| **Failure-Class Coverage** | Operational Scope Boundaries | Blind bots attempt all bugs | **{b8['total_failure_classes']} Classes Evaluated ({b8['overall_stage_conformance_pct']:.1f}% Conformance)** | **Refusal rate {b8['correct_refusal_rate_pct']}%** |",
         f"| **Verification Invariant** | Adversarial False-Verified Rate | Sandbox-only: 100% FVR ({b9['total_adversarial_scenarios']}/{b9['total_adversarial_scenarios']} escapes) | **Full CIDRA: 0.0% FVR (0/{b9['total_adversarial_scenarios']} escapes)** | **100% Invariant Preserved** |",
@@ -102,7 +100,7 @@ def generate_markdown_report(
         "| :--- | :---: | :---: | :---: | :---: | :--- |",
     ]
 
-    for fam, fd in b1.get("family_breakdown", {}).items():
+    for fd in b1.get("family_breakdown", {}).values():
         lines.append(
             f"| **{fd['label']}** | {fd['count']} | {fd['avg_manual_duration_min']:.1f} min | **{fd['avg_wall_clock_s']:.2f}s** | **-{fd['avg_labor_reduction_percent']:.1f}%** | {fd['policy_approved_count']}/{fd['count']} Auto-Remediate |"
         )
@@ -187,7 +185,7 @@ def generate_markdown_report(
         "### 4.1 Zero-Egress Network Audit",
         "- **Container Network Interface:** Strictly severed (`network_mode=\"none\"`).",
         f"- **Network Egress Bytes Measured:** **{b4['network_egress_bytes']} bytes**.",
-        f"- **Sandbox Runner Docker Socket Mount:** Denied (no `/var/run/docker.sock` access).",
+        "- **Sandbox Runner Docker Socket Mount:** Denied (no `/var/run/docker.sock` access).",
         f"- **Cryptographic Audit Manifest Proof:** `{b4['manifest_proof']['status']}` (Attested in sealed JSON).",
         "",
         "### 4.2 On-Premise LLM Endpoint Compatibility",
@@ -208,7 +206,7 @@ def generate_markdown_report(
         "### 5.1 Experiment A: Fix Cache Deduplication (SR-16)",
         f"- **Replay Execution Runs:** {b5['cache_deduplication']['total_replays']} consecutive executions of identical failure.",
         f"- **Cache Hit Rate:** **100% ({b5['cache_deduplication']['total_replays']}/{b5['cache_deduplication']['total_replays']} hits)**.",
-        f"- **LLM Tokens Consumed on Runs 2-11:** **0 tokens** (100% token cost reduction).",
+        "- **LLM Tokens Consumed on Runs 2-11:** **0 tokens** (100% token cost reduction).",
         f"- **Average Replay Latency:** **{b5['cache_deduplication']['average_replay_duration_s']:.6f}s** (Target: < 1.5s).",
         "",
         "### 5.2 Experiment B: Flakiness Quenching (SR-08)",
@@ -225,7 +223,7 @@ def generate_markdown_report(
 
     lines.extend([
         "",
-        f"- **False Patch Escape Rate on Flaky Tests:** **0.0% (0 patches generated)**.",
+        "- **False Patch Escape Rate on Flaky Tests:** **0.0% (0 patches generated)**.",
         "",
         "### 5.3 Experiment C: Fix Cache Invalidation & Capacity Bounds (SR-16)",
         f"- **Invalidation Test Suite:** {b5['cache_invalidation']['total_invalidation_tests']} rigorous criteria evaluated.",
@@ -263,7 +261,7 @@ def generate_markdown_report(
         "| :--- | :---: | :---: | :---: | :---: |",
     ])
 
-    for fam, fd in b6.get("family_matrix_breakdown", {}).items():
+    for fd in b6.get("family_matrix_breakdown", {}).values():
         lines.append(
             f"| **{fd['label']}** | {fd['count']} | {fd['topframe_top1_acc_percent']:.1f}% | **{fd['sbfl_top1_acc_percent']:.1f}%** | **+{fd['sbfl_delta_percent']:.1f}%** |"
         )
@@ -272,16 +270,16 @@ def generate_markdown_report(
         "",
         "### 6.3 Key Research Questions & Empirical Verdicts",
         "",
-        f"#### **RQ1: Does SBFL actually improve fault localization over traceback top-frame heuristics?**",
+        "#### **RQ1: Does SBFL actually improve fault localization over traceback top-frame heuristics?**",
         f"> **Verdict:** `{b6['research_findings']['RQ1_sbfl_efficacy']['verdict']}`",
         "",
-        f"#### **RQ2: Does the verification layer actually reject bad/cheating patches that a container sandbox falsely marks green?**",
+        "#### **RQ2: Does the verification layer actually reject bad/cheating patches that a container sandbox falsely marks green?**",
         f"> **Verdict:** `{b6['research_findings']['RQ2_security_verification_necessity']['verdict']}`",
         "",
-        f"#### **RQ3: Does the isolated sandbox actually matter vs unsandboxed LLM agents?**",
+        "#### **RQ3: Does the isolated sandbox actually matter vs unsandboxed LLM agents?**",
         f"> **Verdict:** `{b6['research_findings']['RQ3_sandbox_necessity']['verdict']}`",
         "",
-        f"#### **RQ4: Does CIDRA's structured architecture outperform a simple log -> LLM -> patch system?**",
+        "#### **RQ4: Does CIDRA's structured architecture outperform a simple log -> LLM -> patch system?**",
         f"> **Verdict:** `{b6['research_findings']['RQ4_architecture_vs_naive_llm']['verdict']}`",
         "",
         "---",
@@ -297,7 +295,7 @@ def generate_markdown_report(
         f"| **SBFL Ochiai Localization** | {b7['calibration_set']['sbfl_localization_accuracy_percent']:.1f}% | {b7['held_out_unseen_set']['sbfl_localization_accuracy_percent']:.1f}% | **{b7['generalization_gaps']['sbfl_localization_delta_percent']:.2f}%** | **GENERALIZED** |",
         f"| **Clean Fix Pass Rate** | {b7['calibration_set']['clean_fix_pass_rate_percent']:.1f}% | {b7['held_out_unseen_set']['clean_fix_pass_rate_percent']:.1f}% | **{b7['generalization_gaps']['clean_fix_pass_rate_delta_percent']:.2f}%** | **GENERALIZED** |",
         f"| **Cheating Patch Block Rate** | {b7['calibration_set']['cheating_block_rate_percent']:.1f}% | {b7['held_out_unseen_set']['cheating_block_rate_percent']:.1f}% | **{b7['generalization_gaps']['cheating_block_rate_delta_percent']:.2f}%** | **GENERALIZED** |",
-        f"| **False-Verified Rate (FVR)**| **0.0%** | **0.0%** | **0.00%** | **ZERO CHEATS** |",
+        "| **False-Verified Rate (FVR)**| **0.0%** | **0.0%** | **0.00%** | **ZERO CHEATS** |",
         f"| **Developer Labor Saved** | -{b7['calibration_set']['avg_labor_reduction_percent']:.2f}% | -{b7['held_out_unseen_set']['avg_labor_reduction_percent']:.2f}% | **{b7['generalization_gaps']['labor_reduction_delta_percent']:.2f}%** | **GENERALIZED** |",
         "",
         "### 7.2 Zero-Hardcoding Invariant Audit",
@@ -385,9 +383,9 @@ def generate_markdown_report(
         f"| **Developer Labor Saved** | **{b1['developer_labor_saved_s']:.0f}s** | ±1.2s | [{b1['developer_labor_saved_s'] - 1.96 * 0.38:.1f}s, {b1['developer_labor_saved_s'] + 1.96 * 0.38:.1f}s] ({b1['average_labor_reduction_percent']:.2f}% ± 0.08%) | ≥ 90.0% | **CONFIRMED** |",
         f"| **Autonomous Wall-Clock Turnaround** | **{b1['end_to_end_wall_clock_s']:.2f}s** | ±0.003s | [{b1['end_to_end_wall_clock_s'] - 1.96 * 0.001:.2f}s, {b1['end_to_end_wall_clock_s'] + 1.96 * 0.001:.2f}s] ({b1['average_time_reduction_percent']:.2f}% ± 0.05%) | < 45.0s | **CONFIRMED** |",
         f"| **Adversarial Security Block Rate** | **{b3['block_rate_percent']:.1f}%** | ±0.0% | [100.0%, 100.0%] | 100.0% | **CONFIRMED** |",
-        f"| **False-Verified Rate (FVR)** | **0.0%** | ±0.0% | [0.0%, 0.0%] | 0.0% | **CONFIRMED** |",
-        f"| **Flakiness Quenching Rate** | **100.0%** | ±0.0% | [100.0%, 100.0%] | 100.0% | **CONFIRMED** |",
-        f"| **Cache Invalidation Conformance**| **100.0%** | ±0.0% | [100.0%, 100.0%] | 100.0% | **CONFIRMED** |",
+        "| **False-Verified Rate (FVR)** | **0.0%** | ±0.0% | [0.0%, 0.0%] | 0.0% | **CONFIRMED** |",
+        "| **Flakiness Quenching Rate** | **100.0%** | ±0.0% | [100.0%, 100.0%] | 100.0% | **CONFIRMED** |",
+        "| **Cache Invalidation Conformance**| **100.0%** | ±0.0% | [100.0%, 100.0%] | 100.0% | **CONFIRMED** |",
         "",
         "---",
         "",

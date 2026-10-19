@@ -190,10 +190,10 @@ def dashboard_telemetry() -> dict:
         first_call = llm_telem[0] if llm_telem else {}
         # Only what was recorded. A run with no model call has no token counts,
         # latency or model: those are None, and the dashboard shows "no data".
-        def _tokens(kind: str) -> Optional[int]:
-            if not llm_telem:
+        def _tokens(kind: str, calls: list = llm_telem) -> Optional[int]:
+            if not calls:
                 return None
-            return sum(c.get("tokens", {}).get(kind, 0) for c in llm_telem)
+            return sum(c.get("tokens", {}).get(kind, 0) for c in calls)
 
         latency = first_call.get("latency_s")
         model_name = first_call.get("model")

@@ -16,11 +16,8 @@ from __future__ import annotations
 
 import json
 import logging
-import math
-import os
 import pathlib
 import sys
-import time
 from typing import Any
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -29,10 +26,9 @@ if str(ROOT) not in sys.path:
 
 from cidra.nodes.audit import audit_diff
 from cidra.nodes.ingest import isolate_error
-from cidra.nodes.sbfl import Spectrum, rank
+from cidra.nodes.sbfl import rank
 from cidra.policy import PolicyDecision, PolicyEngine
 from eval.benchmarks.corpus_45 import FAILURE_CORPUS_45
-from eval.benchmarks.corpus_unseen import UNSEEN_FAILURE_CORPUS_20
 
 HERE = pathlib.Path(__file__).resolve().parent
 RESULTS_JSON = HERE / "07_cross_scenario_generalization.json"

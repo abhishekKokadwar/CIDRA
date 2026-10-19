@@ -17,7 +17,7 @@ import json
 import logging
 import os
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional

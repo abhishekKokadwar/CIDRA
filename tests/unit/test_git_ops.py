@@ -4,7 +4,6 @@ import subprocess
 
 import pytest
 
-from cidra import git_ops
 from cidra.git_ops import git, hardened_flags
 
 

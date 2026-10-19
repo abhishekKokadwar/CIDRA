@@ -65,7 +65,7 @@ def test_a_huge_value_repr_does_not_crowd_out_the_diff(tmp_path, monkeypatch):
 def test_no_detail_when_pytest_did_not_run_tests(tmp_path, monkeypatch):
     # pytest usage error, pytest not installed: not a test result, so nothing to show.
     for session in (Session(exit_code=4, out="ERROR: usage"), Session(exit_code=127, out="python: not found")):
-        monkeypatch.setattr(fix, "session_for", lambda _r: session)
+        monkeypatch.setattr(fix, "session_for", lambda _r, s=session: s)
         assert fix._failure_detail(_state(tmp_path)) is None
     monkeypatch.setattr(fix, "session_for", lambda _r: Session())
     assert fix._failure_detail(_state(tmp_path, target_tests=[])) is None

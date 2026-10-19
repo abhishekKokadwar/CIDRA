@@ -17,8 +17,11 @@ Returns:
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, Response, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from cidra import config, history
 from cidra.server.events import parse_event
@@ -92,9 +95,6 @@ def api_guard(request: Request) -> None:
 _store = IdempotencyStore(config.IDEMPOTENCY_DB)
 
 
-from pathlib import Path
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
 
 _STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 

@@ -174,7 +174,7 @@ def render_comment(state: DebugState) -> str:
             "🔒 **Enterprise Audit Manifest:**",
             f"- **Policy Decision:** `{pol_dec}`",
             f"- **AST Security Gate:** `{ast_status}`",
-            f"- **Sandbox Isolation:** `0 egress bytes` (network disabled)",
+            "- **Sandbox Isolation:** `0 egress bytes` (network disabled)",
             f"- **Cryptographic Seal:** {seal_line}",
         ]
 

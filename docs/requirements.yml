@@ -155,3 +155,8 @@
   title: What users install works
   accept: The built wheel carries pyproject's version, the sandbox Dockerfile and exactly the dashboard files its page loads (no missing file, no stale bundle); installed in a clean venv and run from outside the checkout, the CLI starts, the sandbox image builds from the package, the dashboard serves every file, and `cidra action` reports a verified fix on a failing practice commit through a stand-in GitHub API.
   jobs: [package]
+
+- id: LINT
+  title: No Python errors or likely bugs merge
+  accept: ruff checks cidra/, scripts/, eval/ and tests/ for pyflakes errors, import and syntax errors and bugbear patterns (rules in pyproject.toml), and the unit job fails on any finding.
+  jobs: [unit]
