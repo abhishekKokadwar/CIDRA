@@ -19,11 +19,11 @@ jobs:
 
     steps:
     # The action itself always runs from the default branch (trusted code).
-    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     # The commit whose CI failed goes in a subfolder: it is only ever copied
     # into the sandbox, never executed on the runner next to the secrets.
-    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         ref: ${{ github.event.workflow_run.head_sha }}
         path: cidra-target
@@ -46,7 +46,7 @@ jobs:
     # and a commit per run buried main's history.
     - name: Upload run telemetry
       if: always()
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: cidra-telemetry-${{ github.event.workflow_run.id }}
         path: dashboard/public/telemetry.json
