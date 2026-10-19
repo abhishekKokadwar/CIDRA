@@ -21,5 +21,6 @@
   "fix_size": {
     "files": 2,
     "lines": 18
-  }
+  },
+  "held_out_command": "python -m pytest -q tornado/test/asyncio_test.py tornado/test/test_heldout_asyncio_map.py 2>&1"
 }

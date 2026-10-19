@@ -429,30 +429,41 @@ npx playwright install chromium && npm run e2e
 
 ### Measured results
 
-From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in dry run. One small paid model for both runs (named in the result files), priced at $1 / $5 per million input / output tokens.
+From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in dry run. One small paid model for all runs (named in the result files), priced at $1 / $5 per million input / output tokens.
 
-| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 18 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v4.json)) |
+| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 40 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v6.json)) |
 |---|---|---|
-| Correct diagnosis | 7 / 7 | 13 / 18 |
-| Verified fix, where one exists | 4 / 4 | 5 / 12 |
-| Correctly declined | 3 / 3 | 6 / 6 |
-| "Verified" fix that fails held-out tests | 0 / 4 | 0 / 5 ([judged](eval/results/claude-haiku-4-5-bugsinpy-v4-held-out.json) by independent tests the model never saw) |
-| Median cost per run | $0.008 | $0.016 |
-| Total cost | $0.05 | $0.32 |
+| Correct diagnosis | 7 / 7 | 29 / 40 |
+| Verified fix, where one exists | 4 / 4 | 6 / 24 |
+| Correctly declined | 3 / 3 | 13 / 16 |
+| "Verified" fix that fails held-out tests | 0 / 4 | **4 / 9** ([judged](eval/results/claude-haiku-4-5-bugsinpy-v6-held-out.json) by independent tests the model never saw) |
+| Median cost per run | $0.008 | $0.015 |
+| Total cost | $0.05 | $0.76 |
 
-The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, thefuck, tornado and youtube-dl, chosen by rules fixed before any model ran ([eval/corpus/README.md](eval/corpus/README.md)). On those, CIDRA declined every case it should and fixed 5 of the 12 fixable ones: tornado-1, -3 and -5, youtube-dl-1 and -3. All 5 also passed the held-out tests, but checking those sets (`measure.py --validate`) shows none can catch a wrong fix: each is the failing test file, already run before the patch. So the fixes were read by hand instead.
+The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, keras, thefuck, tornado and youtube-dl, chosen in two batches by rules fixed before any model ran on them ([eval/corpus/README.md](eval/corpus/README.md)). The second batch (22 cases) was unseen while CIDRA was developed; the two batches come out alike (3 of 12 fixed in each).
 
-Read by hand against each project's own fix: tornado-5 is the same change, youtube-dl-1 behaves the same, and tornado-3 has the same idea with a different edge case for a `None` entry. youtube-dl-3 takes another route, a stricter entity pattern, that looks correct. tornado-1 re-attaches the stream to the handler, where the project routes the call through the connection instead. Each fixed case now also has held-out tests written separately from the visible one (other inputs, the public code path; [eval/corpus](eval/corpus/README.md)), each shown to pass on the project's fix and to fail on the buggy commit. All 5 of CIDRA's patches pass them, tornado-1 included: `set_nodelay` reaches the live socket, from `open()` or later, and the connection still closes normally.
+**4 of CIDRA's 9 "verified" fixes on real bugs are wrong.** Every fix CIDRA verifies is judged afterwards by held-out tests written apart from the failing test (other inputs, the public code path), each set shown to pass on the project's own fix and to fail on the buggy commit. Five fixes pass them. Four make the failing test pass and break something no test in the run checked:
 
-The 7 not fixed: 4 fastapi bugs and youtube-dl-2 go through framework code the failing test does not call directly, so the code to change is not shown to the model, and its guesses do not apply (CIDRA refuses an edit whose text is not in the file). Two more were misdiagnosed. How the number moved, one change at a time:
-
-| Run | Change | Fixed |
+| Case | What the patch did | Held-out test it fails |
 |---|---|---|
-| [v2](eval/results/claude-haiku-4-5-bugsinpy-v2.json) | baseline after the G-15/G-16/G-17/G-22 fixes | 0 / 12 (15 of 19 patches did not apply) |
-| [v3](eval/results/claude-haiku-4-5-bugsinpy-v3.json) | edits instead of hand-written diffs; code excerpts instead of a 16 KB tail | 1 / 12 |
-| v4 | the failing test's full `-vv` assertion diff in the prompt | 5 / 12 |
+| tornado-3 | deleted the "inconsistent cache" error instead of fixing the case that raised it | a mixed-up cache is still reported |
+| thefuck-25 | also changed when the rule fires, with a substring test, so a path such as `my-project/` turns it off | the rule fires for a path containing `-p` |
+| tornado-9 | rebuilds the URL, re-encoding its query (`%20` becomes `+`) | `url_concat(url, None)` returns the URL unchanged |
+| youtube-dl-6 | still crashes on a subtitle line without a `begin` time | lines missing a timestamp are skipped |
 
-Diagnosis varies between runs of the same model (12 to 14 of 18); the analysis step did not change. Next steps are in [ROADMAP M3](docs/ROADMAP.md).
+Three of the 9 (tornado-9, youtube-dl-6, youtube-dl-10) are on bugs CIDRA's scope says to decline, an exception rather than a failed assert; one of those is genuine. CIDRA's own check, red to green with no test going from pass to fail, cannot see what the repository does not test. Reducing false "verified" is the open M3 work ([ROADMAP](docs/ROADMAP.md)).
+
+How the numbers moved, one change at a time:
+
+| Run | Change | Cases | Fixed | False "verified" (judged) |
+|---|---|---|---|---|
+| [v2](eval/results/claude-haiku-4-5-bugsinpy-v2.json) | baseline after the G-15/G-16/G-17/G-22 fixes | 18 | 0 / 12 (15 of 19 patches did not apply) | — |
+| [v3](eval/results/claude-haiku-4-5-bugsinpy-v3.json) | edits instead of hand-written diffs; code excerpts instead of a 16 KB tail | 18 | 1 / 12 | — |
+| [v4](eval/results/claude-haiku-4-5-bugsinpy-v4.json) | the failing test's full `-vv` assertion diff in the prompt | 18 | 5 / 12 | [0 / 5](eval/results/claude-haiku-4-5-bugsinpy-v4-held-out.json) |
+| [v5](eval/results/claude-haiku-4-5-bugsinpy-v5.json) | verdict from the per-test report (G-25); batch 2 added | 40 | not comparable: a parsing regression (fixed in #69) and sampling at temperature 1.0 | — |
+| [v6](eval/results/claude-haiku-4-5-bugsinpy-v6.json) | model called at temperature 0, so runs repeat | 40 | 6 / 24 | [4 / 9](eval/results/claude-haiku-4-5-bugsinpy-v6-held-out.json) |
+
+Until v6 the model sampled at its default temperature (1.0), so the same log could be diagnosed differently from run to run: v4's tornado-1 and -5 fixes were not repeated in v5 or v6. Next steps are in [ROADMAP M3](docs/ROADMAP.md).
 
 ---
 
