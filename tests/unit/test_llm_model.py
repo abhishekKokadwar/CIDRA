@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
 from pydantic import BaseModel
 
 from cidra.integrations import llm
@@ -12,6 +13,7 @@ class _Out(BaseModel):
     ok: bool
 
 
+@pytest.mark.req("M3-REPEATABLE")
 def test_structured_sends_configured_model():
     fake = MagicMock()
     call = SimpleNamespace(function=SimpleNamespace(arguments='{"ok": true}'))
@@ -24,6 +26,8 @@ def test_structured_sends_configured_model():
 
     assert out.ok is True
     assert fake.chat.completions.create.call_args.kwargs["model"] == "my/own-model"
+    # Repeatable diagnoses and fixes: never the provider's default sampling temperature.
+    assert fake.chat.completions.create.call_args.kwargs["temperature"] == 0
 
 
 def _reply(tool_calls, prompt=10, completion=5):

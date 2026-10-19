@@ -156,6 +156,10 @@
   accept: The built wheel carries pyproject's version, the sandbox Dockerfile and exactly the dashboard files its page loads (no missing file, no stale bundle); installed in a clean venv and run from outside the checkout, the CLI starts, the sandbox image builds from the package, the dashboard serves every file, and `cidra action` reports a verified fix on a failing practice commit through a stand-in GitHub API. A release runs these same checks on the files it uploads to PyPI, and its tag must match the version.
   jobs: [package]
 
+- id: M3-REPEATABLE
+  title: The same failure gets the same diagnosis and fix from run to run
+  accept: Every model call (diagnosis and fix, primary and fallback) is sent with temperature 0, so a measured change in results comes from a change in CIDRA, not from sampling. At the provider default (1.0 for Claude) the same tornado logs were diagnosed differently in corpus runs v4 and v5.
+
 - id: M3-HELDOUT
   title: Every real bug CIDRA claims to fix is judged by tests the model never saw
   accept: Each BugsInPy case with a verified fix has held-out tests in its held_out/ folder, written apart from the visible test, and a held_out_command that runs them; each set passes on the project's fix and fails on the buggy commit where the visible run did not (measure.py --validate); the README's false-verified number is the judgement on file from measure.py --rejudge, which lists for each case the held-out failures that make it valid.
