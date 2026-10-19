@@ -152,6 +152,9 @@ def structured(
                 resp = get_client().chat.completions.create(
                     model=attempt_model,
                     max_tokens=max_tokens,
+                    # Repeatable answers: at the provider's default (1.0 for Claude) the
+                    # same log was diagnosed differently from run to run (corpus v4 vs v5).
+                    temperature=0,
                     messages=[
                         {"role": "system", "content": system},
                         {"role": "user", "content": user},
