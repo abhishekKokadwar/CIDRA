@@ -30,7 +30,10 @@ This file says how changes are made, so the history stays readable and every cha
    has a test tagged `@pytest.mark.req("<id>")` (or, in the dashboard, a test whose title starts with `[<id>]`)
    that ran and passed (skipped does not count), and every
    CI job it names passed. A new requirement or roadmap item goes in that file with the tests that prove it.
-   A push to `main` runs every tier. The paid-model BugsInPy run is never in CI.
+   A push to `main` runs every tier, and so does a nightly run on `main`, which installs the newest
+   versions of the unpinned dependencies; a failed nightly opens an issue. Once a week
+   `real-model.yml` runs three practice fixtures with the real model (about $0.02, capped); the
+   paid BugsInPy run is never in CI.
    Third-party Actions are pinned to a commit (a test fails otherwise); Dependabot proposes their
    updates, and the pip and npm ones, weekly, and each update PR runs the full CI.
    Coverage has floors: the unit, server and integration runs together must cover `cidra/` at least

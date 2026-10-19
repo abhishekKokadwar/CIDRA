@@ -11,6 +11,11 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  # Nightly on main: catches a break between PRs, such as a new release of an
+  # unpinned dependency (every run installs the newest). Free on a public repo.
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -368,3 +373,24 @@ jobs:
       run: |
         echo "tier results: $RESULTS"
         case " $RESULTS " in *" failure "*|*" cancelled "*) exit 1 ;; esac
+
+  nightly-report:
+    # A failed nightly run opens an issue (or comments on the open one), so it is
+    # seen without watching the Actions tab.
+    needs: [ changes, unit, compat, sandbox, pipeline, frontend, e2e, package, audit, codeql, coverage, requirements ]
+    if: always() && github.event_name == 'schedule' && contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+    - name: Open or update the nightly-failure issue
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        msg="The nightly CI run failed on $(date -u +%F): $RUN"
+        open=$(gh issue list --state open --search "in:title Nightly CI failed" --json number --jq '.[0].number')
+        if [ -n "$open" ]; then gh issue comment "$open" --body "$msg"; else gh issue create --title "Nightly CI failed" --body "$msg"; fi
+

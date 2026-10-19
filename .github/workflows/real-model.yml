@@ -1,0 +1,61 @@
+name: Real model (weekly)
+
+# The whole pipeline with the real model on three practice fixtures: two it must
+# fix (F-01, F-02) and one it must not claim to (N-01). Catches what the stub model
+# in CI cannot: a provider or model change. Costs about $0.02 a week on
+# ANTHROPIC_API_KEY, capped per run; disable the workflow to stop it.
+on:
+  schedule:
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+    - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      with:
+        python-version: "3.11"
+        cache: pip
+    - run: pip install ".[dev]"
+    - run: docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+    - run: git clone --quiet https://github.com/helpmecode69/cidra-practice "$RUNNER_TEMP/cidra-practice"
+    - name: F-01, F-02 and N-01 with claude-haiku-4-5
+      env:
+        CIDRA_PRACTICE_REPO: ${{ runner.temp }}/cidra-practice
+        CIDRA_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        CIDRA_BASE_URL: https://api.anthropic.com/v1/
+        CIDRA_MODEL_ANALYZE: claude-haiku-4-5
+        CIDRA_MODEL_FIX: claude-haiku-4-5
+        GEMINI_API_KEY: ""             # the measured model only, no fallback
+        CIDRA_MAX_LLM_CALLS: "6"       # per fixture run: the spend cap
+        CIDRA_MAX_LLM_TOKENS: "15000"
+      run: python eval/measure.py F-01 F-02 N-01 --check --out "$RUNNER_TEMP/real-model.json"
+    - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      if: always()
+      with:
+        name: real-model-results
+        path: ${{ runner.temp }}/real-model.json
+        if-no-files-found: ignore
+
+  report:
+    needs: measure
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+    - env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        msg="The weekly real-model check failed on $(date -u +%F): $RUN"
+        open=$(gh issue list --state open --search "in:title Real-model check failed" --json number --jq '.[0].number')
+        if [ -n "$open" ]; then gh issue comment "$open" --body "$msg"; else gh issue create --title "Real-model check failed" --body "$msg"; fi
