@@ -63,7 +63,7 @@ jobs:
       env:
         CIDRA_REQ_REPORT: req-unit.json
         COVERAGE_FILE: coverage-unit
-      run: pytest -q tests/unit tests/server --cov --cov-report=
+      run: pytest -q tests/unit tests/server --cov --cov-report= --cov-fail-under=0  # the coverage job checks the combined total
     - uses: actions/upload-artifact@v4
       with:
         name: cov-unit
@@ -91,7 +91,7 @@ jobs:
       env:
         CIDRA_REQ_REPORT: req-integration.json
         COVERAGE_FILE: coverage-integration
-      run: pytest -q tests/integration --cov --cov-report=
+      run: pytest -q tests/integration --cov --cov-report= --cov-fail-under=0  # the coverage job checks the combined total
     - uses: actions/upload-artifact@v4
       with:
         name: cov-integration
