@@ -2,7 +2,7 @@
 # What a user gets from `pip install cidra`, run from outside the checkout so
 # nothing can be imported from the source tree (CI's package job).
 #
-#   scripts/smoke_installed.sh <python of a venv with the wheel installed> <clone of cidra-practice>
+#   scripts/smoke_installed.sh <python of a venv with the wheel installed> <cidra-practice: URL or clone with its branches>
 #
 # 1. the `cidra` command starts
 # 2. the sandbox image builds from the installed package (the README's step)

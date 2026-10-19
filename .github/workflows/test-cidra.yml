@@ -218,9 +218,8 @@ jobs:
       run: python scripts/check_package.py dist/*.whl
     - name: Install the wheel in a clean environment
       run: python -m venv "$RUNNER_TEMP/user" && "$RUNNER_TEMP/user/bin/pip" install --quiet dist/*.whl
-    - run: git clone --quiet https://github.com/helpmecode69/cidra-practice "$RUNNER_TEMP/cidra-practice"
     - name: The installed package works (CLI, sandbox image, dashboard, cidra action)
-      run: bash scripts/smoke_installed.sh "$RUNNER_TEMP/user/bin/python" "$RUNNER_TEMP/cidra-practice"
+      run: bash scripts/smoke_installed.sh "$RUNNER_TEMP/user/bin/python" https://github.com/helpmecode69/cidra-practice
 
   coverage:
     # The unit, server and integration runs together, against the floor in
