@@ -241,8 +241,12 @@ def install_deps(state: DebugState) -> dict:
     session = session_for(state["run_id"])
     if session is None:
         return {"env_ready": False}
-    result = session.install(sandbox_install_command(state))
-    out = {"env_ready": result.passed, "repro_results": [*state.get("repro_results", []), result]}
+    command = sandbox_install_command(state)
+    result = session.install(command)
+    # Recorded: a detected command cannot be detected again once the checkout is gone,
+    # and the rerun command shown later (report, dashboard) must be the one that ran.
+    out = {"env_ready": result.passed, "repro_results": [*state.get("repro_results", []), result],
+           "install_command": command}
     if not result.passed:
         # The most likely first failure on a new repository: say what went wrong (G-18).
         tail = (result.stderr_tail.strip() or result.stdout_tail.strip())[-600:]

@@ -40,6 +40,9 @@ def test_a_pyproject_package_gets_its_dependencies_without_configuration(tmp_pat
         "tests/test_dep.py": "import six\n\n\ndef test_dependency_installed():\n    assert six.PY3\n"})
     assert state["env_ready"], state.get("analysis_error")
     assert tests.passed, tests.stdout_tail[-500:]
+    # The detected command is recorded: the rerun command shown later needs it,
+    # and cannot detect it again once the checkout is gone.
+    assert state["install_command"] == "pip install --quiet ."
 
 
 def test_a_repo_with_nothing_to_install_still_runs(tmp_path, monkeypatch):

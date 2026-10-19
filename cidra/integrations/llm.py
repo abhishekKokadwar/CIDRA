@@ -75,10 +75,15 @@ def _price(model: str) -> tuple[tuple[float, float] | None, str | None]:
 def run_cost() -> tuple[float, str] | None:
     """(USD, where the price came from) for this run's calls, or None when there
     were none or any call's model has no known price: a partial sum would mislead."""
-    if not _latest_telemetry:
+    return cost_of(_latest_telemetry)
+
+
+def cost_of(calls: list[dict]) -> tuple[float, str] | None:
+    """run_cost() for a list of recorded calls, e.g. a saved run's llm_telemetry."""
+    if not calls:
         return None
     total, source = 0.0, None
-    for call in _latest_telemetry:
+    for call in calls:
         price, source = _price(call["model"])
         if price is None:
             return None

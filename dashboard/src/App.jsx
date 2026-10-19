@@ -7,6 +7,7 @@ import CodeDiffViewer from './components/CodeDiffViewer';
 import TimelineNode from './components/TimelineNode';
 import OrchestratorView from './components/OrchestratorView';
 import SettingsView from './components/SettingsView';
+import EvidencePanel from './components/EvidencePanel';
 import { outcomeBadge } from './outcome';
 import { AUTH_HELP, apiFetch } from './api';
 import { Play, CheckCircle2, Clock, ChevronRight, Bot, PlayCircle, Cpu, Zap, Activity, FileJson, RefreshCw, ExternalLink, ShieldCheck, Check, Workflow } from 'lucide-react';
@@ -348,6 +349,8 @@ function RunExplorer({ run, onBack }) {
 
       {/* Interactive Container Sandbox & Flakiness Lab */}
       <ContainerFlakinessLab run={run} />
+
+      <EvidencePanel evidence={run.evidence} />
 
       <div style={{ paddingLeft: '0.5rem', marginTop: '2.5rem' }}>
         <TimelineNode 

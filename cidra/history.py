@@ -101,6 +101,24 @@ def export_dashboard_telemetry():
         log.warning("Could not write telemetry to %s: %s", out, e)
 
 
+def _evidence(st: dict) -> dict:
+    """The report's evidence block as data for the Run Explorer: each test before and
+    after the patch, the run's cost, and the command that reruns the verification."""
+    from cidra.evidence import rerun_command, test_changes
+    from cidra.integrations.llm import cost_of
+    tests, unchanged = test_changes(st)
+    cost = cost_of(st.get("llm_telemetry") or [])
+    return {
+        "tests": tests,
+        "unchanged": unchanged,
+        "cost_usd": round(cost[0], 4) if cost else None,
+        "price_source": cost[1] if cost else None,
+        # Only with the install command the run recorded: re-detecting it now, with
+        # the checkout gone, would print a command that installs nothing.
+        "rerun_command": rerun_command(st) if st.get("fix_diff") and st.get("install_command") else None,
+    }
+
+
 def dashboard_telemetry() -> dict:
     """The dashboard's view of this directory's run history: stats and one entry per run."""
     runs = []
@@ -239,6 +257,7 @@ def dashboard_telemetry() -> dict:
             "policy_decision": st.get("policy_decision"),
             "requires_human_approval": bool(st.get("requires_human_approval", False)),
             "audit_manifest": st.get("audit_manifest"),
+            "evidence": _evidence(st),
             "pr_url": st.get("pr_url"),
             "comment_url": st.get("comment_url")
         })
