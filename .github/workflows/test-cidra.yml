@@ -79,6 +79,30 @@ jobs:
         path: req-unit.json
         if-no-files-found: ignore
 
+  compat:
+    # The Pythons pyproject.toml accepts (>=3.10) and Windows, where people run the
+    # CLI. Unit and server tests only: the unit job (3.11, Linux) also lints,
+    # type-checks and measures coverage, and the sandbox needs Linux Docker.
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, python: "3.10" }
+          - { os: ubuntu-latest, python: "3.12" }
+          - { os: windows-latest, python: "3.11" }
+    name: compat (${{ matrix.os }}, ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python }}
+        cache: pip
+    - run: pip install ".[dev]"
+    - run: pytest -q tests/unit tests/server
+
   sandbox:
     needs: changes
     if: needs.changes.outputs.code == 'true'
@@ -251,7 +275,7 @@ jobs:
   requirements:
     # Every requirement in docs/requirements.yml has a test that passed in this run
     # (skipped does not count) and every CI job it names passed.
-    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, package, coverage ]
+    needs: [ changes, unit, compat, sandbox, pipeline, frontend, e2e, package, coverage ]
     if: always() && needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -274,7 +298,7 @@ jobs:
         python scripts/check_requirements.py docs/requirements.yml req/*.json --jobs "$jobs"
 
   ci-ok:
-    needs: [ changes, unit, sandbox, pipeline, frontend, e2e, package, coverage, requirements ]
+    needs: [ changes, unit, compat, sandbox, pipeline, frontend, e2e, package, coverage, requirements ]
     if: always()
     runs-on: ubuntu-latest
     steps:
