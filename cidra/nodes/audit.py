@@ -381,13 +381,13 @@ def _run_context(state: DebugState) -> tuple[tuple, tuple]:
     analysis = state.get("analysis")
     text = f"{getattr(analysis, 'evidence', '') or ''}\n{state.get('error_region') or ''}"
     missing = set(_MISSING_MODULE.findall(text))
-    if getattr(analysis, "missing_package", None):
-        missing.add(analysis.missing_package)
+    if package := getattr(analysis, "missing_package", None):
+        missing.add(package)
 
     expectations: list = []
     test_file = (getattr(analysis, "failing_test", None) or "").split("::")[0]
-    if test_file and state.get("source_dir"):
-        root = pathlib.Path(state["source_dir"]).resolve()
+    if test_file and (source := state.get("source_dir")):
+        root = pathlib.Path(source).resolve()
         path = (root / test_file).resolve()
         if path.is_file() and path.is_relative_to(root):
             expectations = call_expectations(path.read_text(encoding="utf-8", errors="replace"))

@@ -44,7 +44,7 @@ def checkout_commit(state: DebugState) -> dict:
     from cidra.nodes.checkout import fetch_commit, prepare_checkout
 
     run_id = state["run_id"]
-    raw_source = state.get("source_dir")
+    raw_source: str | pathlib.Path | None = state.get("source_dir")
     try:
         if not raw_source:
             # Webhook mode: nothing local holds the failing commit, so fetch it
@@ -55,7 +55,7 @@ def checkout_commit(state: DebugState) -> dict:
         return {"env_ready": False, "analysis_error": f"checkout failed: {e}"[:500]}
     # source_dir now points at the .git-free sandbox tree, so remember the real
     # repo separately: the PR path needs a clone it can commit and push from.
-    out = {"source_dir": str(tree), "repo_dir": str(raw_source)}
+    out: dict = {"source_dir": str(tree), "repo_dir": str(raw_source)}
     if "ci_env" not in state:  # a caller-supplied env (tests, eval) wins
         out["ci_env"] = workflow_env(tree, state.get("workflow_file"))
     if "python_version" not in state:

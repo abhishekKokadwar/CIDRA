@@ -89,6 +89,7 @@ docs: correct README and known gaps against the code
 
 ```bash
 ruff check .                  # errors and likely bugs (rules in pyproject.toml); CI fails on any
+mypy                          # type checks on cidra/; CI fails on any
 pytest -q                     # unit and server suites, no Docker or key needed
 git status                    # the test suite rewrites some tracked files; do not commit them
 ```

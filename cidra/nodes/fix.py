@@ -177,11 +177,12 @@ def _context(state: DebugState) -> str:
     if analysis and analysis.file:
         files[analysis.file] = []
     called: set[str] = set()
-    test_file = (analysis.failing_test or "").split("::")[0] if analysis else ""
+    failing = (analysis.failing_test if analysis else None) or ""
+    test_file = failing.split("::")[0]
     test_text = _read(root, test_file) if test_file else None
     if test_text is not None:
         lines = test_text.splitlines()
-        name = analysis.failing_test.split("::")[-1].split("[")[0]
+        name = failing.split("::")[-1].split("[")[0]
         spans = _defs(lines, {name})
         files[test_file] = [(0, 30), *spans]  # its imports and the failing test
         for start, end in spans:
@@ -204,8 +205,8 @@ def _context(state: DebugState) -> str:
                 # One hop further: what those definitions call, defined in the same file.
                 inner = {n for s, e in spans for n in _CALL.findall("\n".join(lines[s:e]))} - _NOT_DEFS - called
                 hits.append((len(spans), rel.as_posix(), spans + _defs(lines, inner)))
-        for _, rel, spans in sorted(hits, key=lambda h: (-h[0], h[1]))[:MAX_DEF_FILES]:
-            files.setdefault(rel, []).extend((s - 3, min(e, s + 150)) for s, e in spans)
+        for _, name, spans in sorted(hits, key=lambda h: (-h[0], h[1]))[:MAX_DEF_FILES]:
+            files.setdefault(name, []).extend((s - 3, min(e, s + 150)) for s, e in spans)
     files.setdefault("requirements.txt", [])
 
     parts = [f"<error>\n{region}\n</error>"]
@@ -320,15 +321,16 @@ def generate_fix(state: DebugState) -> dict:
         state = {**state, **out}
     previous = state.get("verify_results", [])
     retry_note = ""
-    if state.get("patch_applied") is False and state.get("apply_error"):
+    apply_error = state.get("apply_error")
+    if state.get("patch_applied") is False and apply_error:
         # The last edits never applied: say so, or the model sends them again.
         retry_note = (
             "\n\nYour previous edits could not be applied. Do not repeat them. Copy each "
             "old text exactly from the <file> contents above, with enough lines to be unique.\n"
         )
-        if state.get("fix_diff"):
-            retry_note += f"<previous_diff>\n{state['fix_diff'][-2000:]}\n</previous_diff>\n"
-        retry_note += f"<apply_error>\n{state['apply_error'][-1000:]}\n</apply_error>"
+        if previous_diff := state.get("fix_diff"):
+            retry_note += f"<previous_diff>\n{previous_diff[-2000:]}\n</previous_diff>\n"
+        retry_note += f"<apply_error>\n{apply_error[-1000:]}\n</apply_error>"
     elif previous:
         last = previous[-1]
         retry_note = (

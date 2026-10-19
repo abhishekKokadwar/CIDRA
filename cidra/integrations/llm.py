@@ -82,12 +82,13 @@ def cost_of(calls: list[dict]) -> tuple[float, str] | None:
     """run_cost() for a list of recorded calls, e.g. a saved run's llm_telemetry."""
     if not calls:
         return None
-    total, source = 0.0, None
+    total, source = 0.0, ""
     for call in calls:
-        price, source = _price(call["model"])
-        if price is None:
+        price, where = _price(call["model"])
+        if price is None or where is None:
             return None
         total += call["tokens"]["prompt"] / 1e6 * price[0] + call["tokens"]["completion"] / 1e6 * price[1]
+        source = where
     return total, source
 
 
@@ -137,7 +138,7 @@ def structured(
     if GEMINI_API_KEY and BASE_URL.rstrip("/") != GEMINI_BASE_URL.rstrip("/"):
         models_to_try.append((FALLBACK_MODEL, gemini_client))
 
-    last_error = None
+    last_error: Exception | None = None
     
     for attempt_model, get_client in models_to_try:
         max_retries = 3
@@ -168,7 +169,8 @@ def structured(
                     tool_choice={"type": "function", "function": {"name": "report"}},
                 )
                 elapsed = time.time() - start_time
-                calls = resp.choices[0].message.tool_calls
+                # Only function calls: the one tool CIDRA offers is a function.
+                calls = [c for c in resp.choices[0].message.tool_calls or [] if hasattr(c, "function")]
 
                 # Record real telemetry for dashboard transparency. Recorded before
                 # the shape check: a reply with no tool call was still billed.
@@ -219,7 +221,7 @@ def structured(
                     break # Move to next fallback model
 
     # If all fallbacks fail, raise the last error so the graph can gracefully abort
-    raise last_error
+    raise last_error or RuntimeError("no model was called")
 
 
 if __name__ == "__main__":

@@ -144,8 +144,11 @@ def _open_pr(state: DebugState, body: str) -> Optional[str]:
     # Keyed by the failing commit, not the CI run: a commit usually has two runs
     # (push and pull_request), and both must land on one branch and one PR.
     key = (state.get("commit_sha") or run_id)[:12]
+    diff = state.get("fix_diff")
+    if not diff:
+        raise ValueError("no verified diff to open a pull request with")
     branch = build_fix_branch(
-        key, _repo_dir(state), state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
+        key, _repo_dir(state), diff, repo, GITHUB_TOKEN, GITHUB_API,
         base_sha=state.get("commit_sha"),
     )
     return open_draft_pr(
@@ -166,13 +169,16 @@ def _apply_to_existing_pr(state: DebugState, body: str) -> Optional[str]:
 
     run_id = state["run_id"]
     repo = state["repo"]
+    diff, number = state.get("fix_diff"), state.get("issue_number")
+    if not diff or number is None:
+        raise ValueError("no verified diff, or no pull request, to update")
     # Push to the existing PR branch, then comment on the PR.
     build_fix_branch(
-        run_id, _repo_dir(state), state["fix_diff"], repo, GITHUB_TOKEN, GITHUB_API,
+        run_id, _repo_dir(state), diff, repo, GITHUB_TOKEN, GITHUB_API,
         base_sha=state.get("commit_sha"),
         branch_name=state["pr_branch"]
     )
-    return post_or_update_comment(repo, state["issue_number"], body)
+    return post_or_update_comment(repo, number, body)
 
 
 def cleanup(state: DebugState) -> dict:

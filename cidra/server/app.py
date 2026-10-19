@@ -18,12 +18,14 @@ Returns:
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import cast
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, Response, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from cidra import config, history
+from cidra.state import DebugState
 from cidra.server.events import parse_event
 from cidra.server.idempotency import IdempotencyStore
 from cidra.server.security import verify_signature
@@ -179,7 +181,7 @@ def approve_run(run_id: str):
 
     state["approved_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     try:
-        history.save_full_state(state)
+        history.save_full_state(cast(DebugState, state))
     except Exception:  # noqa: BLE001 - the response must not depend on the disk
         log.warning("could not persist approval for run_id=%s", run_id)
     log.info("HITL approval recorded for run_id=%s", run_id)

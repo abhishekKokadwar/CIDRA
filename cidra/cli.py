@@ -9,7 +9,7 @@ import logging
 import os
 import sys
 import uuid
-from typing import Optional
+from typing import Any, Optional
 
 from cidra.graph import build_graph
 
@@ -207,7 +207,7 @@ def verify_run(args) -> int:
 
     patch = pathlib.Path(args.patch).read_text(encoding="utf-8")
     run_id = f"verify-{uuid.uuid4().hex[:8]}"
-    state: dict = {"run_id": run_id, "install_command": args.install, "test_command": args.test,
+    state: Any = {"run_id": run_id, "install_command": args.install, "test_command": args.test,
                    "ci_failing_tests": args.target or []}
     try:
         tree = prepare_checkout(run_id, args.source, args.sha)
@@ -222,7 +222,11 @@ def verify_run(args) -> int:
         if not state.get("reproduced"):
             print(f"Not reproduced, so there is nothing to verify: {state.get('analysis_error')}")
             return 1
-        applied = session_for(run_id).apply_patch(patch)
+        session = session_for(run_id)
+        if session is None:
+            print("The sandbox session closed before the patch could be applied.")
+            return 1
+        applied = session.apply_patch(patch)
         if not applied.passed:
             print(f"The patch does not apply to {args.sha}:\n{(applied.stdout_tail or applied.stderr_tail)[-1000:]}")
             return 1
