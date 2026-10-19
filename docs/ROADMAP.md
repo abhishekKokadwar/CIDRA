@@ -1,6 +1,6 @@
 # CIDRA Roadmap
 
-**Written:** 2026-10-15 · **Horizon:** about 12 weeks · **Owner:** Abhishek Kokadwar
+**Written:** 2026-10-15 · **Horizon:** about 15 weeks (M6 added 2026-10-19) · **Owner:** Abhishek Kokadwar
 
 This is the working plan. It replaces `PRODUCT_PLAN.md` for deciding what to build next; that
 file stays as background. Progress is tracked in pull requests and in
@@ -28,8 +28,8 @@ interviewers, research (optional).
 **Out of scope for this plan:** languages other than Python, webhook mode beyond what
 exists, SBFL, the semantic fix cache, and merging without a human. The dashboard was out
 of scope until 2026-10-19, when it was brought up to the same standard as the rest: it
-shows only real results, and it is tested in CI by component and browser tests. New
-dashboard features stay out of scope.
+shows only real results, and it is tested in CI by component and browser tests. Making it
+run and control CIDRA is milestone M6.
 
 ## 2. Where it stands (2026-10-19)
 
@@ -124,6 +124,54 @@ that do not favour CIDRA.
 
 **Exit:** the README states, with numbers, where CIDRA is better and where it is not.
 
+### M6 · The dashboard runs CIDRA (weeks 13 to 15)
+
+Today the dashboard shows what CIDRA did; it cannot make CIDRA do anything. This milestone
+makes it a control panel for a local or self-hosted CIDRA. It comes after M4 and M5 because
+the Action on GitHub is how most users meet CIDRA; the dashboard serves the ones who run it
+themselves (`cidra dashboard`, `cidra serve`).
+
+**Audit (2026-10-19), what is wired today:**
+
+| Part | State |
+|---|---|
+| Runs list, run detail, evidence panel, pull requests tab | Wired: read live from run history (`/telemetry.json`, `/api/runs`), tested in CI by component and browser tests |
+| Models, connection test, PR creation toggle | Wired: saved to `.env` and read by the engine at call time |
+| API key and base URL | **Half wired**: saved, and the connection test uses the new values, but `llm.py` copies them at import and caches its client, so runs in the same server keep the old ones until a restart |
+| Approve | Records who approved and when; opens nothing (CIDRA never merges, by design) |
+| Flakiness runs and threshold, max fix attempts | **Not wired**: saved, but `reproduce.py` and `routers.py` read the values once at import, and `config.py` never reads them from the environment, so they are ignored even after a restart (G-19) |
+| Container timeout | **Not wired**: saved and read by nothing (G-19) |
+| Orchestrator tab | A scripted demo, labelled as one; nothing runs |
+| Starting, watching or cancelling a run | Not possible: runs start only from the terminal (`cidra fix`) or a webhook |
+| Runs of the GitHub Action | Not visible: they happen on GitHub's machines and stay there (their telemetry is the G-20 problem) |
+
+**Items:**
+
+- [ ] Every setting the dashboard offers, the API key and base URL included, is one the engine reads at call time, or it is
+  removed (closes G-19). A test changes each one through `/api/settings` and checks the
+  next run behaves differently.
+- [ ] Start a run from the dashboard: repository (URL or local path), commit, and optional
+  install and test commands, the same inputs as `cidra fix`. It runs in the background, one
+  at a time.
+- [ ] Watch it: the run's steps (checkout, install, reproduce, diagnose, fix, audit,
+  verify, publish) update as they happen, with the sandbox's output and the cost so far.
+- [ ] Cancel it: the sandbox and checkout are removed (the G-23 cleanup path).
+- [ ] Act on a result: rerun its verification (`cidra verify`); for a verified fix made with
+  PR creation off, open the draft pull request after a human approves. Anything that writes
+  to GitHub or spends money asks first.
+- [ ] Spend limits shown and set per run (`CIDRA_MAX_LLM_CALLS`, `CIDRA_MAX_LLM_TOKENS`).
+- [ ] Runs of the GitHub Action: the Action uploads its run record as a workflow artifact
+  (closes G-20); the dashboard lists a repository's recent runs from GitHub with a token.
+- [ ] The scripted demo stays only as a labelled tour, or goes.
+
+**Rules:** the server binds to localhost unless a token is set (already true); a run
+started from the dashboard is the same graph, sandbox and audit gate as any other run;
+each control has a browser test against the real server with the stub model, and an entry
+in [requirements.yml](requirements.yml).
+
+**Exit:** a user configures, starts, watches, cancels and acts on a run from the dashboard
+alone, and every control is proved by a test to change what the engine does.
+
 ## 4. Metrics
 
 | Metric | Measured by | Target |
@@ -134,6 +182,7 @@ that do not favour CIDRA.
 | Fix rate, fixable cases | corpus | M3 target, then improving |
 | Median cost per run | harness | under $0.02 |
 | Trial repositories working from the README alone | M4 | 3 of 3 |
+| Dashboard controls proved to change the engine's behaviour | M6 browser and server tests | all |
 
 ## 5. Budget
 
