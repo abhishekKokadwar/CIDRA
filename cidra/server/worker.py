@@ -43,7 +43,9 @@ def process_job(job: WebhookJob) -> dict | None:
     try:
         from cidra.integrations.llm import clear_latest_telemetry
         clear_latest_telemetry()  # telemetry is per run, not per server process
-        final = build_graph().invoke(state)
+        from cidra.nodes.publish import released
+        with released(state["run_id"]):
+            final = build_graph().invoke(state)
         log.info("done run_id=%s outcome=%s comment=%s",
                  state["run_id"], final.get("outcome"), final.get("comment_url"))
         return final

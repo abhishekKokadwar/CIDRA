@@ -35,6 +35,7 @@ os.environ.pop("GITHUB_STEP_SUMMARY", None)
 
 from cidra import config  # noqa: E402
 from cidra.graph import build_graph  # noqa: E402
+from cidra.nodes.publish import released  # noqa: E402
 from cidra.integrations import llm  # noqa: E402
 from scripts.fake_llm import serve  # noqa: E402
 
@@ -59,10 +60,11 @@ def run_fixture(fid: str) -> tuple[bool, str]:
     started = time.time()
     try:
         llm.clear_latest_telemetry()
-        state = build_graph().invoke({
-            "run_id": str(meta["gh_run_id"]), "repo": meta["gh_repo"], "commit_sha": sha,
-            "source_dir": practice, "dry_run": True,
-        })
+        with released(str(meta["gh_run_id"])):
+            state = build_graph().invoke({
+                "run_id": str(meta["gh_run_id"]), "repo": meta["gh_repo"], "commit_sha": sha,
+                "source_dir": practice, "dry_run": True,
+            })
     finally:
         server.shutdown()
         server.server_close()

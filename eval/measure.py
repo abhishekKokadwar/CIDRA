@@ -91,6 +91,7 @@ from cidra import config  # noqa: E402
 from cidra.graph import build_graph  # noqa: E402
 from cidra.integrations import llm  # noqa: E402
 from cidra.nodes.checkout import prepare_checkout, remove_checkout  # noqa: E402
+from cidra.nodes.publish import released  # noqa: E402
 from cidra.nodes.environment import (  # noqa: E402
     sandbox_install_command, sandbox_test_command, workflow_env, workflow_python)
 from cidra.sandbox import limits  # noqa: E402
@@ -232,11 +233,12 @@ def run_fixture(fid: str) -> dict:
         # Streamed, not invoked: each node's update is kept, so every fix
         # attempt can be recorded, not only the last one.
         updates, state = [], dict(run_input)
-        for mode, chunk in build_graph().stream(run_input, stream_mode=["updates", "values"]):
-            if mode == "updates":
-                updates.extend(chunk.items())
-            else:
-                state = chunk
+        with released(run_input["run_id"]):
+            for mode, chunk in build_graph().stream(run_input, stream_mode=["updates", "values"]):
+                if mode == "updates":
+                    updates.extend(chunk.items())
+                else:
+                    state = chunk
     finally:
         if server is not None:
             server.shutdown()

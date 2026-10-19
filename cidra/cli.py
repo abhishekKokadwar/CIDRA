@@ -26,8 +26,10 @@ def _run_graph(state: dict) -> dict:
     log.info("Starting CIDRA graph execution...")
     from cidra.integrations.llm import clear_latest_telemetry
     clear_latest_telemetry()  # telemetry is per run, not per process
+    from cidra.nodes.publish import released
     try:
-        final_state = build_graph().invoke(state)
+        with released(state["run_id"]):
+            final_state = build_graph().invoke(state)
         outcome = final_state.get("outcome")
         log.info(f"Execution complete. Outcome: {outcome}")
         from cidra.integrations.llm import usage_summary
