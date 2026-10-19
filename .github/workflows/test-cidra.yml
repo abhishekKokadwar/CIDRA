@@ -98,6 +98,8 @@ jobs:
         include:
           - { os: ubuntu-latest, python: "3.10" }
           - { os: ubuntu-latest, python: "3.12" }
+          - { os: ubuntu-latest, python: "3.13" }
+          - { os: ubuntu-latest, python: "3.14" }
           - { os: windows-latest, python: "3.11" }
     name: compat (${{ matrix.os }}, ${{ matrix.python }})
     runs-on: ${{ matrix.os }}
