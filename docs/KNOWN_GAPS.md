@@ -65,11 +65,11 @@ manual command; `--twice` shows the idempotency no-op.
 in the telemetry, and `cidra-bot.yml` commits `telemetry.json` to `main` of a public repo on
 every run. **Fix:** upload it as a workflow artifact instead, and stop the commit step.
 
-### G-21 · Release — 🛠 (small)
-The 0.2.0 wheel on PyPI has no `sandbox/Dockerfile` (checked 2026-10-15), so a pip install
-cannot build its own sandbox; `pyproject.toml` already includes it for the next release.
-There is no `LICENSE` file although MIT is declared. The v0.2.0 release title says "Node.js
-Support"; Node.js is log parsing only.
+### G-25 · "Verified" is judged from the log, not the per-test report — 🐳 🛠
+Every sandbox test run records pytest's JUnit report (`repro_junit`, `verify_junit`), but
+`judge_verification` and `reproduce_once` still decide from the failure list parsed out of
+the log. The report is shown as evidence only. **Fix:** judge from the report, fall back to
+the log when it is missing, and test both on the real sandbox.
 
 ---
 
@@ -117,6 +117,7 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-21 · Release** — Closed 2026-10-19. `LICENSE` (MIT) is in the repository; 0.3.0 and 0.3.1 are on PyPI with `sandbox/Dockerfile`, the Action is tagged `v1` and listed on the Marketplace. CI's package job and the release job check every wheel for the Dockerfile before it can ship (`scripts/check_package.py`). The v0.2.0 release title ("Node.js Support") is left as published.
 - **G-24 · CI environment variables did not reach a command after `cd ... &&`** — Closed 2026-10-19. `env_prefix` exports the workflow's variables (`export K=V; ...`) instead of putting them inline, where they applied to `cd` only. Tested in the real sandbox with `cd sub && pytest` (`tests/integration/test_ci_env_sandbox.py`).
 - **G-23 · A crash mid-run leaves its sandbox container running** — Closed 2026-10-19. Every graph run (Action, CLI, server, `eval/measure.py`, the fixtures script) is wrapped in `publish.released`, which removes the container and checkouts in a `finally`. Tested on real Docker by raising inside a node after the sandbox started (`tests/integration/test_cleanup_on_crash.py`).
 - **G-08 · Commit-comment fallback for no-PR runs** — Closed 2026-10-19. With no pull request, `publish` comments on the failing commit (updating its own comment by marker); every GitHub write is guarded, and a 403 names the workflow permission to add. Tested against a local server that answers like the GitHub API (`tests/integration/test_publish_github_api.py`).
