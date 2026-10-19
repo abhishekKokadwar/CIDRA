@@ -9,19 +9,11 @@ repository, so they are cleaned before they go into a Markdown table.
 import re
 import shlex
 
+from cidra.junit import junit_id
 from cidra.state import DebugState
 
 MAX_ROWS = 25
 _DEPENDENCY_FILE = re.compile(r"(^|/)(requirements[^/]*\.txt|pyproject\.toml|setup\.py|setup\.cfg)$")
-
-
-def junit_id(nodeid: str) -> str:
-    """A pytest node id in the form the JUnit report uses (cidra/junit.py):
-    "tests/test_a.py::TestX::test_y[p]" -> "tests.test_a.TestX::test_y[p]"."""
-    path, _, rest = nodeid.partition("::")
-    parts = rest.split("::")
-    module = path.removesuffix(".py").replace("/", ".")
-    return f"{'.'.join([module, *parts[:-1]])}::{parts[-1]}" if rest else module
 
 
 def _cell(text: object) -> str:
