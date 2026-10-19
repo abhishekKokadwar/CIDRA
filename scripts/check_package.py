@@ -11,9 +11,13 @@ reasons when anything is wrong.
 
 import re
 import sys
-import tomllib
 import zipfile
 from pathlib import Path
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:  # the compat job runs the unit tests, which import this, on 3.10
+    import tomli as tomllib
 
 STATIC = "cidra/static/"
 

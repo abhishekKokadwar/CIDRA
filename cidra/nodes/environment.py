@@ -6,6 +6,7 @@ and torn down by publish.cleanup.
 """
 
 import pathlib
+import sys
 import re
 import shlex
 
@@ -188,7 +189,10 @@ def detect_install(tree: pathlib.Path) -> str:
     if (tree / "pyproject.toml").is_file() or (tree / "setup.py").is_file():
         extras = {}
         try:
-            import tomllib
+            if sys.version_info >= (3, 11):
+                import tomllib
+            else:  # pyproject.toml accepts Python 3.10, which has no tomllib
+                import tomli as tomllib
             with open(tree / "pyproject.toml", "rb") as f:
                 extras = tomllib.load(f).get("project", {}).get("optional-dependencies", {})
         except (OSError, ValueError):
