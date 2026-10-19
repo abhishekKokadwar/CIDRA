@@ -51,3 +51,18 @@ def test_a_version_mismatch_and_a_bundle_built_before_the_bump_fail(tmp_path):
     found = problems(_wheel(tmp_path, version="1.2.4"), "1.2.4")
     assert found == ["the dashboard bundle does not carry version 1.2.4: built before the version bump?"]
     assert problems(_wheel(tmp_path), "1.2.4")[0] == "wheel version is 1.2.3, pyproject.toml says 1.2.4"
+
+
+def test_the_release_publishes_only_the_files_these_checks_passed():
+    import pathlib
+
+    import yaml
+    jobs = yaml.safe_load((pathlib.Path(__file__).resolve().parents[2] / ".github/workflows/publish.yml")
+                          .read_text(encoding="utf-8"))["jobs"]
+    run = lambda job: "\n".join(s.get("run", "") for s in jobs[job]["steps"])  # noqa: E731
+    uploader = next(n for n, j in jobs.items() if "id-token" in j.get("permissions", {}))
+    gate = jobs[uploader].get("needs")
+    assert gate and "scripts/check_package.py" in run(gate) and "scripts/smoke_installed.sh" in run(gate)
+    # The upload job builds nothing itself: it publishes the artifact the gate built and checked.
+    assert jobs[uploader]["if"] == "github.event_name != 'pull_request'"  # PRs check, never publish
+    assert "build" not in run(uploader) and any("download-artifact" in s.get("uses", "") for s in jobs[uploader]["steps"])
