@@ -1,5 +1,6 @@
 """Output. See docs/4_architecture.md §5 nodes 16-18. Phase 6."""
 
+from contextlib import contextmanager
 from typing import Optional
 
 from cidra.state import DebugState
@@ -181,13 +182,29 @@ def cleanup(state: DebugState) -> dict:
     that guarantees no container outlives a run.
     """
     from cidra.history import record
-    from cidra.nodes.checkout import remove_checkout
-    from cidra.nodes.environment import close_session
 
-    run_id = state.get("run_id", "")
-    close_session(run_id)
-    remove_checkout(run_id)  # Phase 9: drop the per-run isolated checkout dir
-    from cidra.nodes.checkout import source_run_id
-    remove_checkout(source_run_id(run_id))  # the fetched source, in webhook mode
+    release(state.get("run_id", ""))
     record(state)  # Phase 13: append this run to the history (best-effort)
     return {}
+
+
+def release(run_id: str) -> None:
+    """Remove a run's container and checkouts. Safe to call twice, or for a run
+    that never got that far."""
+    from cidra.nodes.checkout import remove_checkout, source_run_id
+    from cidra.nodes.environment import close_session
+
+    close_session(run_id)
+    remove_checkout(run_id)  # Phase 9: drop the per-run isolated checkout dir
+    remove_checkout(source_run_id(run_id))  # the fetched source, in webhook mode
+
+
+@contextmanager
+def released(run_id: str):
+    """Around every graph run (KNOWN_GAPS G-23). `cleanup` is the graph's last
+    node, so an exception in an earlier one skips it, and the container kept
+    running, holding up to 2 GB, until removed by hand."""
+    try:
+        yield
+    finally:
+        release(run_id)

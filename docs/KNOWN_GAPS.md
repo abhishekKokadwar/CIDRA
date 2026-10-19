@@ -73,14 +73,6 @@ Support"; Node.js is log parsing only.
 
 ---
 
-### G-23 · A crash mid-run leaves its sandbox container running — 🐳 🛠 (small)
-**What:** `cleanup` is the last node of the graph, so an exception in an earlier node (seen on
-2026-10-16: Windows ran out of resources talking to Docker during `install_deps`) skips it. The
-run's container keeps running and holds up to 2 GB until removed by hand.
-**Unblock / fix:** close the run's session and remove its checkout in a `finally` around the graph
-run, in every entry point (Action, CLI, server, `eval/measure.py`).
-**Done when:** a test that raises inside a node leaves no container and no checkout behind.
-
 ### G-24 · CI environment variables do not reach a command after `cd ... &&` — 🛠 (small)
 **What:** `env_prefix` puts the CI workflow's `env:` values inline (`CI=1 cd sub && pytest`), so
 they apply to `cd` only and the test run never sees them. The JUnit setting is exported for this
@@ -132,6 +124,7 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-23 · A crash mid-run leaves its sandbox container running** — Closed 2026-10-19. Every graph run (Action, CLI, server, `eval/measure.py`, the fixtures script) is wrapped in `publish.released`, which removes the container and checkouts in a `finally`. Tested on real Docker by raising inside a node after the sandbox started (`tests/integration/test_cleanup_on_crash.py`).
 - **G-08 · Commit-comment fallback for no-PR runs** — Closed 2026-10-19. With no pull request, `publish` comments on the failing commit (updating its own comment by marker); every GitHub write is guarded, and a 403 names the workflow permission to add. Tested against a local server that answers like the GitHub API (`tests/integration/test_publish_github_api.py`).
 - **G-18 · Install failure and non-reproduction reported as "could not diagnose"** — Closed 2026-10-17. `install_deps` records the exit code and install output; the report names the step that stopped the run (install, or diagnosed but not reproduced, with the reason), the command it ran, and the input to change (`install_command` / `test_command`). Untrusted output is shown in a code block it cannot close. Tested on the real sandbox in `tests/integration/test_failed_reasons_sandbox.py`.
 - **G-05 · Adversarial + benchmark on Docker were point-in-time** — Closed 2026-10-16. CI's

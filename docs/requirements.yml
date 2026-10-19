@@ -137,3 +137,7 @@
 - id: UI-EVIDENCE
   title: The Run Explorer shows the evidence
   accept: A run's page shows what the report's evidence block shows - each test that matters before and after the patch (targets marked), the unchanged rest as a count, the run's cost when its price is known, and the command that reruns the verification - built from what the run recorded, never re-detected afterwards.
+
+- id: G-23
+  title: A crashed run leaves nothing running
+  accept: When a node raises after the sandbox started, the run's container is removed and its checkout deleted, in every entry point (Action, CLI, server, eval/measure.py), not only when the graph reaches its cleanup node.
