@@ -20,5 +20,6 @@
   "fix_size": {
     "files": 1,
     "lines": 4
-  }
+  },
+  "held_out_command": "python -m pytest -q test/test_utils.py test/test_heldout_match_filter.py 2>&1"
 }

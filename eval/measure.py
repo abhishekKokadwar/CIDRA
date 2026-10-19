@@ -26,6 +26,8 @@ out of the false-verified rate and listed.
     python eval/measure.py --stub --corpus eval/corpus
     # check the held-out sets themselves, with no model call
     python eval/measure.py --validate
+    # judge a past run's verified fixes by today's held-out sets, with no model call
+    python eval/measure.py --corpus eval/corpus --rejudge eval/results/claude-haiku-4-5-bugsinpy-v4.json
     # proof that the audit gate refuses a patch that special-cases the visible test
     python eval/measure.py --stub --stub-answers cheat_llm.json --out cheat.json F-02b
 
@@ -68,6 +70,9 @@ def _args() -> argparse.Namespace:
                         help="check the held-out sets themselves (no model call): each must pass on the "
                              "fix commit, catch the fixture's cheat_llm.json patch if it has one, and "
                              "add a failing test on the failing commit or catch that patch")
+    parser.add_argument("--rejudge", metavar="RESULTS",
+                        help="judge every verified fix in a past results file by today's held-out sets "
+                             "(no model call): validates each set, then applies the stored diff")
     parser.add_argument("--out", help="results JSON path (default: eval/results/<label>.json)")
     parser.add_argument("--check", action="store_true",
                         help="exit 1 unless every fixture ends as expected, with a correct diagnosis "
@@ -168,6 +173,9 @@ def held_out_check(fx: dict, sha: str, diff: str | None, ci_env: dict | None = N
         tree = prepare_checkout(run_id, fx["repo"], sha)
         with Session(tree, fx["overrides"].get("python_version") or workflow_python(tree)) as session:
             state = {**fx["overrides"], "ci_env": workflow_env(tree) if ci_env is None else ci_env}
+            if overlay and fx["meta"].get("held_out_command"):
+                # a corpus test command names one file: this one also runs the fixture's held_out/ tests
+                state["test_command"] = fx["meta"]["held_out_command"]
             if diff and not session.apply_patch(diff).passed:
                 return {"passed": False, "detail": "the diff did not apply to a clean checkout"}
             if overlay:
@@ -330,6 +338,35 @@ def validate(wanted: list[str]) -> int:
     return 1 if bad else 0
 
 
+def rejudge(path: str) -> int:
+    """Judge the verified fixes of a past run by today's held-out sets, with no
+    model call: a set must first be valid, then the stored diff must pass it.
+    Exit 1 when any verified fix fails a valid set (a false "verified")."""
+    runs = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))["runs"]
+    false, judged = 0, []
+    for r in (r for r in runs if r["outcome"] == "verified_fix" and r.get("diff")):
+        fx = load_fixture(r["fixture"])
+        v = validate_held_out(fx)
+        if not v["valid"]:
+            print(f"{r['fixture']:<18} not judged: no valid held-out set", flush=True)
+            judged.append({"fixture": r["fixture"], "verdict": "not judged"})
+            continue
+        h = held_out_check(fx, fx["failing_sha"], r["diff"])
+        false += not h["passed"]
+        judged.append({"fixture": r["fixture"], "verdict": "genuine" if h["passed"] else "false_verified",
+                       "held_out_unseen_failures": v["unseen_failures"], "detail": h["detail"],
+                       "failed": h.get("failed", [])})
+        print(f"{r['fixture']:<18} {'genuine' if h['passed'] else 'FALSE VERIFIED'}  {h['detail']}"
+              + ("" if h["passed"] else f"  failed: {', '.join(h.get('failed', [])[:5])}"), flush=True)
+    if ARGS.out:
+        pathlib.Path(ARGS.out).write_text(json.dumps({
+            "rejudged": pathlib.Path(path).resolve().relative_to(ROOT).as_posix(),
+            "measured_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "false_verified": f"{false}/{sum(j['verdict'] != 'not judged' for j in judged)}",
+            "runs": judged}, indent=2) + "\n", encoding="utf-8")
+    return 1 if false else 0
+
+
 def _preflight(wanted: list[str]) -> str | None:
     """Why the run cannot start, or None. Checked before any model call is made."""
     try:
@@ -346,7 +383,7 @@ def _preflight(wanted: list[str]) -> str | None:
     if (any(not m.get("repo_url") for m in metas.values())
             and not (pathlib.Path(config.PRACTICE_REPO_DIR) / ".git").exists()):
         return f"practice repo not found at {config.PRACTICE_REPO_DIR} (set CIDRA_PRACTICE_REPO)"
-    if ARGS.validate:
+    if ARGS.validate or ARGS.rejudge:
         return None
     no_log = [fid for fid, m in metas.items() if not (FIXTURES / fid / m.get("log", "raw.log")).is_file()]
     if no_log and not (os.environ.get("CIDRA_GITHUB_TOKEN_RO") or os.environ.get("CIDRA_GITHUB_TOKEN")):
@@ -355,6 +392,8 @@ def _preflight(wanted: list[str]) -> str | None:
 
 
 def main() -> int:
+    if ARGS.rejudge:
+        return rejudge(ARGS.rejudge)
     wanted = ARGS.fixtures or sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.json").is_file())
     problem = _preflight(wanted)
     if problem:
