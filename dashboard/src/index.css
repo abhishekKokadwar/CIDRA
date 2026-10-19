@@ -288,16 +288,15 @@ p {
   border-color: var(--border-focus);
 }
 
+/* The accent is white in this theme: dark text, or the label disappears. */
 .btn-accent {
   background: var(--color-accent);
-  color: #ffffff;
-  border: 1px solid rgba(0, 112, 243, 0.5);
-  box-shadow: 0 2px 10px rgba(0, 112, 243, 0.25);
+  color: #000000;
+  border: 1px solid var(--color-accent);
 }
 
 .btn-accent:hover {
-  background: #0060df;
-  box-shadow: 0 4px 16px rgba(0, 112, 243, 0.4);
+  background: #e5e7eb;
   transform: translateY(-1px);
 }
 

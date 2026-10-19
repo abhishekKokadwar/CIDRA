@@ -56,3 +56,23 @@ def test_passing_tests_mean_nothing_to_fix(monkeypatch, tmp_path):
         _run(monkeypatch, tmp_path, repo)
     assert stop.value.code == 0
     assert not (repo / "ran_here.txt").exists()
+
+
+@pytest.mark.req('R2')
+def test_the_failure_log_run_sees_the_env_the_workflow_sets(monkeypatch, tmp_path):
+    """The first run, whose log the model reads, gets the same CI env as the pipeline's
+    reproduce step. Without it a test that reads a CI variable fails only there, and
+    the model is sent a failure that is not real."""
+    repo = tmp_path / "repo"
+    (repo / ".github" / "workflows").mkdir(parents=True)
+    (repo / ".github" / "workflows" / "ci.yml").write_text(
+        "on: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    env:\n      API_TOKEN: tok_value\n"
+        "    steps:\n      - run: pytest\n")
+    (repo / "requirements.txt").write_text("")
+    (repo / "test_env.py").write_text("import os\n\n\ndef test_token():\n    assert os.environ.get('API_TOKEN') == 'tok_value'\n")
+    for args in (["init", "-q"], ["add", "-A"],
+                 ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "init"]):
+        subprocess.run(["git", *args], cwd=repo, check=True)
+    with pytest.raises(SystemExit) as stop:
+        _run(monkeypatch, tmp_path, repo)
+    assert stop.value.code == 0  # passes with the workflow's env: nothing to fix

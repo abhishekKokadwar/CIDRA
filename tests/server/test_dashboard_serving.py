@@ -72,3 +72,11 @@ def test_with_a_dashboard_token_the_runs_need_it_too(client, monkeypatch):
     monkeypatch.setattr(config, "DASHBOARD_TOKEN", "t0k")
     assert client.get("/telemetry.json").status_code == 401
     assert client.get("/telemetry.json", headers={"X-CIDRA-Token": "t0k"}).status_code == 200
+
+
+@pytest.mark.req("UI-OWN-RUNS")
+def test_a_run_leaves_no_dashboard_folders_in_the_repository_it_ran_in(client, tmp_path):
+    history.record({"run_id": "mine-2", "repo": "me/proj", "outcome": "verified_fix"})
+    assert not (tmp_path / "dashboard").exists() and not (tmp_path / "cidra").exists()
+    assert not (tmp_path / "cidra_telemetry.json").exists()
+    assert [r["id"] for r in client.get("/telemetry.json").json()["runs"]] == ["mine-2"]

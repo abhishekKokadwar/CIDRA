@@ -89,21 +89,16 @@ def load_full_state(run_id: str) -> Optional[dict]:
         return None
 
 def export_dashboard_telemetry():
-    """Writes dashboard_telemetry() where the hosted demo dashboard reads it."""
-    if not Path("run_states").exists():
+    """Writes dashboard_telemetry() for the hosted demo dashboard, only inside a CIDRA
+    checkout (CIDRA's own bot uploads it). In anyone else's repository it would leave
+    new folders behind; `cidra dashboard` builds the same view live."""
+    out = Path("dashboard/public/telemetry.json")
+    if not Path("run_states").exists() or not out.parent.is_dir():
         return
-    dashboard_data = dashboard_telemetry()
-    out_paths = [
-        Path("dashboard/public/telemetry.json"),
-        Path("cidra/static/telemetry.json"),
-        Path("cidra_telemetry.json")
-    ]
-    for out_p in out_paths:
-        try:
-            out_p.parent.mkdir(parents=True, exist_ok=True)
-            out_p.write_text(json.dumps(dashboard_data, indent=2), encoding="utf-8")
-        except Exception as e:
-            log.warning("Could not write telemetry to %s: %s", out_p, e)
+    try:
+        out.write_text(json.dumps(dashboard_telemetry(), indent=2), encoding="utf-8")
+    except OSError as e:
+        log.warning("Could not write telemetry to %s: %s", out, e)
 
 
 def dashboard_telemetry() -> dict:
