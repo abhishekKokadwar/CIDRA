@@ -58,7 +58,8 @@ def _why_failed(state: DebugState) -> tuple[str, list[str]]:
     new repository, so "could not diagnose" alone sent people to the source."""
     from cidra import config
     err = state.get("analysis_error")
-    last = (state.get("repro_results") or [None])[-1]
+    results = state.get("repro_results") or []
+    last = results[-1] if results else None
     if state.get("env_ready") is False and last is not None and last.step == "install" and not last.passed:
         from cidra.nodes.environment import sandbox_install_command
         cmd = sandbox_install_command(state)

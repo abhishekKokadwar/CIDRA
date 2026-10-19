@@ -16,7 +16,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Optional, Any
+from typing import Any, Optional, cast
 from pydantic import BaseModel
 
 from cidra import config
@@ -106,7 +106,7 @@ def _evidence(st: dict) -> dict:
     after the patch, the run's cost, and the command that reruns the verification."""
     from cidra.evidence import rerun_command, test_changes
     from cidra.integrations.llm import cost_of
-    tests, unchanged = test_changes(st)
+    tests, unchanged = test_changes(cast(DebugState, st))
     cost = cost_of(st.get("llm_telemetry") or [])
     return {
         "tests": tests,
@@ -115,7 +115,7 @@ def _evidence(st: dict) -> dict:
         "price_source": cost[1] if cost else None,
         # Only with the install command the run recorded: re-detecting it now, with
         # the checkout gone, would print a command that installs nothing.
-        "rerun_command": rerun_command(st) if st.get("fix_diff") and st.get("install_command") else None,
+        "rerun_command": rerun_command(cast(DebugState, st)) if st.get("fix_diff") and st.get("install_command") else None,
     }
 
 

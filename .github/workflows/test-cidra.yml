@@ -61,6 +61,8 @@ jobs:
     - run: pip install ".[dev]"
     - name: Lint (ruff; rules in pyproject.toml)
       run: ruff check --output-format=github .
+    - name: Type check (mypy; settings in pyproject.toml)
+      run: mypy
     - name: Unit and server tests
       env:
         CIDRA_REQ_REPORT: req-unit.json

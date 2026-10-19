@@ -21,6 +21,7 @@ from typing import Optional
 
 import docker
 from docker.errors import DockerException, ImageNotFound, NotFound
+from docker.models.containers import Container
 
 from cidra.sandbox import limits
 from cidra.state import SandboxResult, Step
@@ -42,7 +43,7 @@ def ensure_image(python: Optional[str] = None) -> str:
     come from the same Dockerfile on that version's digest-pinned base.
     """
     tag = limits.image_for(python)
-    if tag == limits.IMAGE:
+    if python is None or tag == limits.IMAGE:
         return tag
     try:
         client().images.get(tag)
@@ -239,18 +240,18 @@ class Session:
         self.source_dir = source_dir
         self.python = python  # a version in limits.PYTHON_IMAGES, else the default image
         self.image = limits.IMAGE
-        self.image_id = None
-        self.container = None
+        self.image_id: Optional[str] = None
+        self.container: Optional[Container] = None
         self._patched = False  # a diff is applied on top of the pristine tree
 
     def __enter__(self) -> "Session":
         self.image = ensure_image(self.python)
         self.image_id = client().images.get(self.image).id  # the exact image, for the evidence block
-        self.container = _create("none", self.image)
-        self.container.start()
-        self.container.put_archive(limits.WORKDIR, _tar_bytes(self.source_dir))
+        self.container = box = _create("none", self.image)
+        box.start()
+        box.put_archive(limits.WORKDIR, _tar_bytes(self.source_dir))
         code, out, err = _exec_with_timeout(
-            self.container, ["cp", "-a", limits.WORKDIR, limits.PRISTINE], 120, limits.WORKDIR
+            box, ["cp", "-a", limits.WORKDIR, limits.PRISTINE], 120, limits.WORKDIR
         )
         if code != 0:
             raise RuntimeError(f"could not snapshot the checkout: {_tail(err or out)}")
@@ -264,9 +265,16 @@ class Session:
                 pass
             self.container = None
 
+    @property
+    def _box(self) -> Container:
+        """The open container: using a session outside its `with` is a bug, said plainly."""
+        if self.container is None:
+            raise RuntimeError("sandbox session is not open")
+        return self.container
+
     def _workdir_tar(self) -> bytes:
         """Current /work from the session, so the installer sees applied patches."""
-        blob = b"".join(self.container.get_archive(limits.WORKDIR)[0])
+        blob = b"".join(self._box.get_archive(limits.WORKDIR)[0])
         # get_archive wraps the dir ("work/..."); re-root so it unpacks into /work.
         src = tarfile.open(fileobj=io.BytesIO(blob))
         buf = io.BytesIO()
@@ -325,10 +333,10 @@ class Session:
 
         # Replace, not merge: packages from an earlier install (an earlier fix
         # attempt's dependency) must not linger and make a later attempt pass.
-        _exec_with_timeout(self.container, ["rm", "-rf", limits.SITE], 60, limits.WORKDIR)
+        _exec_with_timeout(self._box, ["rm", "-rf", limits.SITE], 60, limits.WORKDIR)
         # get_archive returns the directory itself, so unpack at its parent.
         if blob is not None:
-            self.container.put_archive(str(Path(limits.SITE).parent.as_posix()), blob)
+            self._box.put_archive(str(Path(limits.SITE).parent.as_posix()), blob)
         return SandboxResult(
             step="install",
             exit_code=0,
@@ -344,7 +352,7 @@ class Session:
             raise ValueError("use Session.install(): the session container has no network")
         started = time.monotonic()
         code, out, err = _exec_with_timeout(
-            self.container, ["sh", "-c", command], timeout_s or limits.TIMEOUTS[step], limits.WORKDIR
+            self._box, ["sh", "-c", command], timeout_s or limits.TIMEOUTS[step], limits.WORKDIR
         )
         return SandboxResult(
             step=step,
@@ -359,7 +367,7 @@ class Session:
         """A file from the container, whole, or None if absent or over `max_bytes`.
         Copied out as an archive, so the output-tail limit of run() does not apply."""
         try:
-            stream, stat = self.container.get_archive(path)
+            stream, stat = self._box.get_archive(path)
         except NotFound:
             return None
         if stat.get("size", 0) > max_bytes:
@@ -386,7 +394,7 @@ class Session:
             if not restore.passed:
                 return restore
             self._patched = False
-        self.container.put_archive(limits.WORKDIR, _patch_tar(patch))
+        self._box.put_archive(limits.WORKDIR, _patch_tar(patch))
         result = self.run(
             "test",
             "git apply --ignore-whitespace --verbose /work/.cidra.patch || "

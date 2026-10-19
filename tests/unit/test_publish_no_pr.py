@@ -80,3 +80,12 @@ def test_a_failed_pr_step_falls_back_to_a_commit_comment_and_says_why(monkeypatc
     assert out["pr_url"] is None and out["comment_url"] == "https://gh/commit"
     assert "open a draft pull request (403)" in out["publish_errors"][0]
     assert "contents: write, pull-requests: write" in out["publish_errors"][0]
+
+
+def test_opening_or_updating_a_pr_without_a_diff_says_so(monkeypatch):
+    # Reached only through a caller bug, but then the error must name it, not
+    # surface from git as a TypeError about None.
+    with pytest.raises(ValueError, match="no verified diff"):
+        publish._open_pr(_state(outcome="verified_fix"), "body")
+    with pytest.raises(ValueError, match="no verified diff, or no pull request"):
+        publish._apply_to_existing_pr(_state(fix_diff="+x", pr_branch="b"), "body")

@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from cidra.adapters.models import FailureEvent
 from cidra.adapters.base import LanguageAdapter
 import re
@@ -14,7 +15,7 @@ def _clean(line: str) -> str:
     line = _DIRECTIVE.sub("", line)
     return line.rsplit("\r", 1)[-1].rstrip()
 
-def _extract_region(raw_log: str, markers: list[str]) -> tuple[str, list[str]]:
+def _extract_region(raw_log: str, markers: Sequence[str]) -> tuple[str, list[str]]:
     lines = [_clean(ln) for ln in raw_log.splitlines()]
     hits = [i for i, ln in enumerate(lines) if any(m in ln for m in markers)]
     if not hits:
