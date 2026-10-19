@@ -161,6 +161,10 @@
   accept: The unit and server tests pass on Linux with each Python from requires-python's floor to the newest release (3.10 to 3.14) and on Windows; the PyPI classifiers and the README badge list exactly those versions.
   jobs: [compat]
 
+- id: CI-NET
+  title: A network hiccup does not fail CI as if the code were broken
+  accept: Every step that downloads (git clone, docker build, npm ci, the Playwright browser install), in the workflows and in the installed-package smoke test, runs through scripts/retry.sh, up to 3 tries with a warning on the run for each retry; no test step does, so a test that fails once fails CI.
+
 - id: LINT
   title: No Python errors, likely bugs or type errors merge
   accept: ruff checks cidra/, scripts/, eval/ and tests/ for pyflakes errors, import and syntax errors and bugbear patterns, and mypy type-checks cidra/ (settings in pyproject.toml); the unit job fails on any finding of either.

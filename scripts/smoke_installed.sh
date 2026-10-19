@@ -29,7 +29,7 @@ echo "== 1. the cidra command"
 "$(dirname "$PY")/cidra" --help >/dev/null
 
 echo "== 2. the sandbox image from the installed package"
-docker build -q -t cidra-sandbox:base "$("$PY" -c 'import cidra, os; print(os.path.join(os.path.dirname(cidra.__file__), "sandbox"))')" >/dev/null
+bash "$REPO/scripts/retry.sh" docker build -q -t cidra-sandbox:base "$("$PY" -c 'import cidra, os; print(os.path.join(os.path.dirname(cidra.__file__), "sandbox"))')"
 
 echo "== 3. the installed dashboard"
 port_free 8799
@@ -45,7 +45,7 @@ done
 [ "$(curl -fsS http://127.0.0.1:8799/telemetry.json | "$PY" -c 'import json,sys; print(len(json.load(sys.stdin)["runs"]))')" = 0 ]
 
 echo "== 4. cidra action on a failing commit"
-git clone -q --branch fix-02-assertion "$PRACTICE" target
+bash "$REPO/scripts/retry.sh" git clone -q --branch fix-02-assertion "$PRACTICE" target
 SHA=$(git -C target rev-parse HEAD)
 port_free 8798; port_free 8797
 "$PY" "$REPO/scripts/fake_llm.py" "$REPO/eval/fixtures/F-02/fake_llm.json" --port 8798 &

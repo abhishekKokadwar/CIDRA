@@ -125,7 +125,7 @@ jobs:
         python-version: "3.11"
         cache: pip
     - run: pip install ".[dev]"
-    - run: docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+    - run: bash scripts/retry.sh docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
     - name: Integration tests (real sandbox)
       env:
         CIDRA_REQ_REPORT: req-integration.json
@@ -160,8 +160,8 @@ jobs:
         python-version: "3.11"
         cache: pip
     - run: pip install ".[dev]"
-    - run: docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
-    - run: git clone --quiet https://github.com/helpmecode69/cidra-practice "$RUNNER_TEMP/cidra-practice"
+    - run: bash scripts/retry.sh docker build -t cidra-sandbox:base -f cidra/sandbox/Dockerfile cidra/sandbox
+    - run: bash scripts/retry.sh git clone --quiet https://github.com/helpmecode69/cidra-practice "$RUNNER_TEMP/cidra-practice"
     - name: Full pipeline on the practice fixtures (stub model)
       env:
         CIDRA_PRACTICE_REPO: ${{ runner.temp }}/cidra-practice
@@ -182,7 +182,7 @@ jobs:
         node-version: "22"
         cache: npm
         cache-dependency-path: dashboard/package-lock.json
-    - run: npm ci
+    - run: bash ../scripts/retry.sh npm ci
     - run: npm run lint
     - name: Component tests
       run: npx vitest run --reporter=default --reporter=json --outputFile.json=../req-frontend.json
@@ -224,8 +224,8 @@ jobs:
         node-version: "22"
         cache: npm
         cache-dependency-path: dashboard/package-lock.json
-    - run: npm ci
-    - run: npx playwright install --with-deps chromium
+    - run: bash ../scripts/retry.sh npm ci
+    - run: bash ../scripts/retry.sh npx playwright install --with-deps chromium
     - name: Browser tests
       env:
         PLAYWRIGHT_JSON_OUTPUT_NAME: ../req-e2e.json
