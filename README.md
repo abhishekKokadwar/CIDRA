@@ -9,7 +9,7 @@
 *The autonomous, deterministic CI repair agent powered by LangGraph, Spectrum-Based Fault Localization (SBFL), and a hardened, zero-trust Docker execution sandbox.*
 
 [![PyPI version](https://img.shields.io/badge/pypi-v0.3.1-blue.svg)](https://pypi.org/project/cidra/)
-[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker Security](https://img.shields.io/badge/sandbox-network--isolated-green.svg)](#7-hardened-sandbox--threat-model-adv-01adv-08)
 [![CI](https://github.com/abhishekKokadwar/CIDRA/actions/workflows/test-cidra.yml/badge.svg)](https://github.com/abhishekKokadwar/CIDRA/actions/workflows/test-cidra.yml)

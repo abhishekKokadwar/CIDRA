@@ -156,6 +156,11 @@
   accept: The built wheel carries pyproject's version, the sandbox Dockerfile and exactly the dashboard files its page loads (no missing file, no stale bundle); installed in a clean venv and run from outside the checkout, the CLI starts, the sandbox image builds from the package, the dashboard serves every file, and `cidra action` reports a verified fix on a failing practice commit through a stand-in GitHub API. A release runs these same checks on the files it uploads to PyPI, and its tag must match the version.
   jobs: [package]
 
+- id: COMPAT
+  title: Every Python CIDRA says it supports is tested
+  accept: The unit and server tests pass on Linux with each Python from requires-python's floor to the newest release (3.10 to 3.14) and on Windows; the PyPI classifiers and the README badge list exactly those versions.
+  jobs: [compat]
+
 - id: LINT
   title: No Python errors, likely bugs or type errors merge
   accept: ruff checks cidra/, scripts/, eval/ and tests/ for pyflakes errors, import and syntax errors and bugbear patterns, and mypy type-checks cidra/ (settings in pyproject.toml); the unit job fails on any finding of either.
