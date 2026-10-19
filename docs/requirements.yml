@@ -145,3 +145,8 @@
 - id: G-24
   title: The CI env reaches the tests behind `cd ... &&`
   accept: The literal env values of the repo's workflow are exported before the test command, so a test command such as `cd sub && pytest` sees them in the real sandbox; names are validated and values quoted.
+
+- id: COVERAGE
+  title: Coverage cannot drop unnoticed
+  accept: CI combines the unit, server and integration coverage of cidra/ and fails below the floor in pyproject.toml; the dashboard's component tests fail below the floors in dashboard/vite.config.js. The combined report is in the job summary.
+  jobs: [coverage, frontend]

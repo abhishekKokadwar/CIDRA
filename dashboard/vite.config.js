@@ -40,7 +40,20 @@ export default defineConfig({
     proxy: Object.fromEntries(['/api', '/telemetry.json'].map((p) => [p, 'http://127.0.0.1:8000'])),
   },
   define: { __CIDRA_VERSION__: JSON.stringify(cidraVersion) },
-  test: { environment: 'jsdom', include: ['src/**/*.test.{js,jsx}'] },
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.test.{js,jsx}'],
+    // Floors at the measured level: raise them when coverage rises, never lower them
+    // to get a change through. The browser tests (e2e/) are not counted here.
+    coverage: {
+      enabled: true,
+      provider: 'v8',
+      include: ['src/**'],
+      exclude: ['src/__tests__/**', 'src/main.jsx'],
+      reporter: ['text-summary'],
+      thresholds: { statements: 27, branches: 35, functions: 20, lines: 30 },
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

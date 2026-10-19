@@ -31,7 +31,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "pytest-asyncio"
+    "pytest-asyncio",
+    "pytest-cov"
 ]
 
 [project.scripts]
@@ -46,3 +47,14 @@ cidra = [
     "static/**/*",
     "sandbox/Dockerfile"
 ]
+
+# CI combines the unit, server and integration runs and fails below this floor
+# (the coverage job in test-cidra.yml). Raise it when coverage rises; never lower it
+# to get a change through.
+[tool.coverage.run]
+source = ["cidra"]
+relative_files = true
+
+[tool.coverage.report]
+fail_under = 88.5
+skip_empty = true
