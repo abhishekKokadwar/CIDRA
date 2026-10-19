@@ -54,7 +54,13 @@ What each case records:
 - **Held-out tests:** the fix commit's test file. It is the same test the log
   shows failing, so on its own it cannot catch a patch written to satisfy only
   that test. Such a case is reported as "not judged" for the false-verified rate
-  until it gets tests of its own in `held_out/`.
+  until it gets tests of its own in `held_out/`, written apart from the visible
+  test (other inputs, the public code path), plus a `held_out_command` in
+  `meta.json` that runs them with the case's test file. A set counts once
+  `measure.py --validate` shows it passes on the fix commit and fails on the
+  buggy one where the visible run did not. The 5 cases CIDRA fixed (tornado-1,
+  -3, -5, youtube-dl-1, -3) have such sets; `measure.py --rejudge <results>`
+  judges a past run's fixes by them without calling a model.
 
 Code excerpts in the reference patches belong to their projects and stay under
 those projects' licences; each case names its repository and commits.

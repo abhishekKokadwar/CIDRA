@@ -20,5 +20,6 @@
   "fix_size": {
     "files": 1,
     "lines": 22
-  }
+  },
+  "held_out_command": "python -m pytest -q tornado/test/ioloop_test.py tornado/test/test_heldout_periodic_clock.py 2>&1"
 }

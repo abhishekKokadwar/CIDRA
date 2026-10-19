@@ -20,5 +20,6 @@
   "fix_size": {
     "files": 2,
     "lines": 8
-  }
+  },
+  "held_out_command": "python -m pytest -q test/test_utils.py test/test_heldout_unescape_html.py 2>&1"
 }

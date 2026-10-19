@@ -20,5 +20,6 @@
     "files": 2,
     "lines": 13
   },
-  "dependencies": "pinned"
+  "dependencies": "pinned",
+  "held_out_command": "python -m pytest -q tornado/test/httpclient_test.py tornado/test/test_heldout_client_cache.py 2>&1"
 }

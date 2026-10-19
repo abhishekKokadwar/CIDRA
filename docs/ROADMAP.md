@@ -90,7 +90,7 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 - [x] Show the full assertion difference: before the first fix attempt the target tests are rerun alone with `pytest -vv`, and the failures section goes in the prompt, with a huge value printout skipped so the diff fits.
 - [x] Rerun after it ([v4](../eval/results/claude-haiku-4-5-bugsinpy-v4.json)): 5 of 12 fixed, $0.32. Reviewed by hand: 3 match the project's fix, 1 takes another plausible route, 1 (tornado-1) is doubtful.
 - [x] Validate the held-out sets of the fixed cases (`measure.py --validate`): **0 of 5 valid**. Each is the failing test file itself, all of whose tests already ran in the failing run, so passing it proves nothing beyond the target tests. False "verified" stays judged by hand until the next item is done.
-- [ ] Independent held-out tests for the 5 fixed cases: tests a wrong fix would fail (e.g. tornado-1 calling `set_nodelay` on a live connection), checked to pass on the project's fix and fail on the buggy commit.
+- [x] Independent held-out tests for the 5 fixed cases: tests a wrong fix would fail (e.g. tornado-1 calling `set_nodelay` on a live connection), checked to pass on the project's fix and fail on the buggy commit. All 5 sets are valid (`measure.py --validate`), and all 5 of the v4 patches pass them: **0 of 5 false "verified"** ([result](../eval/results/claude-haiku-4-5-bugsinpy-v4-held-out.json), `measure.py --rejudge`).
 - [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
 - [ ] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible.
 

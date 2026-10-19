@@ -436,13 +436,13 @@ From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in
 | Correct diagnosis | 7 / 7 | 13 / 18 |
 | Verified fix, where one exists | 4 / 4 | 5 / 12 |
 | Correctly declined | 3 / 3 | 6 / 6 |
-| "Verified" fix that fails held-out tests | 0 / 4 | not judged: the held-out sets cannot catch a wrong fix |
+| "Verified" fix that fails held-out tests | 0 / 4 | 0 / 5 ([judged](eval/results/claude-haiku-4-5-bugsinpy-v4-held-out.json) by independent tests the model never saw) |
 | Median cost per run | $0.008 | $0.016 |
 | Total cost | $0.05 | $0.32 |
 
 The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, thefuck, tornado and youtube-dl, chosen by rules fixed before any model ran ([eval/corpus/README.md](eval/corpus/README.md)). On those, CIDRA declined every case it should and fixed 5 of the 12 fixable ones: tornado-1, -3 and -5, youtube-dl-1 and -3. All 5 also passed the held-out tests, but checking those sets (`measure.py --validate`) shows none can catch a wrong fix: each is the failing test file, already run before the patch. So the fixes were read by hand instead.
 
-Read by hand against each project's own fix: tornado-5 is the same change, youtube-dl-1 behaves the same, and tornado-3 has the same idea with a different edge case for a `None` entry. youtube-dl-3 takes another route, a stricter entity pattern, that looks correct. tornado-1 passes the test by re-attaching a stream that tornado deliberately detaches, where the project routes the call through the connection instead; treat it as doubtful.
+Read by hand against each project's own fix: tornado-5 is the same change, youtube-dl-1 behaves the same, and tornado-3 has the same idea with a different edge case for a `None` entry. youtube-dl-3 takes another route, a stricter entity pattern, that looks correct. tornado-1 re-attaches the stream to the handler, where the project routes the call through the connection instead. Each fixed case now also has held-out tests written separately from the visible one (other inputs, the public code path; [eval/corpus](eval/corpus/README.md)), each shown to pass on the project's fix and to fail on the buggy commit. All 5 of CIDRA's patches pass them, tornado-1 included: `set_nodelay` reaches the live socket, from `open()` or later, and the connection still closes normally.
 
 The 7 not fixed: 4 fastapi bugs and youtube-dl-2 go through framework code the failing test does not call directly, so the code to change is not shown to the model, and its guesses do not apply (CIDRA refuses an edit whose text is not in the file). Two more were misdiagnosed. How the number moved, one change at a time:
 
