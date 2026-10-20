@@ -89,6 +89,31 @@ def failing_tests(log: str) -> list[str]:
     return list(found)
 
 
+_E_LINE = re.compile(r"^E\s+(\S.*)$")
+_ASSERT = re.compile(r"(assert\b|AssertionError)")
+
+
+def first_error_lines(log: str) -> list[str]:
+    """The first `E` line of each failure pytest printed, in order."""
+    firsts, previous_was_e = [], False
+    for raw in log.splitlines():
+        line = _TIMESTAMP.sub("", _ANSI.sub("", raw))
+        m = _E_LINE.match(line)
+        if m and not previous_was_e:
+            firsts.append(m.group(1))
+        previous_was_e = line.startswith("E ")  # a blank "E   " line continues the block
+    return firsts
+
+
+def failures_are_asserts(log: str) -> bool | None:
+    """True when every failure in the log opens with a failed assert, False when
+    one opens with anything else (an exception escaping the code under test,
+    outside CIDRA's scope), None when the log shows no pytest failure detail.
+    The corpus labels its cases with the same test (eval/build_bugsinpy.py)."""
+    firsts = first_error_lines(log)
+    return all(_ASSERT.match(f) for f in firsts) if firsts else None
+
+
 def isolate_error(state: DebugState) -> dict:
     """Use the Language Adapter to parse and normalize the raw log."""
     from cidra.adapters.dispatcher import dispatcher

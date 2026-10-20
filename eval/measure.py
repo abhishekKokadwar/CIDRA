@@ -73,8 +73,8 @@ def _args() -> argparse.Namespace:
                              "fix commit, catch the fixture's cheat_llm.json patch if it has one, and "
                              "add a failing test on the failing commit or catch that patch")
     parser.add_argument("--reaudit", metavar="RESULTS",
-                        help="replay a past run's patches through today's audit gate (no model, no sandbox): "
-                             "which verified fixes the gate would now refuse")
+                        help="replay a past run through today's scope check and audit gate (no model, no "
+                             "sandbox): which verified fixes they would now stop")
     parser.add_argument("--rejudge", metavar="RESULTS",
                         help="judge every verified fix in a past results file by today's held-out sets "
                              "(no model call): validates each set, then applies the stored diff")
@@ -344,13 +344,15 @@ def validate(wanted: list[str]) -> int:
 
 
 def reaudit(path: str) -> int:
-    """Replay a past run's patches through today's audit gate: no model, no sandbox.
+    """Replay a past run through today's scope check and audit gate: no model, no sandbox.
 
     Exact for a change to the gate alone: with the model at temperature 0 a rerun
     writes the same patches up to the first one the gate now refuses, and a
-    refusal ends the run as diagnosis_only. Uses the run's held-out judgement
+    refusal ends the run as diagnosis_only; so does a diagnosis of assertion_error
+    on a log whose failures are not failed asserts. Uses the run's held-out judgement
     (<results>-held-out.json) when there is one to count false "verified"."""
     from cidra.nodes.audit import audit_diff
+    from cidra.nodes.ingest import failures_are_asserts
     runs = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))["runs"]
     judged_file = pathlib.Path(path).with_name(pathlib.Path(path).stem + "-held-out.json")
     verdicts = ({r["fixture"]: r["verdict"] for r in json.loads(judged_file.read_text(encoding="utf-8"))["runs"]}
@@ -359,12 +361,17 @@ def reaudit(path: str) -> int:
     for r in runs:
         refused = next((a for a in r.get("attempts") or [] if a.get("diff") and a.get("audit_ok")
                         and not audit_diff(a["diff"]).ok), None)
-        outcome = "diagnosis_only" if refused else r["outcome"]
+        log = FIXTURES / r["fixture"] / "raw.log"
+        out_of_scope = (r.get("category") == "assertion_error" and log.is_file()
+                        and failures_are_asserts(log.read_text(encoding="utf-8", errors="replace")) is False)
+        outcome = "diagnosis_only" if refused or out_of_scope else r["outcome"]
         before += r["outcome"] == "verified_fix"
         after += outcome == "verified_fix"
         false_before += r["outcome"] == "verified_fix" and verdicts.get(r["fixture"]) == "false_verified"
         false_after += outcome == "verified_fix" and verdicts.get(r["fixture"]) == "false_verified"
-        if refused:
+        if out_of_scope and r["outcome"] != outcome:
+            print(f"{r['fixture']:<18} {r['outcome']} -> {outcome} (out of scope: the log shows an exception)", flush=True)
+        elif refused:
             print(f"{r['fixture']:<18} {r['outcome']} -> {outcome} "
                   f"(attempt {refused['n']}: {audit_diff(refused['diff']).reasons[0][:110]})", flush=True)
     print(f"verified fixes {before} -> {after}; false \"verified\" (judged) {false_before} -> {false_after}", flush=True)

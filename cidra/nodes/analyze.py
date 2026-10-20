@@ -6,6 +6,7 @@ analyze calls the model, validate_analysis decides whether to trust it.
 
 from cidra import config
 from cidra.integrations.llm import structured
+from cidra.nodes.ingest import failures_are_asserts, first_error_lines
 from cidra.state import Analysis, DebugState
 
 SYSTEM = """You classify Python CI failures into exactly one category.
@@ -91,14 +92,24 @@ def validate_analysis(state: DebugState) -> dict:
     if analysis.category == "env_config_error" and not analysis.env_var:
         return {"analysis": None, "analysis_error": "env_config_error without env_var"}
 
+    # Scope from the log, not the model: an exception escaping the code under test
+    # is out of scope even when the model calls it an assertion error. On the
+    # corpus (v6) 2 of the 3 fixes CIDRA verified on such failures were wrong.
+    scope_note = None
+    if analysis.category == "assertion_error" and failures_are_asserts(state.get("raw_log") or "") is False:
+        first = next(iter(first_error_lines(state.get("raw_log") or "")), "")
+        analysis = analysis.model_copy(update={"category": "unknown"})
+        scope_note = f"the log shows an exception, not a failed assert ({first[:120]}): outside CIDRA's scope"
+
     from cidra.policy import PolicyEngine, PolicyDecision
     source_dir = state.get("source_dir")
     policy_engine = PolicyEngine.find_and_load(source_dir)
     decision, reason = policy_engine.evaluate_category(analysis.category)
 
     updates: dict = {
+        **({"analysis": analysis} if scope_note else {}),
         "policy_decision": decision.value,
-        "policy_reasons": [reason],
+        "policy_reasons": [reason, *([scope_note] if scope_note else [])],
         "policy_sha256": policy_engine.policy_sha256,
         "requires_human_approval": decision == PolicyDecision.REQUIRE_HUMAN_APPROVAL,
     }

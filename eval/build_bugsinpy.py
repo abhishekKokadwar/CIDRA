@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from cidra import config  # noqa: E402
 from cidra.nodes.checkout import prepare_checkout, remove_checkout  # noqa: E402
+from cidra.nodes.ingest import failures_are_asserts, first_error_lines  # noqa: E402
 from cidra.sandbox import limits  # noqa: E402
 from cidra.sandbox.runner import Session  # noqa: E402
 from eval import corpus_repo  # noqa: E402
@@ -35,7 +36,6 @@ KEEP_PER_PROJECT, TRIALS_PER_PROJECT, INSTALL_FAILURES_TO_ABANDON = 10, 24, 3
 MAX_FILES, MAX_LINES = 3, 30
 
 _PIN = re.compile(r"^[A-Za-z0-9_.\-\[\]]+==[\w.!+*-]+$")
-_E_LINE = re.compile(r"^E\s+(\S.*)$")
 _FAILED = re.compile(r"^FAILED (\S+)", re.MULTILINE)
 
 
@@ -52,15 +52,10 @@ def _is_test(path: str) -> bool:
 def expected_category(log: str) -> tuple[str, str]:
     """(category, first error line). assertion_error only when every failure
     opens with a failed assert; anything else is outside CIDRA's stated scope."""
-    firsts, previous_was_e = [], False
-    for line in log.splitlines():
-        m = _E_LINE.match(line)
-        if m and not previous_was_e:
-            firsts.append(m.group(1))
-        previous_was_e = line.startswith("E ")  # a blank "E   " line continues the block
-    if firsts and all(re.match(r"(assert\b|AssertionError)", f) for f in firsts):
-        return "assertion_error", firsts[0]
-    return "unknown", firsts[0] if firsts else ""
+    # The same test CIDRA applies to a diagnosis (validate_analysis).
+    firsts = first_error_lines(log)
+    category = "assertion_error" if failures_are_asserts(log) else "unknown"
+    return category, firsts[0] if firsts else ""
 
 
 def _exclude(record: dict, key: str, reason: str) -> None:
