@@ -26,6 +26,8 @@ out of the false-verified rate and listed.
     python eval/measure.py --stub --corpus eval/corpus
     # check the held-out sets themselves, with no model call
     python eval/measure.py --validate
+    # replay a past run's patches through today's audit gate (no model, no sandbox)
+    python eval/measure.py --corpus eval/corpus --reaudit eval/results/claude-haiku-4-5-bugsinpy-v6.json
     # judge a past run's verified fixes by today's held-out sets, with no model call
     python eval/measure.py --corpus eval/corpus --rejudge eval/results/claude-haiku-4-5-bugsinpy-v4.json
     # proof that the audit gate refuses a patch that special-cases the visible test
@@ -70,6 +72,9 @@ def _args() -> argparse.Namespace:
                         help="check the held-out sets themselves (no model call): each must pass on the "
                              "fix commit, catch the fixture's cheat_llm.json patch if it has one, and "
                              "add a failing test on the failing commit or catch that patch")
+    parser.add_argument("--reaudit", metavar="RESULTS",
+                        help="replay a past run's patches through today's audit gate (no model, no sandbox): "
+                             "which verified fixes the gate would now refuse")
     parser.add_argument("--rejudge", metavar="RESULTS",
                         help="judge every verified fix in a past results file by today's held-out sets "
                              "(no model call): validates each set, then applies the stored diff")
@@ -338,6 +343,34 @@ def validate(wanted: list[str]) -> int:
     return 1 if bad else 0
 
 
+def reaudit(path: str) -> int:
+    """Replay a past run's patches through today's audit gate: no model, no sandbox.
+
+    Exact for a change to the gate alone: with the model at temperature 0 a rerun
+    writes the same patches up to the first one the gate now refuses, and a
+    refusal ends the run as diagnosis_only. Uses the run's held-out judgement
+    (<results>-held-out.json) when there is one to count false "verified"."""
+    from cidra.nodes.audit import audit_diff
+    runs = json.loads(pathlib.Path(path).read_text(encoding="utf-8"))["runs"]
+    judged_file = pathlib.Path(path).with_name(pathlib.Path(path).stem + "-held-out.json")
+    verdicts = ({r["fixture"]: r["verdict"] for r in json.loads(judged_file.read_text(encoding="utf-8"))["runs"]}
+                if judged_file.is_file() else {})
+    before = after = false_before = false_after = 0
+    for r in runs:
+        refused = next((a for a in r.get("attempts") or [] if a.get("diff") and a.get("audit_ok")
+                        and not audit_diff(a["diff"]).ok), None)
+        outcome = "diagnosis_only" if refused else r["outcome"]
+        before += r["outcome"] == "verified_fix"
+        after += outcome == "verified_fix"
+        false_before += r["outcome"] == "verified_fix" and verdicts.get(r["fixture"]) == "false_verified"
+        false_after += outcome == "verified_fix" and verdicts.get(r["fixture"]) == "false_verified"
+        if refused:
+            print(f"{r['fixture']:<18} {r['outcome']} -> {outcome} "
+                  f"(attempt {refused['n']}: {audit_diff(refused['diff']).reasons[0][:110]})", flush=True)
+    print(f"verified fixes {before} -> {after}; false \"verified\" (judged) {false_before} -> {false_after}", flush=True)
+    return 0
+
+
 def rejudge(path: str) -> int:
     """Judge the verified fixes of a past run by today's held-out sets, with no
     model call: a set must first be valid, then the stored diff must pass it.
@@ -383,7 +416,7 @@ def _preflight(wanted: list[str]) -> str | None:
     if (any(not m.get("repo_url") for m in metas.values())
             and not (pathlib.Path(config.PRACTICE_REPO_DIR) / ".git").exists()):
         return f"practice repo not found at {config.PRACTICE_REPO_DIR} (set CIDRA_PRACTICE_REPO)"
-    if ARGS.validate or ARGS.rejudge:
+    if ARGS.validate or ARGS.rejudge or ARGS.reaudit:
         return None
     no_log = [fid for fid, m in metas.items() if not (FIXTURES / fid / m.get("log", "raw.log")).is_file()]
     if no_log and not (os.environ.get("CIDRA_GITHUB_TOKEN_RO") or os.environ.get("CIDRA_GITHUB_TOKEN")):
@@ -392,6 +425,8 @@ def _preflight(wanted: list[str]) -> str | None:
 
 
 def main() -> int:
+    if ARGS.reaudit:
+        return reaudit(ARGS.reaudit)
     if ARGS.rejudge:
         return rejudge(ARGS.rejudge)
     wanted = ARGS.fixtures or sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.json").is_file())

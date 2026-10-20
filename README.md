@@ -462,6 +462,7 @@ How the numbers moved, one change at a time:
 | [v4](eval/results/claude-haiku-4-5-bugsinpy-v4.json) | the failing test's full `-vv` assertion diff in the prompt | 18 | 5 / 12 | [0 / 5](eval/results/claude-haiku-4-5-bugsinpy-v4-held-out.json) |
 | [v5](eval/results/claude-haiku-4-5-bugsinpy-v5.json) | verdict from the per-test report (G-25); batch 2 added | 40 | not comparable: a parsing regression (fixed in #69) and sampling at temperature 1.0 | — |
 | [v6](eval/results/claude-haiku-4-5-bugsinpy-v6.json) | model called at temperature 0, so runs repeat | 40 | 6 / 24 | [4 / 9](eval/results/claude-haiku-4-5-bugsinpy-v6-held-out.json) |
+| v6 replayed | the audit gate refuses a patch that deletes a `raise` (replayed with `measure.py --reaudit`: same patches, no model call) | 40 | 5 / 24 | 3 / 8 |
 
 Until v6 the model sampled at its default temperature (1.0), so the same log could be diagnosed differently from run to run: v4's tornado-1 and -5 fixes were not repeated in v5 or v6. Next steps are in [ROADMAP M3](docs/ROADMAP.md).
 

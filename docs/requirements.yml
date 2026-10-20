@@ -156,6 +156,10 @@
   accept: The built wheel carries pyproject's version, the sandbox Dockerfile and exactly the dashboard files its page loads (no missing file, no stale bundle); installed in a clean venv and run from outside the checkout, the CLI starts, the sandbox image builds from the package, the dashboard serves every file, and `cidra action` reports a verified fix on a failing practice commit through a stand-in GitHub API. A release runs these same checks on the files it uploads to PyPI, and its tag must match the version.
   jobs: [package]
 
+- id: M3-NO-SILENCED-ERRORS
+  title: A fix may not delete the error it is meant to fix
+  accept: The audit gate refuses a patch that removes more `raise` statements than it adds in a non-test Python file, so a failing test cannot be made to pass by deleting the check that fails it (corpus v6, tornado-3). Moving or rewording a raise passes; every reference fix in the fixtures and the corpus, and the v6 fixes judged genuine, still pass the gate.
+
 - id: M3-REPEATABLE
   title: The same failure gets the same diagnosis and fix from run to run
   accept: Every model call (diagnosis and fix, primary and fallback) is sent with temperature 0, so a measured change in results comes from a change in CIDRA, not from sampling. At the provider default (1.0 for Claude) the same tornado logs were diagnosed differently in corpus runs v4 and v5.
