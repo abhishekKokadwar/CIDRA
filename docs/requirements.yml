@@ -162,7 +162,7 @@
 
 - id: M3-NO-SILENCED-ERRORS
   title: A fix may not delete the error it is meant to fix
-  accept: The audit gate refuses a patch that removes more `raise` statements than it adds in a non-test Python file, so a failing test cannot be made to pass by deleting the check that fails it (corpus v6, tornado-3). Moving or rewording a raise passes; every reference fix in the fixtures and the corpus, and the v6 fixes judged genuine, still pass the gate.
+  accept: The audit gate refuses a patch that removes more `raise` statements than it adds in a non-test Python file (corpus v6, tornado-3), or that adds an `except` whose body, comments aside, is only `pass` or `...` (v7, tornado-3 again), so a failing test cannot be made to pass by deleting or swallowing the error that fails it. Handling an error (returning a value, logging and re-raising) passes. Moving or rewording a raise passes; every reference fix in the fixtures and the corpus, and the v6 fixes judged genuine, still pass the gate.
 
 - id: M3-REPEATABLE
   title: The same failure gets the same diagnosis and fix from run to run
