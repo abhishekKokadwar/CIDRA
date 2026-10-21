@@ -1,0 +1,49 @@
+{
+  "rejudged": "eval/results/claude-haiku-4-5-bugsinpy-v7.json",
+  "measured_at": "2026-10-21T19:54:19Z",
+  "false_verified": "1/4",
+  "runs": [
+    {
+      "fixture": "bip-thefuck-26",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "tests/rules/test_heldout_vagrant_up.py::test_a_named_machine_offers_that_machine_then_all",
+        "tests/rules/test_heldout_vagrant_up.py::test_no_machine_starts_all"
+      ],
+      "detail": "14 passed, 1 warning in 0.05s",
+      "failed": []
+    },
+    {
+      "fixture": "bip-tornado-3",
+      "verdict": "false_verified",
+      "held_out_unseen_failures": [
+        "tornado/test/test_heldout_client_cache.py::HeldOutClientCacheTest::test_closing_after_the_cache_entry_is_gone"
+      ],
+      "detail": "1 failed, 50 passed, 1 warning in 0.47s",
+      "failed": [
+        "tornado/test/test_heldout_client_cache.py::HeldOutClientCacheTest::test_closing_after_the_cache_entry_is_gone"
+      ]
+    },
+    {
+      "fixture": "bip-tornado-5",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "tornado/test/test_heldout_periodic_clock.py::HeldOutPeriodicClockTest::test_a_backwards_step_right_after_an_overrun",
+        "tornado/test/test_heldout_periodic_clock.py::HeldOutPeriodicClockTest::test_every_call_is_later_than_the_last_whatever_the_clock_does",
+        "tornado/test/test_heldout_periodic_clock.py::HeldOutPeriodicClockTest::test_small_backwards_steps_keep_a_5s_schedule_moving"
+      ],
+      "detail": "56 passed, 5 skipped, 2 warnings in 0.65s",
+      "failed": []
+    },
+    {
+      "fixture": "bip-youtube-dl-3",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "test/test_heldout_unescape_html.py::test_an_ampersand_without_a_semicolon_before_a_real_entity",
+        "test/test_heldout_unescape_html.py::test_numeric_entities_after_a_stray_ampersand"
+      ],
+      "detail": "80 passed, 1 warning in 0.60s",
+      "failed": []
+    }
+  ]
+}
