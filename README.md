@@ -465,6 +465,7 @@ How the numbers moved, one change at a time:
 | v6 replayed | the audit gate refuses a patch that deletes a `raise` (`measure.py --reaudit`: v6's patches through today's gate, no model call) | 40 | 5 / 24 | 3 / 8 |
 | v6 replayed | and scope is read from the log: a failure that is an exception, not a failed assert, is declined whatever the model says (correct declines 13 → 16 of 16, by construction: the corpus labels cases with the same test) | 40 | 5 / 24 | 1 / 5 |
 | [v7](eval/results/claude-haiku-4-5-bugsinpy-v7.json) | both rules, measured | 40 | 4 / 24 | [1 / 4](eval/results/claude-haiku-4-5-bugsinpy-v7-held-out.json) |
+| v7 replayed | the audit gate also refuses a patch that catches an error and ignores it (`except …: pass`) | 40 | 3 / 24 | 0 / 3 |
 
 Until v6 the model sampled at its default temperature (1.0), so the same log could be diagnosed differently from run to run. Temperature 0 narrows that but does not remove it: between v6 and v7 the model wrote different patches for the same cases (tornado-6 and youtube-dl-1 were fixed in v6 only, tornado-5 in v7 only). A replay (`--reaudit`) shows what a gate change refuses; a real run also moves by a fix or two from the model alone, so a single run cannot show a change of that size. Next steps are in [ROADMAP M3](docs/ROADMAP.md).
 
