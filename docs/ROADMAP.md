@@ -104,7 +104,7 @@ $0.02 per run.
 
 - [x] A default install ladder: `requirements.txt` (plus `requirements-dev.txt`, `requirements-test.txt`, `dev-requirements.txt` or `test-requirements.txt` beside it), else `pyproject.toml` / `setup.py` (with its `test`, `tests`, `testing` or `dev` extra), else nothing. A dev or test requirements file without a `requirements.txt` is not read.
 - [x] A comment on the failing commit when there is no PR (G-08); a clear message on a 403.
-- [x] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing. (0.3.1 is current; every release's wheel is checked for the Dockerfile before upload.)
+- [x] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing. (0.3.2 is current; every release's wheel is checked for the Dockerfile before upload.)
 - [x] README quick start that fits on one screen.
 - [ ] Follow only the README on three Python repositories CIDRA was not built around, one with `pyproject.toml`. Every question needing the source becomes a fix.
 

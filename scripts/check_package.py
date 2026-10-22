@@ -1,6 +1,6 @@
 """What a built wheel must hold for `pip install cidra` to work (CI's package job).
 
-    python scripts/check_package.py dist/cidra-0.3.1-py3-none-any.whl
+    python scripts/check_package.py dist/cidra-0.3.2-py3-none-any.whl
 
 Checks the version against pyproject.toml, that the sandbox Dockerfile ships
 (0.2.0 shipped without it), and that the dashboard's files are exactly those its
