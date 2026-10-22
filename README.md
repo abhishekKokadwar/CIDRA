@@ -429,7 +429,7 @@ npx playwright install chromium && npm run e2e
 
 ### Measured results
 
-From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in dry run. One small paid model for all runs (named in the result files), priced at $1 / $5 per million input / output tokens.
+From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in dry run. Every run, with its method and what changed between runs, is in [reports/RESULTS.md](reports/RESULTS.md). One small paid model for all runs (named in the result files), priced at $1 / $5 per million input / output tokens.
 
 | | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 40 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v7.json)) |
 |---|---|---|

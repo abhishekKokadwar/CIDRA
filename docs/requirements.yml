@@ -194,3 +194,7 @@
   title: The build's supply chain is checked
   accept: Every third-party Action in the workflows and in action.yml is pinned to a commit, every CI job has a time limit, CIDRA's Python dependencies and the dashboard's npm packages have no known vulnerability (npm high and up), and CodeQL analyses the Python and JavaScript code on every code change. Dependabot proposes weekly updates for Actions, pip and npm.
   jobs: [audit, codeql]
+
+- id: RESULTS-REPORT
+  title: Published results are measured, never typed in
+  accept: reports/RESULTS.md's table of BugsInPy runs is computed from the committed result files in eval/results/ by eval/results_table.py, and every file the report links to exists.
