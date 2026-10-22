@@ -43,3 +43,28 @@ def test_corrupt_cache_is_a_miss_not_a_crash(tmp_path):
     assert fix_cache.get("fp1", path=p) is None
     # and a put over a corrupt file still succeeds (overwrites)
     assert fix_cache.put("fp1", "+a", "cat", path=p) is True
+
+
+def test_an_expired_entry_is_a_miss_and_is_removed(tmp_path):
+    p = tmp_path / "c.json"
+    fix_cache.put("fp", "diff", "assertion_error", path=p, ttl_seconds=-1)
+    assert fix_cache.get("fp", path=p) is None
+    assert "fp" not in p.read_text(encoding="utf-8")
+
+
+def test_a_full_cache_evicts_the_oldest_entry(tmp_path, monkeypatch):
+    p = tmp_path / "c.json"
+    monkeypatch.setattr(fix_cache, "MAX_CACHE_ENTRIES", 2)
+    for fp in ("old", "mid", "new"):
+        fix_cache.put(fp, "diff", "assertion_error", path=p)
+    assert fix_cache.get("old", path=p) is None
+    assert fix_cache.get("mid", path=p) and fix_cache.get("new", path=p)
+
+
+def test_invalidate_removes_only_that_entry(tmp_path):
+    p = tmp_path / "c.json"
+    fix_cache.put("a", "diff", "assertion_error", path=p)
+    fix_cache.put("b", "diff", "assertion_error", path=p)
+    assert fix_cache.invalidate("a", path=p) and not fix_cache.invalidate("a", path=p)
+    assert fix_cache.get("a", path=p) is None and fix_cache.get("b", path=p)
+    assert not fix_cache.invalidate("", path=p)
