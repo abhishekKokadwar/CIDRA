@@ -53,7 +53,13 @@ MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX") or "gemini-3.5-flash"
 # to write by a prompt injection in a CI log. GITHUB_TOKEN (Contents:rw,
 # PRs:rw) is only for code that deliberately mutates the repo — Phase 6.
 GITHUB_TOKEN = os.environ.get("CIDRA_GITHUB_TOKEN", "")
-GITHUB_TOKEN_RO = os.environ.get("CIDRA_GITHUB_TOKEN_RO", "") or GITHUB_TOKEN
+GITHUB_TOKEN_RO = os.environ.get("CIDRA_GITHUB_TOKEN_RO", "")
+
+
+def read_token() -> str:
+    """The token for GitHub reads: the read-only one, else the write one. Looked up
+    at call time, so a token saved in the dashboard applies to the next run (G-19)."""
+    return GITHUB_TOKEN_RO or GITHUB_TOKEN
 GITHUB_API = os.environ.get("CIDRA_GITHUB_API", "https://api.github.com")
 
 # Shared secret for GitHub webhook HMAC-SHA256 verification (Phase 7). Set the

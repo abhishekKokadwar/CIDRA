@@ -52,9 +52,9 @@ manual command; `--twice` shows the idempotency no-op.
 ### G-19 · Dead or ignored settings — 🛠 (small)
 - Dashboard "Flakiness & Sandbox" fields are saved to `.env` and `config`, but `reproduce.py`
   and `routers.py` imported the constants at load time, so the engine never sees them.
-- An API key or base URL saved in the dashboard reaches its connection test but not the
-  runs of that server: `llm.py` copies both at import and caches its client (found
-  2026-10-19, ROADMAP M6 audit).
+- (Done 2026-10-23: every key, endpoint and token saved in the dashboard reaches the next
+  call of the running server; `llm.py`, `github.py` and `github_write.py` read `config` at
+  call time, and the read-only token falls back to the write token at call time too.)
 - `CONTAINER_TIMEOUT` is saved by the dashboard and read by nothing.
 - `CIDRA_ENABLE_RATE_LIMIT_BACKOFF` (set by `action.yml`), `limits.AUTO_REMOVE` and the
   `model` input of `action.yml` are read by nothing.

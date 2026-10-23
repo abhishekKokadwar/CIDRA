@@ -34,9 +34,9 @@ def _setup(monkeypatch, *, gemini_key, base_url, primary_fails=True):
     llm.clear_latest_telemetry()
     monkeypatch.setattr(llm, "client", _client(seen, primary_fails))
     monkeypatch.setattr(llm, "gemini_client", _client(seen, False))
-    monkeypatch.setattr(llm, "GEMINI_API_KEY", gemini_key)
-    monkeypatch.setattr(llm, "BASE_URL", base_url)
-    monkeypatch.setattr(llm, "FALLBACK_MODEL", "gemini-fallback")
+    monkeypatch.setattr(llm.config, "GEMINI_API_KEY", gemini_key)
+    monkeypatch.setattr(llm.config, "BASE_URL", base_url)
+    monkeypatch.setattr(llm.config, "FALLBACK_MODEL", "gemini-fallback")
     return seen
 
 
@@ -57,7 +57,7 @@ def test_no_fallback_without_a_gemini_key(monkeypatch):
 
 
 def test_a_gemini_primary_is_not_its_own_fallback(monkeypatch):
-    seen = _setup(monkeypatch, gemini_key="AIza-x", base_url=llm.GEMINI_BASE_URL)
+    seen = _setup(monkeypatch, gemini_key="AIza-x", base_url=llm.config.GEMINI_BASE_URL)
     with pytest.raises(Failing):
         _ask()
     assert seen == ["primary"]
