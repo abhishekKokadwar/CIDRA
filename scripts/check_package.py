@@ -32,6 +32,8 @@ def problems(wheel: str, version: str) -> list[str]:
             out.append(f"wheel version is {found}, pyproject.toml says {version}")
         if "cidra/sandbox/Dockerfile" not in names:
             out.append("cidra/sandbox/Dockerfile is missing: the sandbox image cannot be built from an install")
+        if "cidra/sandbox/Dockerfile.agent" not in names:
+            out.append("cidra/sandbox/Dockerfile.agent is missing: a coding agent's image cannot be built from an install")
         if STATIC + "index.html" not in names:
             return out + ["cidra/static/index.html is missing: the dashboard has no page"]
         page = z.read(STATIC + "index.html").decode()

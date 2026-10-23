@@ -211,6 +211,10 @@
   title: The model key stays out of reach of repository code next to an agent
   accept: A coding agent's container is on an internal network whose only other member is the model-key proxy. Code run there cannot find the key in its environment or any process's, cannot reach the model endpoint or the internet directly, and gets only model calls through the proxy, which carry the real key in place of whatever the caller sent (an API key, or a bearer token). Any other path is refused, the run stops at its request limit, and an unreachable endpoint is an error, not a hang.
 
+- id: M7-CLAUDE-CODE
+  title: Claude Code writes the patch, CIDRA reads it
+  accept: With CIDRA_PATCH_GENERATOR=claude-code, Claude Code runs headless and bare in a container on the key proxy's network, with the checkout, the run's installed packages, the failing tests and the rules the gate enforces, and a placeholder key. The patch is the git diff of what it changed, without test-run leftovers; what it prints is not read. Its model calls are counted by the proxy from the replies and priced with cache tokens. No key is an error before any container starts.
+
 - id: G-20
   title: Exported telemetry never carries what the model was shown or said
   accept: The telemetry CIDRA exports (the dashboard's /telemetry.json and the bot's uploaded artifact) holds counts, latency and the validated diagnosis, but no system or user prompt, raw model output or CI log; the full state with prompts is kept only in files git ignores.

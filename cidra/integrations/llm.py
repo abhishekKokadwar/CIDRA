@@ -37,6 +37,22 @@ class BudgetExceeded(RuntimeError):
     """The run hit its LLM spend cap (CIDRA_MAX_LLM_CALLS / CIDRA_MAX_LLM_TOKENS)."""
 
 
+def record_usage(usage: dict, tool_name: str = "agent") -> None:
+    """A model call made outside this module, such as a coding agent's, as counted
+    by the key proxy. Recorded like the others but with no prompt. Prompt tokens
+    are in input-price units: a cache write costs 1.25 input tokens, a cache read
+    0.1 (Anthropic's prices), so cost_of() prices them right."""
+    written, read = usage.get("cache_creation_input_tokens", 0), usage.get("cache_read_input_tokens", 0)
+    prompt = round(usage.get("input_tokens", 0) + 1.25 * written + 0.1 * read)
+    completion = usage.get("output_tokens", 0)
+    _latest_telemetry.append({
+        "model": usage.get("model") or "unknown", "latency_s": None,
+        "tokens": {"prompt": prompt, "completion": completion, "total": prompt + completion},
+        "usage": usage, "tool_name": tool_name, "tool_args": None,
+        "system_prompt": None, "user_prompt": None, "timestamp": round(time.time(), 2),
+    })
+
+
 def get_latest_telemetry() -> list[dict]:
     return list(_latest_telemetry)
 

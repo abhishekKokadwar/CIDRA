@@ -53,7 +53,8 @@ include = ["cidra", "cidra.*"]
 cidra = [
     "static/**",
     "static/**/*",
-    "sandbox/Dockerfile"
+    "sandbox/Dockerfile",
+    "sandbox/Dockerfile.agent"
 ]
 
 # CI combines the unit, server and integration runs and fails below this floor

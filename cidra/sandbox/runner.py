@@ -14,6 +14,7 @@ here rather than left to callers:
 """
 
 import io
+import json
 import tarfile
 import threading
 import time
@@ -66,10 +67,24 @@ def ensure_image(python: Optional[str] = None) -> str:
     return tag
 
 
-def _create(network: str, image: str = limits.IMAGE):
+def ensure_agent_image(python: Optional[str] = None) -> str:
+    """The coding agent's image for this Python: its sandbox image plus Claude Code
+    (Dockerfile.agent), built on first use."""
+    base = ensure_image(python)
+    tag = base.replace("cidra-sandbox:", "cidra-agent:")
+    try:
+        client().images.get(tag)
+    except ImageNotFound:
+        client().images.build(path=str(Path(__file__).parent), dockerfile="Dockerfile.agent", tag=tag,
+                              rm=True, buildargs={"BASE": base})
+    return tag
+
+
+def _create(network: str, image: str = limits.IMAGE, extra_env: Optional[dict] = None):
     """Every container in this module is created here, so the caps cannot be
     forgotten or overridden at a call site. No volumes, no binds, no privileged,
-    no cap_add, no host env passthrough.
+    no cap_add, no host env passthrough: `extra_env` is CIDRA's own settings for
+    the container (an agent's proxy address), never a secret.
     """
     return client().containers.create(
         image=image,
@@ -87,6 +102,7 @@ def _create(network: str, image: str = limits.IMAGE):
             # Packages installed by the install step live here.
             "PYTHONPATH": limits.SITE,
             "PATH": f"{limits.SITE}/bin:/usr/local/bin:/usr/bin:/bin",
+            **(extra_env or {}),
         },
         security_opt=["no-new-privileges"],
         detach=True,
@@ -428,9 +444,8 @@ class AgentNetwork:
     Use as a context manager, and remove agent containers before it exits.
     """
 
-    def __init__(self, key: str, upstream: str, auth: str = "x-api-key", max_requests: int = 50,
-                 image: str = limits.IMAGE):
-        self.key, self.upstream, self.auth, self.max_requests, self.image = key, upstream, auth, max_requests, image
+    def __init__(self, key: str, upstream: str, auth: str = "x-api-key", max_requests: int = 50):
+        self.key, self.upstream, self.auth, self.max_requests = key, upstream, auth, max_requests
         self.network: Optional[Network] = None
         self.proxy: Optional[Container] = None
 
@@ -450,7 +465,7 @@ class AgentNetwork:
                                                            internal=True)
         try:
             self.proxy = proxy = client().containers.create(
-                image=self.image,
+                image=limits.IMAGE,  # the default Python whatever the run's: the proxy is CIDRA's code
                 command=["python", "/tmp/keyproxy.py"],
                 network_mode="bridge",  # the proxy alone reaches the model endpoint
                 mem_limit=limits.MEM_LIMIT,
@@ -472,6 +487,14 @@ class AgentNetwork:
         except BaseException:
             self.__exit__()
             raise
+
+    def usage(self) -> list[dict]:
+        """Token counts of each model call so far, as the proxy read them from the
+        replies: CIDRA's own measure of what the agent spent."""
+        if self.proxy is None:
+            return []
+        lines = self.proxy.logs(stdout=True, stderr=False).decode("utf-8", "replace").splitlines()
+        return [json.loads(ln[len(keyproxy.USAGE_PREFIX):]) for ln in lines if ln.startswith(keyproxy.USAGE_PREFIX)]
 
     def __exit__(self, *exc) -> None:
         try:

@@ -1,0 +1,17 @@
+# A coding agent's image (ROADMAP M7): the sandbox image for the run's Python,
+# plus Claude Code. Built by sandbox/runner.py from the sandbox image it is
+# given (BASE), so the agent runs the tests on the same Python as the gate.
+# Node and Claude Code are pinned (SR-18); the agent never holds a key: its
+# model calls go to the key proxy (keyproxy.py).
+ARG BASE=cidra-sandbox:base
+FROM node:22-bookworm-slim@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae2e30ec9e735122f38d AS node
+ARG CLAUDE_CODE_VERSION=2.1.302
+RUN npm install -g --no-fund --no-audit @anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}
+
+FROM ${BASE}
+USER root
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/@anthropic-ai/claude-code/bin/claude.exe /usr/local/bin/claude \
+ && claude --version
+USER cidra
