@@ -42,8 +42,8 @@ def prompt_for(state: DebugState) -> str:
     detail = state.get("failure_detail") or state.get("error_region") or ""
     test_command = env_prefix(state) + (state.get("test_command") or config.TEST_COMMAND)
     text = PROMPT.format(test_command=test_command, targets=targets, detail=detail[-8000:])
-    if state.get("verify_note"):
-        text += f"\n\nA previous attempt did not work: {state['verify_note'][:1500]}"
+    if note := state.get("verify_note"):
+        text += f"\n\nA previous attempt did not work: {note[:1500]}"
     return text
 
 
@@ -81,7 +81,7 @@ def claude_code_patch(state: DebugState) -> dict:
             })
             try:
                 box.start()
-                box.put_archive(limits.WORKDIR, _tar_bytes(Path(state["source_dir"])))
+                box.put_archive(limits.WORKDIR, _tar_bytes(Path(state.get("source_dir") or config.PRACTICE_REPO_DIR)))
                 if (session := session_for(state["run_id"])) is not None:
                     _copy_packages(session, box)
                 base = _exec_with_timeout(box, [*_GIT, "init", "-q"], 60, limits.WORKDIR)[0] == 0 and \
