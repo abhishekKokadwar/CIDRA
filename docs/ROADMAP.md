@@ -8,17 +8,28 @@ file stays as background. Progress is tracked in pull requests and in
 
 ## 1. Direction
 
-CIDRA is a **security-focused CI repair agent**. Its claim:
+CIDRA is the **trust layer for AI fixes to failing CI** (direction changed 2026-10-23). A
+patch generator proposes a diff: CIDRA's built-in model loop, or a coding agent such as
+Claude Code, Aider or OpenHands. CIDRA does not take its word for anything. Its claim:
 
-> When a CI run fails, CIDRA produces a repair a developer can trust without re-checking it:
-> the original failure reproduced, a patch that passed a security and test-integrity gate,
-> verified on a clean copy with no regressions, and published as a draft pull request with
-> the evidence of what was run.
+> Whatever wrote the patch, CIDRA reproduces the original failure itself, refuses patches
+> that weaken tests or silence errors, verifies on a clean copy with no regressions, and
+> publishes a draft pull request with the evidence and a command that reruns the check.
+> The patch generator never holds a GitHub token or a secret: it hands back a diff, and
+> CIDRA decides what counts as verified.
 
-Two rules keep the claim honest:
+Why: an agent that reports "fixed, tests pass" chose the tests and the environment, and its
+report is self-graded. In corpus run v8, 3 of 10 patches that passed the failing tests were
+wrong (held-out tests). Anthropic already ships an Action that runs Claude Code in CI, so
+"AI fixes CI" is not the edge; independent, measured verification is.
+
+Three rules keep the claim honest:
 
 - **Safety and usefulness are measured together.** A tool that never patches is trivially
   safe. Every safety number is reported next to the fix rate.
+- **The gate claims only what it is measured to catch.** It refuses weakened tests, deleted
+  or swallowed errors, and regressions in tests that exist. It cannot see a wrong fix the
+  repository has no test for (KNOWN_GAPS G-26); the held-out results say how often that is.
 - **Security features are not a differentiator until measured against another tool.** The
   comparison in milestone M5 decides what CIDRA can claim.
 
@@ -31,14 +42,14 @@ of scope until 2026-10-19, when it was brought up to the same standard as the re
 shows only real results, and it is tested in CI by component and browser tests. Making it
 run and control CIDRA is milestone M6.
 
-## 2. Where it stands (2026-10-19)
+## 2. Where it stands (2026-10-23)
 
 | Requirement | Status |
 |---|---|
 | 1. Authenticate the incoming event | Done: GitHub triggers the Action; webhook mode checks the HMAC |
 | 2. Get the failing commit without exposing secrets to its code | Done: Action mode, `cidra fix` (sandboxed first run) and webhook mode (fetches the commit itself) |
 | 3. Reproduce the original failure | Done: the CI log's failing tests must fail in the sandbox, twice for a failure CIDRA would patch (G-16, G-17 closed) |
-| 4. Generate a patch | 4 of 24 fixable BugsInPy bugs verified (v7, 40 cases), 3 of them genuine; held-out tests show 1 of the 4 is wrong (4 of 9 in v6) |
+| 4. Generate a patch | 10 of 24 fixable BugsInPy bugs verified (v8, 40 cases), 7 of them genuine; held-out tests show 3 of the 10 are wrong (G-26). From M7 the patch can also come from a coding agent |
 | 5. Reject test-weakening or unsafe patches | Done: a test file may change only in its asserts' expected values (G-22 closed) |
 | 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
 | 7. Original failure fixed, no unrelated regressions | Done: the CI's failing tests must pass and no test may go from passing to failing; tests already failing are listed, not blocking |
@@ -92,13 +103,37 @@ Each draft PR and job summary carries a short, fixed-format evidence block:
 - [x] Validate the held-out sets of the fixed cases (`measure.py --validate`): **0 of 5 valid**. Each is the failing test file itself, all of whose tests already ran in the failing run, so passing it proves nothing beyond the target tests. False "verified" stays judged by hand until the next item is done.
 - [x] Independent held-out tests for the 5 fixed cases: tests a wrong fix would fail (e.g. tornado-1 calling `set_nodelay` on a live connection), checked to pass on the project's fix and fail on the buggy commit. All 5 sets are valid (`measure.py --validate`), and all 5 of the v4 patches pass them: **0 of 5 false "verified"** ([result](../eval/results/claude-haiku-4-5-bugsinpy-v4-held-out.json), `measure.py --rejudge`).
 - [x] Make runs repeatable: the model is called at temperature 0 (v6); at 1.0 the same log was diagnosed differently between runs. It narrows the variation but does not end it: v6 and v7 differ by a few patches with no change to the prompt.
-- [ ] **Bring false "verified" to zero.** v6 ([judged](../eval/results/claude-haiku-4-5-bugsinpy-v6-held-out.json)): 4 of 9 verified fixes fail held-out tests. They delete an error check (tornado-3), widen the change beyond the failing test (thefuck-25), rewrite more than asked (tornado-9), or leave a sibling path broken (youtube-dl-6). Candidate changes, one at a time, measured on the corpus and rejudged: ~~refuse a patch that deletes a `raise`~~ (done: 4 → 3 of 8, tornado-3 refused, no genuine fix lost; `measure.py --reaudit` replays a gate change on a past run for free); ~~decline exceptions as the scope says~~ (done: scope is read from the log, 3 → 1 of 5, tornado-9 and youtube-dl-6 declined, youtube-dl-10 lost as a genuine out-of-scope fix); ~~keep a fix inside the function the failing test reaches~~ (rejected: it refuses 20 of the 40 projects' own fixes and does not catch thefuck-25). Measured in [v7](../eval/results/claude-haiku-4-5-bugsinpy-v7-held-out.json): **1 of 4** false, tornado-3 again, now swallowing the error (`except RuntimeError: pass`) instead of deleting it. ~~Next: treat swallowing an error in application code like deleting one~~ (done: replayed on v7, 1 → 0 of 3, no genuine fix lost in v4 to v7). The fix rate (3 genuine of 24) is now the unmet exit criterion.
-- [ ] Improve what the model sees (source context, the failing test, the assertion values) and how retries use feedback. Change one thing at a time, measured on the corpus.
+- [ ] **Bring false "verified" to zero.** v6 ([judged](../eval/results/claude-haiku-4-5-bugsinpy-v6-held-out.json)): 4 of 9 verified fixes fail held-out tests. They delete an error check (tornado-3), widen the change beyond the failing test (thefuck-25), rewrite more than asked (tornado-9), or leave a sibling path broken (youtube-dl-6). Candidate changes, one at a time, measured on the corpus and rejudged: ~~refuse a patch that deletes a `raise`~~ (done: 4 → 3 of 8, tornado-3 refused, no genuine fix lost; `measure.py --reaudit` replays a gate change on a past run for free); ~~decline exceptions as the scope says~~ (done: scope is read from the log, 3 → 1 of 5, tornado-9 and youtube-dl-6 declined, youtube-dl-10 lost as a genuine out-of-scope fix); ~~keep a fix inside the function the failing test reaches~~ (rejected: it refuses 20 of the 40 projects' own fixes and does not catch thefuck-25). Measured in [v7](../eval/results/claude-haiku-4-5-bugsinpy-v7-held-out.json): **1 of 4** false, tornado-3 again, now swallowing the error (`except RuntimeError: pass`) instead of deleting it. ~~Next: treat swallowing an error in application code like deleting one~~ (done: replayed on v7, 1 → 0 of 3, no genuine fix lost in v4 to v7). That held in v8: the gate refused tornado-3's patch. v8 brought three new false "verified" (see the next item), so this item is open again (G-26).
+- [x] Read scope from the log both ways: a log of nothing but failed asserts is in scope even when the model says `unknown` (v7: thefuck-2 and tornado-1, 4, 8 and 10 were never attempted). Measured in [v8](../eval/results/claude-haiku-4-5-bugsinpy-v8-held-out.json): 10 of 24 verified, **7 genuine** (target met), but **3 of 10 false**: thefuck-25 again, and two of the newly attempted cases (tornado-4, tornado-10). No audit rule catches those three without refusing real fixes (KNOWN_GAPS G-26).
+- Dropped for now (2026-10-23): showing the model deeper code context for the 9 cases that return no patch. A coding agent explores the code itself; the agent pilot (M7) decides whether this comes back.
 - [x] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible. 40 cases: batch 2 (22 cases) added 2026-10-19 under rules committed before it was built, with the cap raised to 10 per project. Every case CIDRA verifies in v6 has a validated held-out set.
 
 **Exit (targets, revisited after the first round):** at least a quarter of the fixable cases
 genuinely fixed, **zero** false "verified", correct declines unchanged, median cost under
 $0.02 per run.
+
+### M7 · Agents behind the gate (next, from 2026-10-23)
+
+Milestone numbers are names, not order. From here the order is M3 (close out), M7, M5, M4,
+M6. A coding agent becomes a patch generator behind the same gate; the built-in loop stays
+as the cheap default and the fallback.
+
+- [ ] A patch-generator interface. The built-in loop moves behind it unchanged: the stub
+  pipeline run and every existing test give the same results.
+- [ ] The key never enters the sandbox. A proxy outside it holds the model credential; the
+  sandbox's network reaches only the proxy, with a per-run spend cap. A test runs repository
+  code in the sandbox and shows it cannot read the key. Required before any real key goes
+  near an agent.
+- [ ] Claude Code adapter: headless (`-p`, `--bare`), an API key or a subscription token
+  (`claude setup-token`; check the terms allow it for this use). The agent returns a diff
+  and nothing else is trusted: its claims of success are ignored. Tested with a stub.
+- [ ] Pilot: Claude Code through the gate on 5 BugsInPy cases, cost estimated first. Recorded:
+  fix rate, false "verified" (held-out tests), bad patches the gate refused, cost per run.
+- [ ] Decide from the pilot: the full 40 cases, two runs, for both generators; or back to
+  the built-in loop's context (dropped from M3 above).
+
+**Exit:** an agent's patches are judged by the same gate as the built-in loop's, the key is
+proved out of the sandbox's reach, and the pilot's numbers are published either way.
 
 ### M4 · Usable by a stranger (weeks 9 to 10)
 
@@ -106,7 +141,7 @@ $0.02 per run.
 - [x] A comment on the failing commit when there is no PR (G-08); a clear message on a 403.
 - [x] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing. (0.3.2 is current; every release's wheel is checked for the Dockerfile before upload.)
 - [x] README quick start that fits on one screen.
-- [ ] Follow only the README on three Python repositories CIDRA was not built around, one with `pyproject.toml`. Every question needing the source becomes a fix.
+- [ ] Follow only the README on three Python repositories CIDRA was not built around, one with `pyproject.toml`, in agent mode (M7). Every question needing the source becomes a fix.
 
 **Exit:** all three trial repositories get a verified fix or a clear diagnosis without help.
 
@@ -119,6 +154,7 @@ Same model, same tasks (BugsInPy corpus + `eval/security_fixtures/`), protocol f
 | CIDRA | the full system |
 | Plain loop: same model, no reproduction check, no audit gate | what CIDRA's safety layers add |
 | One maintained open-source agent (chosen at the time, e.g. SWE-agent, OpenHands or Aider) | how CIDRA compares with what exists |
+| Each agent behind CIDRA's gate (M7 adapters, plus the open-source one above as a third) | how many of an agent's own "fixed" claims the gate and the held-out tests reject |
 
 Reported per system: fix rate, false-fix rate (held-out tests), unsafe actions on the attack
 fixtures, cost and time. Published as results files and a README table, including results
