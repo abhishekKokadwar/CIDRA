@@ -207,6 +207,10 @@
   title: The patch generator is pluggable and untrusted
   accept: The patch is written by the generator named in CIDRA_PATCH_GENERATOR, read at call time, with CIDRA's built-in model loop as the default. Of what a generator returns only the diff and the reason there is none are kept; anything else it claims (a test result, "verified", an audit verdict) is dropped, and an unknown generator is an error, not a patch.
 
+- id: M7-KEY-PROXY
+  title: The model key stays out of reach of repository code next to an agent
+  accept: A coding agent's container is on an internal network whose only other member is the model-key proxy. Code run there cannot find the key in its environment or any process's, cannot reach the model endpoint or the internet directly, and gets only model calls through the proxy, which carry the real key in place of whatever the caller sent (an API key, or a bearer token). Any other path is refused, the run stops at its request limit, and an unreachable endpoint is an error, not a hang.
+
 - id: G-20
   title: Exported telemetry never carries what the model was shown or said
   accept: The telemetry CIDRA exports (the dashboard's /telemetry.json and the bot's uploaded artifact) holds counts, latency and the validated diagnosis, but no system or user prompt, raw model output or CI log; the full state with prompts is kept only in files git ignores.
