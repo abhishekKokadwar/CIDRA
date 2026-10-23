@@ -76,3 +76,11 @@ def test_stub_turns_reference_diffs_into_edits_that_rebuild_them(tmp_path):
     edits = [Edit(**e) for e in diff_to_edits(reference)]
     assert [e.path for e in edits] == ["src/calc.py"]
     assert _applies(repo, edits_to_diff(edits, repo))
+
+
+def test_edits_sent_as_json_text_are_read_as_the_list():
+    # corpus v8, keras-27: the model put the edits list in a string, and the attempt was lost
+    args = '{"edits": "[{\\"path\\": \\"a.py\\", \\"old\\": \\"x\\", \\"new\\": \\"y\\"}]", "rationale": "r"}'
+    assert fix.Patch.model_validate_json(args).edits == [Edit(path="a.py", old="x", new="y")]
+    with pytest.raises(ValueError):
+        fix.Patch.model_validate_json('{"edits": "not json", "rationale": "r"}')

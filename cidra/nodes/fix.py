@@ -10,12 +10,13 @@ allowed to make a claim from.
 
 import builtins
 import difflib
+import json
 import pathlib
 import re
 import shlex
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from cidra import config, junit
 from cidra.config import PRACTICE_REPO_DIR
@@ -52,6 +53,18 @@ class Patch(BaseModel):
 
     edits: list[Edit] = Field(default_factory=list, description="Empty if you cannot fix it.")
     rationale: str
+
+    @field_validator("edits", mode="before")
+    @classmethod
+    def _edits_sent_as_json_text(cls, value):
+        # Models sometimes send the list as a JSON string (corpus v8, keras-27): read
+        # it as the list it spells. Anything else still fails validation as before.
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except ValueError:
+                return value
+        return value
 
 
 SYSTEM = """You repair a single CI failure by proposing text edits to the files shown.
