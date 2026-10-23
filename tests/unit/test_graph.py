@@ -1,6 +1,6 @@
 """Tier 1 checks: pure logic only, no network, no Docker. See docs/5_fixtures.md §6."""
 
-from cidra import routers
+from cidra import config, routers
 from cidra.graph import build_graph
 from cidra.nodes.ingest import isolate_error
 from cidra.nodes.reproduce import classify_flakiness
@@ -56,7 +56,8 @@ def test_flaky_all_fail_is_deterministic():
     assert out["reproduced"] is True
 
 
-def test_install_result_does_not_count_as_a_flaky_pass():
+def test_install_result_does_not_count_as_a_flaky_pass(monkeypatch):
+    monkeypatch.setattr(config, "FLAKY_RUNS", 5)  # not whatever a local .env saved
     # install_deps appends to the same repro_results list. Counting its pass
     # would make a deterministic failure look mixed, i.e. falsely flaky.
     install = SandboxResult(
@@ -105,7 +106,8 @@ def test_env_config_has_no_fix_strategy():
     assert routers.route_after_strategy({"fix_strategy": None}) == "compose_report"
 
 
-def test_fix_loop_is_bounded():
+def test_fix_loop_is_bounded(monkeypatch):
+    monkeypatch.setattr(config, "MAX_FIX_ATTEMPTS", 3)  # not whatever a local .env saved
     assert routers.route_after_verify({"verified": False, "fix_attempts": 2}) == "generate_fix"
     assert routers.route_after_verify({"verified": False, "fix_attempts": 3}) == "compose_report"
     assert routers.route_after_verify({"verified": True, "fix_attempts": 0}) == "compose_report"
