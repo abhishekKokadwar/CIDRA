@@ -20,5 +20,6 @@
   "fix_size": {
     "files": 1,
     "lines": 2
-  }
+  },
+  "held_out_command": "python -m pytest -q tests/test_utils.py tests/test_heldout_executables_pathsep.py 2>&1"
 }

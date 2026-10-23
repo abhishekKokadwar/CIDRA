@@ -21,5 +21,6 @@
   "fix_size": {
     "files": 1,
     "lines": 8
-  }
+  },
+  "held_out_command": "python -m pytest -q tornado/test/websocket_test.py tornado/test/test_heldout_websocket_headers.py 2>&1"
 }

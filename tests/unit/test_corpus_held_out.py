@@ -14,7 +14,7 @@ pytestmark = pytest.mark.req("M3-HELDOUT")
 
 # (run, judgement on file, false verified / judged)
 PUBLISHED = [("claude-haiku-4-5-bugsinpy-v4", "0/5"), ("claude-haiku-4-5-bugsinpy-v6", "4/9"),
-             ("claude-haiku-4-5-bugsinpy-v7", "1/4")]
+             ("claude-haiku-4-5-bugsinpy-v7", "1/4"), ("claude-haiku-4-5-bugsinpy-v8", "3/10")]
 
 
 def _load(name: str) -> dict:

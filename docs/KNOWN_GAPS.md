@@ -49,6 +49,24 @@ funded endpoint) + Docker up. Then
 **Done when:** a replayed real failure produces a verified fix and a posted comment, with no
 manual command; `--twice` shows the idempotency no-op.
 
+### G-26 · A wrong fix that no test in the repository checks is "verified"
+**What:** CIDRA's verdict is red to green on the failing tests with no test going from pass
+to fail. A patch can meet that and still be wrong where the repository has no test. Held-out
+tests found three such patches in corpus run v8 (2026-10-23): tornado-4 (a range whose last
+byte is just before its first is served, not refused: `end < start` where `start >= end` was
+needed), tornado-10 (guards `if self.ui:` instead of keeping the handler's UI state until
+the connection closes, so UI modules vanish from templates), thefuck-25 (also narrows when
+the rule fires, a function the failing test never calls).
+**Why open:** each was tried as an audit rule and replayed on every judged patch (v4 to v8)
+and the 40 corpus reference fixes. None holds without losing real fixes: "the fix stays in
+functions the failing test reaches" refuses 20 of the 40 reference fixes and misses
+thefuck-25 (2026-10-21); "refuse a patch that only wraps existing lines in an `if` guard"
+catches tornado-10 but refuses thefuck-22's own fix, which is exactly such a guard; tornado-4
+is an off-by-one no structural rule can see.
+**Unblock / fix:** not a gate rule. Candidates: run the project's whole test suite at verify
+time where the CI does, or ask for tests a wrong fix would fail. Measured the same way.
+**Done when:** false "verified" is zero over two measured runs, judged by held-out tests.
+
 ---
 
 ## Deferred by design (not bugs — scoped out, revisit when the phase arrives)
