@@ -10,7 +10,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from cidra.sandbox.keyproxy import make_handler
+from cidra.sandbox.keyproxy import OAUTH_BETA, USAGE_PREFIX, make_handler, usage_of
 
 pytestmark = pytest.mark.req("M7-KEY-PROXY")
 
@@ -29,7 +29,10 @@ class Upstream(BaseHTTPRequestHandler):
         Upstream.seen.append({"path": self.path, "x-api-key": self.headers.get("x-api-key"),
                               "authorization": self.headers.get("authorization"), "body": body,
                               "beta": self.headers.get("anthropic-beta")})
-        reply = b'data: {"type": "message_start"}\n\ndata: {"type": "message_stop"}\n\n'
+        reply = (b'data: {"type": "message_start", "message": {"model": "claude-x", "usage": {"input_tokens": 12, '
+                 b'"cache_read_input_tokens": 100, "cache_creation_input_tokens": 7, "output_tokens": 1}}}\n\n'
+                 b'data: {"type": "message_delta", "usage": {"output_tokens": 34}}\n\n'
+                 b'data: {"type": "message_stop"}\n\n')
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream")
         self.end_headers()
@@ -76,7 +79,23 @@ def test_a_model_call_reaches_the_endpoint_with_the_real_key_only(proxy):
 
 def test_a_token_goes_as_a_bearer_credential(proxy):
     _post(proxy(auth="bearer"), "/v1/messages")
-    assert Upstream.seen[-1]["authorization"] == f"Bearer {KEY}" and Upstream.seen[-1]["x-api-key"] is None
+    seen = Upstream.seen[-1]
+    assert seen["authorization"] == f"Bearer {KEY}" and seen["x-api-key"] is None
+    assert seen["beta"] == f"b1,{OAUTH_BETA}"  # the agent's betas kept, the token's added
+
+
+def test_each_model_calls_tokens_are_recorded_from_the_reply(proxy, capsys):
+    _post(proxy(), "/v1/messages")
+    lines = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith(USAGE_PREFIX)]
+    assert [json.loads(ln[len(USAGE_PREFIX):]) for ln in lines] == [
+        {"model": "claude-x", "input_tokens": 12, "output_tokens": 34,
+         "cache_read_input_tokens": 100, "cache_creation_input_tokens": 7}]
+
+
+def test_usage_is_read_from_a_whole_reply_and_absent_from_an_error():
+    whole = b'{"model": "m", "usage": {"input_tokens": 3, "output_tokens": 4}}'
+    assert usage_of(whole) == {"model": "m", "input_tokens": 3, "output_tokens": 4}
+    assert usage_of(b'{"type": "error", "error": {"message": "x"}}') is None
 
 
 def test_anything_but_a_model_call_is_refused(proxy):

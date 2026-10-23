@@ -70,6 +70,16 @@ MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX") or "gemini-3.5-flash"
 # What writes the patch (cidra.nodes.fix.GENERATORS). Its diff goes through the same
 # audit gate and verification whatever wrote it.
 PATCH_GENERATOR = os.environ.get("CIDRA_PATCH_GENERATOR") or "builtin"
+# The coding-agent generator (claude-code, cidra/agents.py). The agent holds no key:
+# the key proxy holds AGENT_KEY (else API_KEY) and forwards to AGENT_UPSTREAM.
+# AGENT_AUTH "bearer" sends it as a subscription token (`claude setup-token`).
+AGENT_KEY = os.environ.get("CIDRA_AGENT_KEY", "")
+AGENT_UPSTREAM = os.environ.get("CIDRA_AGENT_UPSTREAM") or "https://api.anthropic.com"
+AGENT_AUTH = os.environ.get("CIDRA_AGENT_AUTH") or "x-api-key"
+AGENT_MODEL = os.environ.get("CIDRA_AGENT_MODEL", "")  # empty: the agent's own default
+AGENT_MAX_REQUESTS = int(os.environ.get("CIDRA_AGENT_MAX_REQUESTS") or 60)  # enforced by the proxy
+AGENT_MAX_USD = float(os.environ.get("CIDRA_AGENT_MAX_USD") or 1.0)  # the agent's own limit, a second line
+AGENT_TIMEOUT = int(os.environ.get("CIDRA_AGENT_TIMEOUT") or 900)
 
 # GitHub, fine-grained PATs scoped to the practice repo.
 # Reads prefer the read-only token: a token that cannot write cannot be made

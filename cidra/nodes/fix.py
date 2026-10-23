@@ -19,6 +19,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 from cidra import config, junit
+from cidra.agents import claude_code_patch
 from cidra.config import PRACTICE_REPO_DIR
 from cidra.integrations.llm import structured
 from cidra.nodes.environment import env_prefix, sandbox_install_command, sandbox_test_command, session_for
@@ -368,7 +369,7 @@ def builtin_patch(state: DebugState) -> dict:
 # Patch generators, by the name in config.PATCH_GENERATOR. Each takes the run's state
 # and returns a diff, or why there is none. Only these keys of what it returns are
 # read: whatever else it claims (a test result, "verified"), the gate decides.
-GENERATORS = {"builtin": builtin_patch}
+GENERATORS = {"builtin": builtin_patch, "claude-code": claude_code_patch}
 _GENERATOR_KEYS = ("fix_diff", "patch_applied", "apply_error", "analysis_error")
 
 

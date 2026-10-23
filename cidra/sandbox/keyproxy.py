@@ -5,7 +5,9 @@ key must not be where that code can read it. The key lives here, in a container
 no repository code runs in. The agent's container sits on a network whose only
 other member is this proxy (runner.AgentNetwork), so the proxy is its one way
 out: it forwards model calls and nothing else, puts the real key on them, and
-stops after a per-run number of requests.
+stops after a per-run number of requests. For each model call it prints one
+line of token counts read from the reply (usage_of), so the run's cost is
+measured here rather than taken from the agent's own report.
 """
 
 import http.client
@@ -25,6 +27,29 @@ ALLOWED_QUERIES = {"": "", "beta=true": "?beta=true"}
 _DROP_REQUEST = {"host", "x-api-key", "authorization", "proxy-authorization",
                  "content-length", "connection", "accept-encoding"}
 _DROP_RESPONSE = {"connection", "transfer-encoding", "keep-alive", "content-length"}
+# A subscription token is an OAuth credential: the API takes it with this beta.
+OAUTH_BETA = "oauth-2025-04-20"
+USAGE_PREFIX = "CIDRA_USAGE "
+
+
+def usage_of(reply: bytes) -> dict | None:
+    """Token counts in a model reply, streamed (server-sent events) or whole.
+    A stream states input tokens when it starts and the output total at its end."""
+    found: dict = {}
+    events = [line[5:].strip() for line in reply.splitlines() if line.startswith(b"data:")]
+    for raw in events or [reply]:
+        try:
+            event = json.loads(raw)
+        except ValueError:
+            continue
+        message = event.get("message", event) if isinstance(event, dict) else {}
+        usage = {**(message.get("usage") or {}), **(event.get("usage") or {})} if isinstance(message, dict) else {}
+        if message.get("model"):
+            found["model"] = message["model"]
+        for key in ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"):
+            if isinstance(usage.get(key), int):
+                found[key] = usage[key]
+    return found if "output_tokens" in found else None
 
 
 def make_handler(upstream: str, key: str, auth: str = "x-api-key", max_requests: int = 50):
@@ -59,9 +84,11 @@ def make_handler(upstream: str, key: str, auth: str = "x-api-key", max_requests:
                     return self._refuse(429, f"this run's limit of {max_requests} model requests is reached")
                 used[0] += 1
             body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
-            headers = {k: v for k, v in self.headers.items() if k.lower() not in _DROP_REQUEST}
+            headers = {k.lower(): v for k, v in self.headers.items() if k.lower() not in _DROP_REQUEST}
             if auth == "bearer":
-                headers["Authorization"] = f"Bearer {key}"
+                headers["authorization"] = f"Bearer {key}"
+                betas = [b for b in headers.get("anthropic-beta", "").split(",") if b.strip()]
+                headers["anthropic-beta"] = ",".join([*betas, OAUTH_BETA])
             else:
                 headers["x-api-key"] = key
             conn_class = http.client.HTTPSConnection if target.scheme == "https" else http.client.HTTPConnection
@@ -80,11 +107,15 @@ def make_handler(upstream: str, key: str, auth: str = "x-api-key", max_requests:
                 self.end_headers()
                 # Relayed as it arrives, so a streamed reply streams; the
                 # connection closing marks its end (HTTP/1.0).
+                seen = []
                 while chunk := reply.read1(65536):
                     self.wfile.write(chunk)
                     self.wfile.flush()
+                    seen.append(chunk)
             finally:
                 conn.close()
+            if path == "/v1/messages" and (usage := usage_of(b"".join(seen))):
+                print(USAGE_PREFIX + json.dumps(usage), flush=True)
 
     return Handler
 

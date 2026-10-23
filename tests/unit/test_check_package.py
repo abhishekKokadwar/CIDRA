@@ -15,6 +15,7 @@ def _wheel(tmp_path, version="1.2.3", page=PAGE, extra=(), drop=()):
     files = {
         "cidra-1.2.3.dist-info/METADATA": f"Metadata-Version: 2.1\nName: cidra\nVersion: {version}\n",
         "cidra/sandbox/Dockerfile": "FROM python:3.11-slim\n",
+        "cidra/sandbox/Dockerfile.agent": "FROM cidra-sandbox:base\n",
         "cidra/static/index.html": page,
         "cidra/static/assets/index-new.js": 'const v="1.2.3";',
         "cidra/static/assets/index-new.css": "body{}",
@@ -35,6 +36,11 @@ def test_a_complete_wheel_passes(tmp_path):
 def test_a_wheel_without_the_dockerfile_fails(tmp_path):  # cidra 0.2.0 on PyPI
     assert problems(_wheel(tmp_path, drop={"cidra/sandbox/Dockerfile"}), "1.2.3") == [
         "cidra/sandbox/Dockerfile is missing: the sandbox image cannot be built from an install"]
+
+
+def test_a_wheel_without_the_agent_dockerfile_fails(tmp_path):
+    assert problems(_wheel(tmp_path, drop={"cidra/sandbox/Dockerfile.agent"}), "1.2.3") == [
+        "cidra/sandbox/Dockerfile.agent is missing: a coding agent's image cannot be built from an install"]
 
 
 def test_a_stale_bundle_left_by_an_earlier_build_fails(tmp_path):  # a reused build/ directory
