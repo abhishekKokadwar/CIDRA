@@ -198,12 +198,12 @@ def dashboard_telemetry() -> dict:
         latency = first_call.get("latency_s")
         model_name = first_call.get("model")
         
-        raw_trace = first_call.get("tool_args")
-        if not raw_trace:
-            raw_trace = {
-                "name": "report",
-                "arguments": analysis if isinstance(analysis, dict) else (analysis.model_dump() if hasattr(analysis, "model_dump") else {})
-            }
+        # The validated diagnosis, never the model's raw output: whatever the model
+        # returned would otherwise be published with the telemetry (G-20).
+        raw_trace = {
+            "name": "report",
+            "arguments": analysis if isinstance(analysis, dict) else (analysis.model_dump() if hasattr(analysis, "model_dump") else {})
+        }
             
         context_files = []
         if st.get("workflow_file"):
