@@ -24,6 +24,7 @@ from typing import Optional
 import docker
 from docker.errors import DockerException, ImageNotFound, NotFound
 from docker.models.containers import Container
+from docker.models.networks import Network
 
 from cidra import config
 from cidra.sandbox import keyproxy, limits
@@ -430,11 +431,13 @@ class AgentNetwork:
     def __init__(self, key: str, upstream: str, auth: str = "x-api-key", max_requests: int = 50,
                  image: str = limits.IMAGE):
         self.key, self.upstream, self.auth, self.max_requests, self.image = key, upstream, auth, max_requests, image
-        self.network = None
+        self.network: Optional[Network] = None
         self.proxy: Optional[Container] = None
 
     @property
     def name(self) -> str:
+        if self.network is None:
+            raise RuntimeError("the agent network is not open")
         return self.network.name
 
     @property
@@ -443,7 +446,8 @@ class AgentNetwork:
         return f"http://{limits.PROXY_HOST}:{keyproxy.PORT}"
 
     def __enter__(self) -> "AgentNetwork":
-        self.network = client().networks.create(f"cidra-agent-{uuid.uuid4().hex[:12]}", driver="bridge", internal=True)
+        self.network = network = client().networks.create(f"cidra-agent-{uuid.uuid4().hex[:12]}", driver="bridge",
+                                                           internal=True)
         try:
             self.proxy = proxy = client().containers.create(
                 image=self.image,
@@ -457,7 +461,7 @@ class AgentNetwork:
                 detach=True,
             )
             proxy.put_archive("/tmp", _file_tar("keyproxy.py", Path(keyproxy.__file__).read_bytes()))
-            self.network.connect(proxy, aliases=[limits.PROXY_HOST])
+            network.connect(proxy, aliases=[limits.PROXY_HOST])
             proxy.start()
             ready = "import socket; socket.create_connection(('127.0.0.1', %d), 1)" % keyproxy.PORT
             for _ in range(50):
