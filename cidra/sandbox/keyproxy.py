@@ -17,6 +17,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = 8080
 ALLOWED_PATHS = ("/v1/messages", "/v1/messages/count_tokens")
+# The SDKs mark a beta call with this query; anything else is refused. The
+# forwarded URL is built from these constants, never from what the caller sent.
+ALLOWED_QUERIES = {"": "", "beta=true": "?beta=true"}
 # Never forwarded from the agent: its own credentials (replaced below) and
 # headers that describe this hop. Without accept-encoding the reply is plain.
 _DROP_REQUEST = {"host", "x-api-key", "authorization", "proxy-authorization",
@@ -47,9 +50,10 @@ def make_handler(upstream: str, key: str, auth: str = "x-api-key", max_requests:
             self._refuse(403, "only model calls are forwarded")
 
         def do_POST(self):
-            path = urllib.parse.urlsplit(self.path).path
-            if path not in ALLOWED_PATHS:
-                return self._refuse(403, f"only model calls are forwarded, not {path}")
+            asked = urllib.parse.urlsplit(self.path)
+            if asked.path not in ALLOWED_PATHS or asked.query not in ALLOWED_QUERIES:
+                return self._refuse(403, f"only model calls are forwarded, not {asked.path}")
+            path = ALLOWED_PATHS[ALLOWED_PATHS.index(asked.path)]
             with lock:
                 if used[0] >= max_requests:
                     return self._refuse(429, f"this run's limit of {max_requests} model requests is reached")
@@ -63,7 +67,7 @@ def make_handler(upstream: str, key: str, auth: str = "x-api-key", max_requests:
             conn_class = http.client.HTTPSConnection if target.scheme == "https" else http.client.HTTPConnection
             conn = conn_class(target.hostname, target.port, timeout=600)
             try:
-                conn.request("POST", target.path.rstrip("/") + self.path, body, headers)
+                conn.request("POST", target.path.rstrip("/") + path + ALLOWED_QUERIES[asked.query], body, headers)
                 reply = conn.getresponse()
             except OSError as e:
                 conn.close()

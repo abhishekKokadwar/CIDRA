@@ -82,6 +82,7 @@ def test_a_token_goes_as_a_bearer_credential(proxy):
 def test_anything_but_a_model_call_is_refused(proxy):
     url = proxy()
     assert _post(url, "/v1/files")[0] == 403
+    assert _post(url, "/v1/messages?x=@evil.example/")[0] == 403  # the URL forwarded is built from constants
     with pytest.raises(urllib.error.HTTPError) as e:
         urllib.request.urlopen(url + "/v1/models", timeout=5)
     assert e.value.code == 403 and Upstream.seen == []
