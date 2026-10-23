@@ -10,15 +10,35 @@ from dotenv import load_dotenv
 ENV_FILE = os.environ.get("CIDRA_ENV_FILE") or ".env"
 load_dotenv(ENV_FILE)
 
-# Bounded loops
+
+
+def bounded(value, default: int, low: int, high: int) -> int:
+    """An int setting clamped to [low, high]; the default when it is not a number.
+    A typo in .env or the dashboard cannot switch a bound off."""
+    try:
+        return min(max(int(value), low), high)
+    except (TypeError, ValueError):
+        return default
+
+
+# Bounded loops. The dashboard saves these to .env and to this module; the
+# graph reads them at call time (G-19), and the bounds below always hold.
+BOUNDS = {
+    "MAX_FIX_ATTEMPTS": (3, 1, 5),
+    "FLAKY_RUNS": (5, 2, 20),
+    "FLAKY_SCORE_THRESHOLD": (1, 1, 100),
+    # Seconds for each test and verify run in the sandbox (dashboard: "Execution Step Timeout").
+    "CONTAINER_TIMEOUT": (300, 30, 1800),
+}
 MAX_ANALYSIS_ATTEMPTS = 2
-MAX_FIX_ATTEMPTS = 3
-FLAKY_RUNS = 5
+MAX_FIX_ATTEMPTS = bounded(os.environ.get("MAX_FIX_ATTEMPTS"), *BOUNDS["MAX_FIX_ATTEMPTS"])
+FLAKY_RUNS = bounded(os.environ.get("FLAKY_RUNS"), *BOUNDS["FLAKY_RUNS"])
+CONTAINER_TIMEOUT = bounded(os.environ.get("CONTAINER_TIMEOUT"), *BOUNDS["CONTAINER_TIMEOUT"])
 # A test is flagged FLAKY when its Deterministic Flakiness Score (0-100, see
 # reproduce.flakiness_score) is at or above this. 1 means "any disagreement
 # across runs is flaky" — the strict reading, since a repair loop against a
 # non-deterministic test is meaningless (2_scope_and_decisions.md §2).
-FLAKY_SCORE_THRESHOLD = 1
+FLAKY_SCORE_THRESHOLD = bounded(os.environ.get("FLAKY_SCORE_THRESHOLD"), *BOUNDS["FLAKY_SCORE_THRESHOLD"])
 
 # Provider — any OpenAI-compatible endpoint, one key (BYOK).
 GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"

@@ -46,7 +46,7 @@ PIDS_LIMIT = 256  # fork-bomb ceiling
 TIMEOUTS = {
     "checkout": 60,
     "install": 300,  # the slow one; network is on here
-    "test": 300,
+    "test": 300,  # test and verify: config.CONTAINER_TIMEOUT, set in the dashboard
     "verify": 300,
 }
 
@@ -60,7 +60,6 @@ SITE = "/home/cidra/site"
 PRISTINE = "/home/cidra/pristine"
 # pytest's per-test report of the last test run (sandbox_test_command asks for it).
 JUNIT = "/home/cidra/junit.xml"
-AUTO_REMOVE = True
 
 # Output capture — logs go to the LLM, so they are bounded.
 TAIL_BYTES = 16_000

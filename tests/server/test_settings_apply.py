@@ -45,3 +45,50 @@ def test_a_saved_webhook_secret_and_fallback_key_reach_the_server(scratch_env):
     settings.save_settings({"keys": {"CIDRA_WEBHOOK_SECRET": "s3cret", "GEMINI_API_KEY": "gem"}})
     assert config.WEBHOOK_SECRET == "s3cret"
     assert llm.gemini_client().api_key == "gem"
+
+
+@pytest.fixture
+def scratch_bounds(scratch_env, monkeypatch):
+    for var in ("MAX_FIX_ATTEMPTS", "FLAKY_RUNS", "FLAKY_SCORE_THRESHOLD", "CONTAINER_TIMEOUT"):
+        monkeypatch.setattr(config, var, getattr(config, var))
+        monkeypatch.delenv(var, raising=False)
+
+
+def test_saved_loop_and_timeout_settings_reach_the_next_run(scratch_bounds, monkeypatch):
+    from types import SimpleNamespace
+
+    from cidra.nodes import reproduce
+    from cidra.routers import route_after_verify
+    from cidra.sandbox import runner
+
+    settings.save_settings({"flakiness": {"max_fix_attempts": 1, "flaky_runs": 7, "container_timeout": 120}})
+    # one attempt allowed: a failed first fix goes to the report, not a second attempt
+    assert route_after_verify({"verified": False, "fix_attempts": 1}) == "compose_report"
+    runs = []
+    session = SimpleNamespace(run=lambda step, cmd: runs.append(step) or SimpleNamespace(passed=True))
+    monkeypatch.setattr(reproduce, "session_for", lambda run_id: session)
+    reproduce.reproduce_n_times({"run_id": "r", "test_command": "pytest"})
+    assert len(runs) == 7
+    assert runner._timeout("test") == runner._timeout("verify") == 120
+    assert runner._timeout("install") == 300  # the install step keeps its own limit
+    shown = settings.get_current_settings()["flakiness"]
+    assert (shown["max_fix_attempts"], shown["flaky_runs"], shown["container_timeout"]) == (1, 7, 120)
+
+
+def test_a_saved_setting_out_of_bounds_is_clamped_not_obeyed(scratch_bounds):
+    settings.save_settings({"flakiness": {"max_fix_attempts": 99, "flaky_runs": 1, "container_timeout": 1}})
+    assert (config.MAX_FIX_ATTEMPTS, config.FLAKY_RUNS, config.CONTAINER_TIMEOUT) == (5, 2, 30)
+    assert config.bounded("not a number", 3, 1, 5) == 3
+
+
+def test_the_settings_are_read_from_the_environment_at_startup(monkeypatch):
+    import importlib
+    monkeypatch.setenv("MAX_FIX_ATTEMPTS", "2")
+    monkeypatch.setenv("CONTAINER_TIMEOUT", "90")
+    try:
+        importlib.reload(config)
+        assert (config.MAX_FIX_ATTEMPTS, config.CONTAINER_TIMEOUT) == (2, 90)
+    finally:
+        monkeypatch.delenv("MAX_FIX_ATTEMPTS")
+        monkeypatch.delenv("CONTAINER_TIMEOUT")
+        importlib.reload(config)

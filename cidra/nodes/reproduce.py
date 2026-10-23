@@ -4,7 +4,7 @@ Reproducing red is the precondition for claiming a fix: if the failure cannot be
 made to happen here, nothing that follows can be verified.
 """
 
-from cidra.config import FLAKY_RUNS, FLAKY_SCORE_THRESHOLD
+from cidra import config
 from cidra import junit
 from cidra.nodes.environment import sandbox_test_command, session_for
 from cidra.state import DebugState, SandboxResult
@@ -131,7 +131,7 @@ def reproduce_n_times(state: DebugState) -> dict:
     if session is None:
         return {"reproduced": False}
     command = _test_command(state)
-    results = [session.run("test", command) for _ in range(FLAKY_RUNS)]
+    results = [session.run("test", command) for _ in range(config.FLAKY_RUNS)]  # at call time (G-19)
     return {"repro_results": [*state.get("repro_results", []), *results]}
 
 
@@ -141,7 +141,7 @@ def classify_flakiness(state: DebugState) -> dict:
     Reads only the last FLAKY_RUNS results so an earlier install/test result in
     the list cannot skew the count.
     """
-    results = state.get("repro_results", [])[-FLAKY_RUNS:]
+    results = state.get("repro_results", [])[-config.FLAKY_RUNS:]
     if not results:
         return {"reproduced": False}
     for r in results:
@@ -152,7 +152,7 @@ def classify_flakiness(state: DebugState) -> dict:
     n = len(results)
     score = flakiness_score(passes, n)
 
-    if score >= FLAKY_SCORE_THRESHOLD and passes != n and passes != 0:
+    if score >= config.FLAKY_SCORE_THRESHOLD and passes != n and passes != 0:
         # Non-deterministic: some passed, some failed. Isolate — 0 repair attempts.
         return {"flaky_pass_count": passes, "flaky_score": score,
                 "outcome": "flaky_detected"}

@@ -23,8 +23,16 @@ import docker
 from docker.errors import DockerException, ImageNotFound, NotFound
 from docker.models.containers import Container
 
+from cidra import config
 from cidra.sandbox import limits
 from cidra.state import SandboxResult, Step
+
+
+def _timeout(step: str) -> int:
+    """Seconds a step may run. Test and verify runs take the configured timeout,
+    read at call time so the dashboard's setting applies to the next run (G-19)."""
+    return config.CONTAINER_TIMEOUT if step in ("test", "verify") else limits.TIMEOUTS[step]
+
 
 _client: Optional[docker.DockerClient] = None
 
@@ -165,7 +173,7 @@ def run_in_sandbox(
     Returns a SandboxResult even when the command fails or times out — a red test
     is a normal result, not an exception. Raises only on infrastructure failure.
     """
-    timeout_s = timeout_s or limits.TIMEOUTS[step]
+    timeout_s = timeout_s or _timeout(step)
     # Network is derived from the step, never chosen by the caller.
     network = "bridge" if step == "install" else "none"
 
@@ -352,7 +360,7 @@ class Session:
             raise ValueError("use Session.install(): the session container has no network")
         started = time.monotonic()
         code, out, err = _exec_with_timeout(
-            self._box, ["sh", "-c", command], timeout_s or limits.TIMEOUTS[step], limits.WORKDIR
+            self._box, ["sh", "-c", command], timeout_s or _timeout(step), limits.WORKDIR
         )
         return SandboxResult(
             step=step,

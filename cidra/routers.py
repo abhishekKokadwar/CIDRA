@@ -1,6 +1,7 @@
 """Conditional edges. Pure functions, no I/O. See docs/4_architecture.md §6."""
 
-from cidra.config import MAX_ANALYSIS_ATTEMPTS, MAX_FIX_ATTEMPTS
+from cidra import config
+from cidra.config import MAX_ANALYSIS_ATTEMPTS
 from cidra.state import DebugState
 
 
@@ -70,6 +71,6 @@ def route_after_audit(state: DebugState) -> str:
 def route_after_verify(state: DebugState) -> str:
     if state.get("verified"):
         return "compose_report"
-    if state.get("fix_attempts", 0) < MAX_FIX_ATTEMPTS:
+    if state.get("fix_attempts", 0) < config.MAX_FIX_ATTEMPTS:  # at call time (G-19)
         return "generate_fix"
     return "compose_report"

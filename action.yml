@@ -73,7 +73,6 @@ runs:
         CIDRA_BASE_URL: ${{ inputs.base_url }}
         CIDRA_MODEL_ANALYZE: ${{ inputs.model_analyze }}
         CIDRA_MODEL_FIX: ${{ inputs.model_fix }}
-        CIDRA_ENABLE_RATE_LIMIT_BACKOFF: 'true'
         CIDRA_GITHUB_TOKEN: ${{ inputs.github_token }}
         CIDRA_GITHUB_TOKEN_RO: ${{ inputs.github_token_ro }}
         GEMINI_API_KEY: ${{ inputs.gemini_api_key }}
