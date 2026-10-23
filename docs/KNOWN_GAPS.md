@@ -49,11 +49,6 @@ funded endpoint) + Docker up. Then
 **Done when:** a replayed real failure produces a verified fix and a posted comment, with no
 manual command; `--twice` shows the idempotency no-op.
 
-### G-20 · Public telemetry carries full prompts — 🛠 🌐
-`llm.structured` records the full system and user prompt (CI log excerpts and source files)
-in the telemetry, and `cidra-bot.yml` commits `telemetry.json` to `main` of a public repo on
-every run. **Fix:** upload it as a workflow artifact instead, and stop the commit step.
-
 ---
 
 ## Deferred by design (not bugs — scoped out, revisit when the phase arrives)
@@ -100,6 +95,7 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-20 · Public telemetry carries full prompts** — Closed 2026-10-23. The bot workflow uploads `telemetry.json` as a workflow artifact and no longer commits it; the exported telemetry carries counts, latency and the validated diagnosis, never the prompts (CI log excerpts, source) or the model's raw output, which was still exported as the "raw JSON trace" until now. The full state, prompts included, stays in `run_states/` and `cidra_run_history.jsonl`, both ignored by git. Tested in `tests/unit/test_telemetry_no_prompts.py`.
 - **G-19 · Dead or ignored settings** — Closed 2026-10-23. Every setting the dashboard saves is used by the next run of the server that saved it, and by every run after a restart: model key, base URL, Gemini key, GitHub tokens and webhook secret (#78); flaky runs and threshold, max fix attempts and the test/verify timeout, read at call time and clamped to safe bounds (`config.BOUNDS`). The unused `CIDRA_ENABLE_RATE_LIMIT_BACKOFF` and `limits.AUTO_REMOVE` are removed. Tested through the settings API in `tests/server/test_settings_apply.py`.
 - **G-25 · "Verified" was judged from the log, not the per-test report** — Closed 2026-10-19. Reproduction and verification read the failed tests from the run's pytest JUnit report, which lists every test; the log's FAILED lines, cut to a 16 KB tail, decide only when there is no readable report. Before, a run with many failures could push the target or a regression out of the tail: on the real sandbox, 400 already-failing tests made a genuine failure read as "not the CI failure". Tested there (`tests/integration/test_junit_results.py`) and in `tests/unit/test_junit_verdict.py`.
 - **G-21 · Release** — Closed 2026-10-19. `LICENSE` (MIT) is in the repository; 0.3.0 and 0.3.1 are on PyPI with `sandbox/Dockerfile`, the Action is tagged `v1` and listed on the Marketplace. CI's package job and the release job check every wheel for the Dockerfile before it can ship (`scripts/check_package.py`). The v0.2.0 release title ("Node.js Support") is left as published.
