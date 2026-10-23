@@ -431,14 +431,14 @@ npx playwright install chromium && npm run e2e
 
 From [eval/measure.py](eval/measure.py): real model, real sandbox, publishing in dry run. Every run, with its method and what changed between runs, is in [reports/RESULTS.md](reports/RESULTS.md). One small paid model for all runs (named in the result files), priced at $1 / $5 per million input / output tokens.
 
-| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 40 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v7.json)) |
+| | 7 practice fixtures ([result](eval/results/claude-haiku-4-5.json)) | 40 real bugs from BugsInPy ([result](eval/results/claude-haiku-4-5-bugsinpy-v8.json)) |
 |---|---|---|
-| Correct diagnosis | 7 / 7 | 32 / 40 |
-| Verified fix, where one exists | 4 / 4 | 4 / 24 |
+| Correct diagnosis | 7 / 7 | 37 / 40 |
+| Verified fix, where one exists | 4 / 4 | 10 / 24 (7 genuine) |
 | Correctly declined | 3 / 3 | 16 / 16 |
-| "Verified" fix that fails held-out tests | 0 / 4 | **1 / 4** ([judged](eval/results/claude-haiku-4-5-bugsinpy-v7-held-out.json) by independent tests the model never saw) |
-| Median cost per run | $0.008 | $0.007 |
-| Total cost | $0.05 | $0.65 |
+| "Verified" fix that fails held-out tests | 0 / 4 | **3 / 10** ([judged](eval/results/claude-haiku-4-5-bugsinpy-v8-held-out.json) by independent tests the model never saw) |
+| Median cost per run | $0.008 | $0.017 |
+| Total cost | $0.05 | $0.74 |
 
 The practice fixtures are small failures built for this project. The BugsInPy cases are real bugs in fastapi, httpie, keras, thefuck, tornado and youtube-dl, chosen in two batches by rules fixed before any model ran on them ([eval/corpus/README.md](eval/corpus/README.md)). The second batch (22 cases) was unseen while CIDRA was developed.
 
@@ -447,11 +447,11 @@ The practice fixtures are small failures built for this project. The BugsInPy ca
 | Case | What the patch did | Held-out test it fails | Since |
 |---|---|---|---|
 | tornado-3 | deleted the "inconsistent cache" error instead of fixing the case that raised it | a mixed-up cache is still reported | a deleted `raise` is refused (v7) |
-| thefuck-25 | also changed when the rule fires, with a substring test, so a path such as `my-project/` turns it off | the rule fires for a path containing `-p` | not caught by a rule; not verified in v7 |
+| thefuck-25 | also changed when the rule fires, with a substring test, so a path such as `my-project/` turns it off | the rule fires for a path containing `-p` | not caught by any rule ([G-26](docs/KNOWN_GAPS.md)); wrong again in v8 |
 | tornado-9 | rebuilds the URL, re-encoding its query (`%20` becomes `+`) | `url_concat(url, None)` returns the URL unchanged | declined as out of scope (v7) |
 | youtube-dl-6 | still crashes on a subtitle line without a `begin` time | lines missing a timestamp are skipped | declined as out of scope (v7) |
 
-In v7, with both rules, the model silenced tornado-3's error another way, catching the `RuntimeError` and ignoring it, and the held-out tests caught that too. CIDRA's own check, red to green with no test going from pass to fail, cannot see what the repository does not test.
+In v7, with both rules, the model silenced tornado-3's error another way, catching the `RuntimeError` and ignoring it, and the held-out tests caught that too; from v8 the gate refuses that as well. In v8, two of the five cases newly attempted were wrong in ways no rule catches without refusing real fixes: tornado-4 serves a byte range that should be refused, tornado-10 hides a symptom with `if self.ui:`. CIDRA's own check, red to green with no test going from pass to fail, cannot see what the repository does not test ([G-26](docs/KNOWN_GAPS.md)).
 
 How the numbers moved, one change at a time:
 
@@ -466,6 +466,7 @@ How the numbers moved, one change at a time:
 | v6 replayed | and scope is read from the log: a failure that is an exception, not a failed assert, is declined whatever the model says (correct declines 13 → 16 of 16, by construction: the corpus labels cases with the same test) | 40 | 5 / 24 | 1 / 5 |
 | [v7](eval/results/claude-haiku-4-5-bugsinpy-v7.json) | both rules, measured | 40 | 4 / 24 | [1 / 4](eval/results/claude-haiku-4-5-bugsinpy-v7-held-out.json) |
 | v7 replayed | the audit gate also refuses a patch that catches an error and ignores it (`except …: pass`) | 40 | 3 / 24 | 0 / 3 |
+| [v8](eval/results/claude-haiku-4-5-bugsinpy-v8.json) | that rule, measured; and a log of only failed asserts is attempted even when the model says `unknown` | 40 | 10 / 24 (7 genuine) | [3 / 10](eval/results/claude-haiku-4-5-bugsinpy-v8-held-out.json) |
 
 Until v6 the model sampled at its default temperature (1.0), so the same log could be diagnosed differently from run to run. Temperature 0 narrows that but does not remove it: between v6 and v7 the model wrote different patches for the same cases (tornado-6 and youtube-dl-1 were fixed in v6 only, tornado-5 in v7 only). A replay (`--reaudit`) shows what a gate change refuses; a real run also moves by a fix or two from the model alone, so a single run cannot show a change of that size. Next steps are in [ROADMAP M3](docs/ROADMAP.md).
 

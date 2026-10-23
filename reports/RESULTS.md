@@ -32,6 +32,7 @@ declined, as CIDRA's stated scope says.
 | [v5](../eval/results/claude-haiku-4-5-bugsinpy-v5.json) | 40 | 30 / 40 | 5 / 24 | 12 / 16 | not judged | $0.72 | $0.013 |
 | [v6](../eval/results/claude-haiku-4-5-bugsinpy-v6.json) | 40 | 29 / 40 | 6 / 24 | 13 / 16 | [4 / 9](../eval/results/claude-haiku-4-5-bugsinpy-v6-held-out.json) | $0.76 | $0.015 |
 | [v7](../eval/results/claude-haiku-4-5-bugsinpy-v7.json) | 40 | 32 / 40 | 4 / 24 | 16 / 16 | [1 / 4](../eval/results/claude-haiku-4-5-bugsinpy-v7-held-out.json) | $0.65 | $0.007 |
+| [v8](../eval/results/claude-haiku-4-5-bugsinpy-v8.json) | 40 | 37 / 40 | 10 / 24 | 16 / 16 | [3 / 10](../eval/results/claude-haiku-4-5-bugsinpy-v8-held-out.json) | $0.74 | $0.017 |
 
 - **Verified fix** counts CIDRA's own verdict: the failing tests went red to
   green in the sandbox and no other test went from passing to failing.
@@ -52,6 +53,7 @@ declined, as CIDRA's stated scope says.
 | v5 | verdict from pytest's per-test report; batch 2 added. Not comparable: a parsing regression (fixed in #69) and sampling at temperature 1.0 |
 | v6 | model called at temperature 0 |
 | v7 | the audit gate refuses a deleted `raise`; scope is read from the log |
+| v8 | the gate also refuses a swallowed error (`except …: pass`); scope is read from the log both ways, so a log of only failed asserts is attempted even when the model says `unknown` |
 
 Temperature 0 narrows run-to-run variation but does not remove it: v6 and v7
 wrote different patches for some cases with no change to the prompt, so one run
@@ -73,7 +75,23 @@ That led to three audit rules: refuse a patch that deletes a `raise`, refuse
 one that catches an error and ignores it (v7's tornado-3 did that instead), and
 decline a failure whose log shows an exception rather than a failed assert.
 Replayed on v7's patches (`measure.py --reaudit`, no model call), no false
-"verified" remain; that is a prediction until the next measured run.
+"verified" remained.
+
+v8 measured those rules, and also attempted five cases the model had declined
+although their logs show only failed asserts. 10 of 24 were verified and 7 of
+them are genuine. Three are wrong, and no rule catches them without refusing
+real fixes ([KNOWN_GAPS G-26](../docs/KNOWN_GAPS.md)):
+
+| Case | What the patch did |
+|---|---|
+| thefuck-25 | the same wrong patch as v6: it also narrows when the rule fires |
+| tornado-4 | serves a byte range whose last byte is just before its first, instead of refusing it |
+| tornado-10 | hides the symptom (`if self.ui:`), so UI modules vanish from templates |
+
+The silenced-error rules held in a real run: the gate refused v8's tornado-3
+patch, which both deleted the `raise` and caught the error to ignore it.
+A second run of the same code (v9) stopped after 27 of 40 cases when the API
+account ran out of credit; it is not published until it is complete.
 
 ## What is not measured
 

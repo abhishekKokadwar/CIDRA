@@ -1,0 +1,111 @@
+{
+  "rejudged": "eval/results/claude-haiku-4-5-bugsinpy-v8.json",
+  "measured_at": "2026-10-23T10:01:44Z",
+  "false_verified": "3/10",
+  "runs": [
+    {
+      "fixture": "bip-thefuck-2",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "tests/test_heldout_executables_pathsep.py::test_executables_from_every_path_entry[;]"
+      ],
+      "detail": "33 passed, 2 warnings in 0.09s",
+      "failed": []
+    },
+    {
+      "fixture": "bip-thefuck-25",
+      "verdict": "false_verified",
+      "held_out_unseen_failures": [
+        "tests/rules/test_heldout_mkdir_p.py::test_new_command_for_another_mkdir_wrapper"
+      ],
+      "detail": "1 failed, 12 passed, 1 warning in 0.06s",
+      "failed": [
+        "tests/rules/test_heldout_mkdir_p.py::test_the_rule_fires_for_a_path_containing_dash_p"
+      ]
+    },
+    {
+      "fixture": "bip-thefuck-26",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "tests/rules/test_heldout_vagrant_up.py::test_a_named_machine_offers_that_machine_then_all",
+        "tests/rules/test_heldout_vagrant_up.py::test_no_machine_starts_all"
+      ],
+      "detail": "14 passed, 1 warning in 0.05s",
+      "failed": []
+    },
+    {
+      "fixture": "bip-tornado-1",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "tornado/test/test_heldout_websocket_nodelay.py::HeldOutNoDelayTest::test_set_after_open_in_on_message",
+        "tornado/test/test_heldout_websocket_nodelay.py::HeldOutNoDelayTest::test_set_and_cleared_in_open_on_the_live_socket"
+      ],
+      "detail": "48 passed, 1 skipped, 1 warning in 0.51s",
+      "failed": []
+    },
+    {
+      "fixture": "bip-tornado-10",
+      "verdict": "false_verified",
+      "held_out_unseen_failures": [
+        "tornado/test/test_heldout_websocket_ui_modules.py::HeldOutUIModuleTest::test_ui_modules_and_methods_render_in_on_message"
+      ],
+      "detail": "1 failed, 33 passed, 1 skipped, 4 warnings in 0.35s",
+      "failed": [
+        "tornado/test/test_heldout_websocket_ui_modules.py::HeldOutUIModuleTest::test_ui_modules_and_methods_render_in_on_message"
+      ]
+    },
+    {
+      "fixture": "bip-tornado-4",
+      "verdict": "false_verified",
+      "held_out_unseen_failures": [
+        "tornado/test/test_heldout_static_ranges.py::HeldOutStaticRangeTest::test_a_suffix_past_the_start_is_the_whole_file",
+        "tornado/test/test_heldout_static_ranges.py::HeldOutStaticRangeTest::test_last_byte_just_before_first_is_unsatisfiable"
+      ],
+      "detail": "1 failed, 186 passed, 1 skipped, 1 warning in 0.93s",
+      "failed": [
+        "tornado/test/test_heldout_static_ranges.py::HeldOutStaticRangeTest::test_last_byte_just_before_first_is_unsatisfiable"
+      ]
+    },
+    {
+      "fixture": "bip-tornado-5",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "tornado/test/test_heldout_periodic_clock.py::HeldOutPeriodicClockTest::test_a_backwards_step_right_after_an_overrun",
+        "tornado/test/test_heldout_periodic_clock.py::HeldOutPeriodicClockTest::test_every_call_is_later_than_the_last_whatever_the_clock_does",
+        "tornado/test/test_heldout_periodic_clock.py::HeldOutPeriodicClockTest::test_small_backwards_steps_keep_a_5s_schedule_moving"
+      ],
+      "detail": "56 passed, 5 skipped, 2 warnings in 0.62s",
+      "failed": []
+    },
+    {
+      "fixture": "bip-tornado-6",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "tornado/test/test_heldout_asyncio_map.py::HeldOutAsyncioMapTest::test_a_closed_ioloop_leaves_the_map",
+        "tornado/test/test_heldout_asyncio_map.py::HeldOutAsyncioMapTest::test_loops_closed_through_asyncio_are_swept_by_the_next_loop"
+      ],
+      "detail": "10 passed, 2 warnings in 0.10s",
+      "failed": []
+    },
+    {
+      "fixture": "bip-tornado-8",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "tornado/test/test_heldout_websocket_headers.py::HeldOutHeaderTest::test_a_good_connection_works_after_a_bad_one",
+        "tornado/test/test_heldout_websocket_headers.py::HeldOutHeaderTest::test_an_empty_key_is_a_bad_request"
+      ],
+      "detail": "37 passed, 1 skipped, 4 warnings in 0.37s",
+      "failed": []
+    },
+    {
+      "fixture": "bip-youtube-dl-3",
+      "verdict": "genuine",
+      "held_out_unseen_failures": [
+        "test/test_heldout_unescape_html.py::test_an_ampersand_without_a_semicolon_before_a_real_entity",
+        "test/test_heldout_unescape_html.py::test_numeric_entities_after_a_stray_ampersand"
+      ],
+      "detail": "80 passed, 1 warning in 0.53s",
+      "failed": []
+    }
+  ]
+}

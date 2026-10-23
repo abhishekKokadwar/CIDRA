@@ -20,5 +20,6 @@
   "fix_size": {
     "files": 1,
     "lines": 16
-  }
+  },
+  "held_out_command": "python -m pytest -q tornado/test/web_test.py tornado/test/test_heldout_static_ranges.py 2>&1"
 }
