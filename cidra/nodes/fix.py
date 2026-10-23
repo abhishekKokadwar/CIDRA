@@ -326,12 +326,8 @@ def _failure_detail(state: DebugState) -> Optional[str]:
     return out[:DETAIL_CHARS]
 
 
-def generate_fix(state: DebugState) -> dict:
-    attempts = state.get("fix_attempts", 0) + 1
-    out: dict = {"fix_attempts": attempts}
-    if "failure_detail" not in state:
-        out["failure_detail"] = _failure_detail(state)
-        state = {**state, **out}
+def builtin_patch(state: DebugState) -> dict:
+    """CIDRA's own patch generator: one model call that returns text edits."""
     previous = state.get("verify_results", [])
     retry_note = ""
     apply_error = state.get("apply_error")
@@ -361,12 +357,33 @@ def generate_fix(state: DebugState) -> dict:
             max_tokens=4000,  # edits quote the old text, so they run longer than a diff
         )
     except Exception as e:
-        return {**out, "fix_diff": None, "analysis_error": str(e)[:500]}
+        return {"fix_diff": None, "analysis_error": str(e)[:500]}
     try:
         diff = edits_to_diff(patch.edits, pathlib.Path(state.get("source_dir") or PRACTICE_REPO_DIR))
     except ValueError as e:
-        return {**out, "fix_diff": None, "patch_applied": False, "apply_error": str(e)}
-    return {**out, "fix_diff": diff or None}
+        return {"fix_diff": None, "patch_applied": False, "apply_error": str(e)}
+    return {"fix_diff": diff or None}
+
+
+# Patch generators, by the name in config.PATCH_GENERATOR. Each takes the run's state
+# and returns a diff, or why there is none. Only these keys of what it returns are
+# read: whatever else it claims (a test result, "verified"), the gate decides.
+GENERATORS = {"builtin": builtin_patch}
+_GENERATOR_KEYS = ("fix_diff", "patch_applied", "apply_error", "analysis_error")
+
+
+def generate_fix(state: DebugState) -> dict:
+    attempts = state.get("fix_attempts", 0) + 1
+    out: dict = {"fix_attempts": attempts}
+    if "failure_detail" not in state:
+        out["failure_detail"] = _failure_detail(state)
+        state = {**state, **out}
+    name = config.PATCH_GENERATOR  # at call time, like the model settings
+    generator = GENERATORS.get(name)
+    if generator is None:
+        return {**out, "fix_diff": None, "analysis_error": f"unknown patch generator {name!r}"}
+    result = generator(state)
+    return {**out, "fix_diff": None, **{k: result[k] for k in _GENERATOR_KEYS if k in result}}
 
 
 def apply_patch(state: DebugState) -> dict:

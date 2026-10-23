@@ -67,6 +67,9 @@ PRICE_OUT = float(os.environ["CIDRA_PRICE_OUT"]) if os.environ.get("CIDRA_PRICE_
 
 MODEL_ANALYZE = os.environ.get("CIDRA_MODEL_ANALYZE") or "gemini-3.5-flash"
 MODEL_FIX = os.environ.get("CIDRA_MODEL_FIX") or "gemini-3.5-flash"
+# What writes the patch (cidra.nodes.fix.GENERATORS). Its diff goes through the same
+# audit gate and verification whatever wrote it.
+PATCH_GENERATOR = os.environ.get("CIDRA_PATCH_GENERATOR") or "builtin"
 
 # GitHub, fine-grained PATs scoped to the practice repo.
 # Reads prefer the read-only token: a token that cannot write cannot be made

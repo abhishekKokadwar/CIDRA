@@ -203,6 +203,10 @@
   title: Settings saved in the dashboard take effect without a restart
   accept: A model key, base URL, Gemini key, GitHub write or read-only token, or webhook secret saved through the settings API is used by the next model call, GitHub call or webhook check of the running server; with no read-only token, reads use the write token saved last. Max fix attempts, flaky runs and threshold, and the test/verify timeout saved there are used by the next run, read from the environment at startup, and clamped to their bounds.
 
+- id: M7-GENERATOR
+  title: The patch generator is pluggable and untrusted
+  accept: The patch is written by the generator named in CIDRA_PATCH_GENERATOR, read at call time, with CIDRA's built-in model loop as the default. Of what a generator returns only the diff and the reason there is none are kept; anything else it claims (a test result, "verified", an audit verdict) is dropped, and an unknown generator is an error, not a patch.
+
 - id: G-20
   title: Exported telemetry never carries what the model was shown or said
   accept: The telemetry CIDRA exports (the dashboard's /telemetry.json and the bot's uploaded artifact) holds counts, latency and the validated diagnosis, but no system or user prompt, raw model output or CI log; the full state with prompts is kept only in files git ignores.
