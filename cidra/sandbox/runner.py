@@ -4,7 +4,8 @@ The ONLY module that imports the Docker SDK. Every hard rule from §3 is enforce
 here rather than left to callers:
 
   - never privileged, never mounts the docker socket, no host bind mounts
-  - network ON iff step == "install"    (not a caller decision)
+  - network ON iff step == "install"    (not a caller decision); a coding
+    agent's container reaches only the model-key proxy (AgentNetwork)
   - mem / cpu / pids limits ALWAYS applied  (no override parameter exists)
   - every exec has a timeout
   - the container is destroyed in a finally block
@@ -16,6 +17,7 @@ import io
 import tarfile
 import threading
 import time
+import uuid
 from pathlib import Path
 from typing import Optional
 
@@ -24,7 +26,7 @@ from docker.errors import DockerException, ImageNotFound, NotFound
 from docker.models.containers import Container
 
 from cidra import config
-from cidra.sandbox import limits
+from cidra.sandbox import keyproxy, limits
 from cidra.state import SandboxResult, Step
 
 
@@ -414,12 +416,79 @@ class Session:
         return result
 
 
-def _patch_tar(patch: str) -> bytes:
+class AgentNetwork:
+    """A network whose only way out is the model-key proxy (ROADMAP M7).
+
+    A coding agent's container joins this network instead of "none". The network
+    is internal, so it has no route outside; its one other member is the proxy,
+    which holds the model key and forwards model calls only (keyproxy.py). The key
+    is in the proxy's environment, never in a container repository code runs in.
+
+    Use as a context manager, and remove agent containers before it exits.
+    """
+
+    def __init__(self, key: str, upstream: str, auth: str = "x-api-key", max_requests: int = 50,
+                 image: str = limits.IMAGE):
+        self.key, self.upstream, self.auth, self.max_requests, self.image = key, upstream, auth, max_requests, image
+        self.network = None
+        self.proxy: Optional[Container] = None
+
+    @property
+    def name(self) -> str:
+        return self.network.name
+
+    @property
+    def base_url(self) -> str:
+        """Where an agent on this network sends its model calls."""
+        return f"http://{limits.PROXY_HOST}:{keyproxy.PORT}"
+
+    def __enter__(self) -> "AgentNetwork":
+        self.network = client().networks.create(f"cidra-agent-{uuid.uuid4().hex[:12]}", driver="bridge", internal=True)
+        try:
+            self.proxy = proxy = client().containers.create(
+                image=self.image,
+                command=["python", "/tmp/keyproxy.py"],
+                network_mode="bridge",  # the proxy alone reaches the model endpoint
+                mem_limit=limits.MEM_LIMIT,
+                pids_limit=limits.PIDS_LIMIT,
+                environment={"CIDRA_PROXY_KEY": self.key, "CIDRA_PROXY_UPSTREAM": self.upstream,
+                             "CIDRA_PROXY_AUTH": self.auth, "CIDRA_PROXY_MAX_REQUESTS": str(self.max_requests)},
+                security_opt=["no-new-privileges"],
+                detach=True,
+            )
+            proxy.put_archive("/tmp", _file_tar("keyproxy.py", Path(keyproxy.__file__).read_bytes()))
+            self.network.connect(proxy, aliases=[limits.PROXY_HOST])
+            proxy.start()
+            ready = "import socket; socket.create_connection(('127.0.0.1', %d), 1)" % keyproxy.PORT
+            for _ in range(50):
+                if proxy.exec_run(["python", "-c", ready]).exit_code == 0:
+                    return self
+                time.sleep(0.2)
+            raise RuntimeError("the model-key proxy did not start")
+        except BaseException:
+            self.__exit__()
+            raise
+
+    def __exit__(self, *exc) -> None:
+        try:
+            if self.proxy is not None:
+                self.proxy.remove(force=True)
+            if self.network is not None:
+                self.network.remove()
+        except (DockerException, NotFound):
+            pass
+        self.proxy = self.network = None
+
+
+def _file_tar(name: str, data: bytes) -> bytes:
     buf = io.BytesIO()
-    data = patch.encode()
     with tarfile.open(fileobj=buf, mode="w") as tar:
-        info = tarfile.TarInfo(".cidra.patch")
+        info = tarfile.TarInfo(name)
         info.size = len(data)
         info.uid = info.gid = limits.UID
         tar.addfile(info, io.BytesIO(data))
     return buf.getvalue()
+
+
+def _patch_tar(patch: str) -> bytes:
+    return _file_tar(".cidra.patch", patch.encode())

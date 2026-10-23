@@ -52,6 +52,7 @@ TIMEOUTS = {
 
 # Container
 USER = "cidra"  # non-root
+PROXY_HOST = "cidra-proxy"  # the model-key proxy, as an agent container sees it
 UID = 1000
 WORKDIR = "/work"
 # pip --target dir, copied from the install container into the session container.
