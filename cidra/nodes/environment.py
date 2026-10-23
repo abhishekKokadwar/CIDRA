@@ -50,7 +50,7 @@ def checkout_commit(state: DebugState) -> dict:
         if not raw_source:
             # Webhook mode: nothing local holds the failing commit, so fetch it
             # with the read-only token.
-            raw_source = fetch_commit(run_id, state["repo"], state["commit_sha"], config.GITHUB_TOKEN_RO)
+            raw_source = fetch_commit(run_id, state["repo"], state["commit_sha"], config.read_token())
         tree = prepare_checkout(run_id, raw_source, state.get("commit_sha"))
     except Exception as e:
         return {"env_ready": False, "analysis_error": f"checkout failed: {e}"[:500]}

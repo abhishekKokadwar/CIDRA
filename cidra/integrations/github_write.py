@@ -14,17 +14,18 @@ the thread.
 
 import httpx
 
-from cidra.config import GITHUB_API, GITHUB_TOKEN
+from cidra import config
 from cidra.nodes.report import _MARKER
 
 
 def _client() -> httpx.Client:
-    if not GITHUB_TOKEN:
+    token = config.GITHUB_TOKEN  # at call time: the dashboard can change it
+    if not token:
         raise ValueError("CIDRA_GITHUB_TOKEN (write) is not set")
     return httpx.Client(
-        base_url=GITHUB_API,
+        base_url=config.GITHUB_API,
         headers={
-            "Authorization": f"Bearer {GITHUB_TOKEN}",
+            "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         },

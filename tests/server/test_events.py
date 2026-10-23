@@ -2,6 +2,7 @@
 
 import httpx
 
+from cidra import config
 from cidra.server import events
 from cidra.server.events import parse_event, resolve_issue_number, WebhookJob
 
@@ -62,7 +63,7 @@ def test_resolve_by_sha_for_fork_pr(monkeypatch):
         return httpx.Response(200, json=[{"state": "open", "number": 55}])
 
     import cidra.integrations.github as gh
-    monkeypatch.setattr(gh, "GITHUB_TOKEN_RO", "ro", raising=False)
+    monkeypatch.setattr(config, "GITHUB_TOKEN_RO", "ro")
     monkeypatch.setattr(gh, "_client",
                         lambda: httpx.Client(base_url="https://api.github.com",
                                              transport=httpx.MockTransport(handler)))
@@ -72,7 +73,7 @@ def test_resolve_by_sha_for_fork_pr(monkeypatch):
 def test_resolve_returns_none_when_no_pr(monkeypatch):
     job = WebhookJob("o/r", "1", "deadbeef", None)
     import cidra.integrations.github as gh
-    monkeypatch.setattr(gh, "GITHUB_TOKEN_RO", "ro", raising=False)
+    monkeypatch.setattr(config, "GITHUB_TOKEN_RO", "ro")
     monkeypatch.setattr(gh, "_client",
                         lambda: httpx.Client(base_url="https://api.github.com",
                                              transport=httpx.MockTransport(
@@ -87,7 +88,7 @@ def test_resolve_swallows_network_error(monkeypatch):
         raise httpx.ConnectError("down")
 
     import cidra.integrations.github as gh
-    monkeypatch.setattr(gh, "GITHUB_TOKEN_RO", "ro", raising=False)
+    monkeypatch.setattr(config, "GITHUB_TOKEN_RO", "ro")
     monkeypatch.setattr(gh, "_client",
                         lambda: httpx.Client(base_url="https://api.github.com",
                                              transport=httpx.MockTransport(boom)))

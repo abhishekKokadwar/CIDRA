@@ -20,6 +20,16 @@ ENV_PATH = Path(config.ENV_FILE).resolve()
 
 # The only credential variables the settings API may write. Anything else in the
 # payload is ignored: the endpoint must not be a way to set arbitrary env vars.
+# Environment variable -> the cidra.config attribute that holds it.
+_CONFIG_ATTR = {
+    "CIDRA_API_KEY": "API_KEY",
+    "CIDRA_BASE_URL": "BASE_URL",
+    "GEMINI_API_KEY": "GEMINI_API_KEY",
+    "CIDRA_GITHUB_TOKEN": "GITHUB_TOKEN",
+    "CIDRA_GITHUB_TOKEN_RO": "GITHUB_TOKEN_RO",
+    "CIDRA_WEBHOOK_SECRET": "WEBHOOK_SECRET",
+}
+
 ALLOWED_KEY_VARS = frozenset({
     "CIDRA_API_KEY",
     "GEMINI_API_KEY",
@@ -129,8 +139,8 @@ def get_current_settings() -> Dict[str, Any]:
             "provider": "GitHub PAT (Read-Only)",
             "label": "Safe CI Log & Metadata Fetching",
             "envVar": "CIDRA_GITHUB_TOKEN_RO",
-            "masked": mask_secret(env.get("CIDRA_GITHUB_TOKEN_RO") or config.GITHUB_TOKEN_RO),
-            "configured": bool(env.get("CIDRA_GITHUB_TOKEN_RO") or config.GITHUB_TOKEN_RO),
+            "masked": mask_secret(env.get("CIDRA_GITHUB_TOKEN_RO") or config.read_token()),
+            "configured": bool(env.get("CIDRA_GITHUB_TOKEN_RO") or config.read_token()),
             "canTest": True,
             "baseUrl": config.GITHUB_API,
         },
@@ -228,10 +238,11 @@ def save_settings(payload: Dict[str, Any]) -> Dict[str, Any]:
         for k, v in updates.items():
             os.environ[k] = v
 
-        if "CIDRA_API_KEY" in updates:
-            config.API_KEY = updates["CIDRA_API_KEY"]
-        if "CIDRA_BASE_URL" in updates:
-            config.BASE_URL = updates["CIDRA_BASE_URL"]
+        # Every saved key reaches the running server; its readers look them up at
+        # call time (G-19: before, only the connection test saw a new key).
+        for var, attr in _CONFIG_ATTR.items():
+            if var in updates:
+                setattr(config, attr, updates[var])
         if "CIDRA_MODEL_ANALYZE" in updates:
             config.MODEL_ANALYZE = updates["CIDRA_MODEL_ANALYZE"]
         if "CIDRA_MODEL_FIX" in updates:
@@ -283,7 +294,7 @@ def test_provider(provider_id: str) -> Dict[str, Any]:
             token = (
                 env.get("CIDRA_GITHUB_TOKEN") or config.GITHUB_TOKEN
                 if provider_id == "github_token"
-                else env.get("CIDRA_GITHUB_TOKEN_RO") or config.GITHUB_TOKEN_RO
+                else env.get("CIDRA_GITHUB_TOKEN_RO") or config.read_token()
             )
             if not token:
                 return {"ok": False, "error": "No GitHub PAT configured"}

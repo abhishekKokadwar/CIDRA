@@ -15,7 +15,7 @@ import zipfile
 
 import httpx
 
-from cidra.config import GITHUB_API, GITHUB_TOKEN_RO
+from cidra import config
 
 # GitHub streams the whole job archive; a runaway log shouldn't eat all memory.
 MAX_ZIP_BYTES = 50 * 1024 * 1024
@@ -23,12 +23,13 @@ MAX_ZIP_BYTES = 50 * 1024 * 1024
 
 def _client() -> httpx.Client:
     """Read-only client. Everything in this module is a GET."""
-    if not GITHUB_TOKEN_RO:
+    token = config.read_token()  # at call time: the dashboard can change it
+    if not token:
         raise ValueError("CIDRA_GITHUB_TOKEN_RO / CIDRA_GITHUB_TOKEN is not set")
     return httpx.Client(
-        base_url=GITHUB_API,
+        base_url=config.GITHUB_API,
         headers={
-            "Authorization": f"Bearer {GITHUB_TOKEN_RO}",
+            "Authorization": f"Bearer {token}",
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         },

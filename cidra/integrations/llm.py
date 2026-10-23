@@ -15,7 +15,7 @@ from openai import OpenAI
 from openai import RateLimitError
 from pydantic import BaseModel
 
-from cidra.config import API_KEY, BASE_URL, FALLBACK_MODEL, GEMINI_API_KEY, GEMINI_BASE_URL
+from cidra import config
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -25,8 +25,9 @@ log = logging.getLogger("cidra.llm")
 # model, rejected schema). Retrying cannot help, so move to the next provider.
 _NO_RETRY_STATUS = {400, 401, 402, 403, 404, 422}
 
-_client: OpenAI | None = None
-_gemini_client: OpenAI | None = None
+# One client per (key, endpoint), so a key or base URL saved in the dashboard
+# applies to the next call instead of the next restart (G-19).
+_clients: dict[tuple[str, str], OpenAI] = {}
 
 _latest_telemetry: list[dict] = []
 _requests_sent = 0  # every request this run, including ones that failed
@@ -103,19 +104,20 @@ def _check_budget() -> None:
     if used["total_tokens"] >= config.MAX_LLM_TOKENS:
         raise BudgetExceeded(f"LLM token cap reached ({config.MAX_LLM_TOKENS} per run)")
 
+def _client_for(key: str, base_url: str) -> OpenAI:
+    if (key, base_url) not in _clients:
+        _clients[(key, base_url)] = OpenAI(api_key=key, base_url=base_url, timeout=120.0)
+    return _clients[(key, base_url)]
+
+
 def client() -> OpenAI:
-    global _client
-    if _client is None:
-        if not API_KEY:
-            raise RuntimeError("CIDRA_API_KEY is not set — see .env.example")
-        _client = OpenAI(api_key=API_KEY, base_url=BASE_URL, timeout=120.0)
-    return _client
+    if not config.API_KEY:
+        raise RuntimeError("CIDRA_API_KEY is not set — see .env.example")
+    return _client_for(config.API_KEY, config.BASE_URL)
+
 
 def gemini_client() -> OpenAI:
-    global _gemini_client
-    if _gemini_client is None:
-        _gemini_client = OpenAI(api_key=GEMINI_API_KEY, base_url=GEMINI_BASE_URL, timeout=120.0)
-    return _gemini_client
+    return _client_for(config.GEMINI_API_KEY, config.GEMINI_BASE_URL)
 
 
 def structured(
@@ -135,8 +137,8 @@ def structured(
     # CIDRA_MODEL_FIX) against CIDRA_BASE_URL. One fallback, Gemini, when its key
     # is set and the primary is not Gemini already.
     models_to_try = [(model, client)]
-    if GEMINI_API_KEY and BASE_URL.rstrip("/") != GEMINI_BASE_URL.rstrip("/"):
-        models_to_try.append((FALLBACK_MODEL, gemini_client))
+    if config.GEMINI_API_KEY and config.BASE_URL.rstrip("/") != config.GEMINI_BASE_URL.rstrip("/"):
+        models_to_try.append((config.FALLBACK_MODEL, gemini_client))
 
     last_error: Exception | None = None
     
