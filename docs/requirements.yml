@@ -158,7 +158,7 @@
 
 - id: M3-SCOPE
   title: Scope is read from the log, not taken from the model
-  accept: A diagnosis of assertion_error is turned into unknown, and the run declined with the reason in the report, when the CI log shows a failure that opens with anything but a failed assert (an exception escaping the code under test). A log with no pytest failure detail leaves the model's diagnosis as it is. The corpus labels its cases with the same function, so on the corpus the declines match by construction; the false-verified effect is judged by held-out tests.
+  accept: A diagnosis of assertion_error is turned into unknown, and the run declined with the reason in the report, when the CI log shows a failure that opens with anything but a failed assert (an exception escaping the code under test). The other way round, a diagnosis of unknown is turned into assertion_error when every failure in the log opens with a failed assert (in corpus v7 thefuck-2 and tornado-1, 4, 8 and 10 were declined that way and never attempted). A log with no pytest failure detail leaves the model's diagnosis as it is. The corpus labels its cases with the same function, so on the corpus the declines match by construction; the false-verified effect is judged by held-out tests.
 
 - id: M3-NO-SILENCED-ERRORS
   title: A fix may not delete the error it is meant to fix

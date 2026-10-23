@@ -53,3 +53,20 @@ def test_github_timestamps_and_continuation_lines_are_read_correctly():
 def test_the_v6_out_of_scope_cases_are_declined_from_their_logs(fixture):
     log = (ROOT / "eval" / "corpus" / fixture / "raw.log").read_text(encoding="utf-8")
     assert validate_analysis({"analysis": _analysis(), "raw_log": log})["analysis"].category == "unknown"
+
+
+def test_failed_asserts_called_unknown_by_the_model_are_attempted():
+    out = validate_analysis({"analysis": _analysis("unknown"), "raw_log": ASSERT_LOG})
+    assert out["analysis"].category == "assertion_error" and "assertion_error" in STRATEGIES
+    assert any("in CIDRA's scope" in r for r in out["policy_reasons"])
+
+
+def test_unknown_stays_unknown_on_an_exception_or_no_detail():
+    for log in (EXCEPTION_LOG, "1 failed in 0.1s\n"):
+        assert "analysis" not in validate_analysis({"analysis": _analysis("unknown"), "raw_log": log})
+
+
+@pytest.mark.parametrize("fixture", ["bip-thefuck-2", "bip-tornado-1", "bip-tornado-4", "bip-tornado-8", "bip-tornado-10"])
+def test_the_v7_fixable_cases_declined_as_unknown_are_attempted(fixture):
+    log = (ROOT / "eval" / "corpus" / fixture / "raw.log").read_text(encoding="utf-8")
+    assert validate_analysis({"analysis": _analysis("unknown"), "raw_log": log})["analysis"].category == "assertion_error"

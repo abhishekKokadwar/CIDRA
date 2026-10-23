@@ -92,14 +92,21 @@ def validate_analysis(state: DebugState) -> dict:
     if analysis.category == "env_config_error" and not analysis.env_var:
         return {"analysis": None, "analysis_error": "env_config_error without env_var"}
 
-    # Scope from the log, not the model: an exception escaping the code under test
-    # is out of scope even when the model calls it an assertion error. On the
-    # corpus (v6) 2 of the 3 fixes CIDRA verified on such failures were wrong.
+    # Scope from the log, not the model, both ways: an exception escaping the code
+    # under test is out of scope even when the model calls it an assertion error
+    # (v6: 2 of the 3 fixes verified on such failures were wrong), and a log of
+    # nothing but failed asserts is in scope even when the model says unknown
+    # (v7: 5 fixable bugs declined that way, never attempted).
     scope_note = None
-    if analysis.category == "assertion_error" and failures_are_asserts(state.get("raw_log") or "") is False:
-        first = next(iter(first_error_lines(state.get("raw_log") or "")), "")
+    log = state.get("raw_log") or ""
+    asserts = failures_are_asserts(log)
+    if analysis.category == "assertion_error" and asserts is False:
+        first = next(iter(first_error_lines(log)), "")
         analysis = analysis.model_copy(update={"category": "unknown"})
         scope_note = f"the log shows an exception, not a failed assert ({first[:120]}): outside CIDRA's scope"
+    elif analysis.category == "unknown" and asserts is True:
+        analysis = analysis.model_copy(update={"category": "assertion_error"})
+        scope_note = "every failure in the log is a failed assert: in CIDRA's scope"
 
     from cidra.policy import PolicyEngine, PolicyDecision
     source_dir = state.get("source_dir")
