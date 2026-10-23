@@ -47,7 +47,7 @@ export default function SettingsView() {
   const [flakyRuns, setFlakyRuns] = useState(5);
   const [flakyThreshold, setFlakyThreshold] = useState(1);
   const [maxFixAttempts, setMaxFixAttempts] = useState(3);
-  const [containerTimeout, setContainerTimeout] = useState(60);
+  const [containerTimeout, setContainerTimeout] = useState(300);
   const [enablePR, setEnablePR] = useState(false);
   const [practiceRepo, setPracticeRepo] = useState('helpmecode69/cidra-practice');
 
@@ -82,7 +82,7 @@ export default function SettingsView() {
           setFlakyRuns(data.flakiness.flaky_runs ?? 5);
           setFlakyThreshold(data.flakiness.flaky_score_threshold ?? 1);
           setMaxFixAttempts(data.flakiness.max_fix_attempts ?? 3);
-          setContainerTimeout(data.flakiness.container_timeout ?? 60);
+          setContainerTimeout(data.flakiness.container_timeout ?? 300);
           setEnablePR(Boolean(data.flakiness.enable_pr_creation));
           setPracticeRepo(data.flakiness.practice_repo || 'helpmecode69/cidra-practice');
         }

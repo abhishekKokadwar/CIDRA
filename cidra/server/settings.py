@@ -164,10 +164,11 @@ def get_current_settings() -> Dict[str, Any]:
     }
 
     flakiness = {
-        "flaky_runs": int(env.get("FLAKY_RUNS", config.FLAKY_RUNS)),
-        "flaky_score_threshold": int(env.get("FLAKY_SCORE_THRESHOLD", config.FLAKY_SCORE_THRESHOLD)),
-        "max_fix_attempts": int(env.get("MAX_FIX_ATTEMPTS", config.MAX_FIX_ATTEMPTS)),
-        "container_timeout": int(env.get("CONTAINER_TIMEOUT", 60)),
+        # The values in effect, after their bounds (config.BOUNDS).
+        "flaky_runs": config.FLAKY_RUNS,
+        "flaky_score_threshold": config.FLAKY_SCORE_THRESHOLD,
+        "max_fix_attempts": config.MAX_FIX_ATTEMPTS,
+        "container_timeout": config.CONTAINER_TIMEOUT,
         "enable_pr_creation": env.get("CIDRA_ENABLE_PR_CREATION", str(config.ENABLE_PR_CREATION)).lower() == "true",
         "practice_repo": env.get("CIDRA_PRACTICE_REPO_SLUG", "helpmecode69/cidra-practice"),
     }
@@ -247,12 +248,9 @@ def save_settings(payload: Dict[str, Any]) -> Dict[str, Any]:
             config.MODEL_ANALYZE = updates["CIDRA_MODEL_ANALYZE"]
         if "CIDRA_MODEL_FIX" in updates:
             config.MODEL_FIX = updates["CIDRA_MODEL_FIX"]
-        if "FLAKY_RUNS" in updates:
-            config.FLAKY_RUNS = int(updates["FLAKY_RUNS"])
-        if "FLAKY_SCORE_THRESHOLD" in updates:
-            config.FLAKY_SCORE_THRESHOLD = int(updates["FLAKY_SCORE_THRESHOLD"])
-        if "MAX_FIX_ATTEMPTS" in updates:
-            config.MAX_FIX_ATTEMPTS = int(updates["MAX_FIX_ATTEMPTS"])
+        for var, bounds in config.BOUNDS.items():
+            if var in updates:
+                setattr(config, var, config.bounded(updates[var], *bounds))
         if "CIDRA_ENABLE_PR_CREATION" in updates:
             config.ENABLE_PR_CREATION = updates["CIDRA_ENABLE_PR_CREATION"].lower() == "true"
 

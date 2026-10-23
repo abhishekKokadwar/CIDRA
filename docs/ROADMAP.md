@@ -149,7 +149,7 @@ themselves (`cidra dashboard`, `cidra serve`).
 
 **Items:**
 
-- [ ] Every setting the dashboard offers, the API key and base URL included, is one the engine reads at call time, or it is
+- [x] Every setting the dashboard offers, the API key and base URL included, is one the engine reads at call time, or it is
   removed (closes G-19). A test changes each one through `/api/settings` and checks the
   next run behaves differently.
 - [ ] Start a run from the dashboard: repository (URL or local path), commit, and optional

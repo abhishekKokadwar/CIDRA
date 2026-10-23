@@ -49,21 +49,6 @@ funded endpoint) + Docker up. Then
 **Done when:** a replayed real failure produces a verified fix and a posted comment, with no
 manual command; `--twice` shows the idempotency no-op.
 
-### G-19 · Dead or ignored settings — 🛠 (small)
-- Dashboard "Flakiness & Sandbox" fields are saved to `.env` and `config`, but `reproduce.py`
-  and `routers.py` imported the constants at load time, so the engine never sees them.
-- (Done 2026-10-23: every key, endpoint and token saved in the dashboard reaches the next
-  call of the running server; `llm.py`, `github.py` and `github_write.py` read `config` at
-  call time, and the read-only token falls back to the write token at call time too.)
-- `CONTAINER_TIMEOUT` is saved by the dashboard and read by nothing.
-- `CIDRA_ENABLE_RATE_LIMIT_BACKOFF` (set by `action.yml`), `limits.AUTO_REMOVE` and the
-  `model` input of `action.yml` are read by nothing.
-- (Done 2026-10-19: the primary key's test is a one-token completion with the configured
-  model at `CIDRA_BASE_URL`; the Action's unused `model` input is removed.)
-- (Done 2026-10-17: the five-provider fallback chain, mostly retired or unknown models, was
-  replaced by one optional Gemini fallback.)
-**Fix:** remove them, or read them at call time.
-
 ### G-20 · Public telemetry carries full prompts — 🛠 🌐
 `llm.structured` records the full system and user prompt (CI log excerpts and source files)
 in the telemetry, and `cidra-bot.yml` commits `telemetry.json` to `main` of a public repo on
@@ -115,6 +100,7 @@ Eval Tier-2 accuracy has only been measured on one model. Blocked on LLM credits
 
 ## Closed (kept for the audit trail)
 
+- **G-19 · Dead or ignored settings** — Closed 2026-10-23. Every setting the dashboard saves is used by the next run of the server that saved it, and by every run after a restart: model key, base URL, Gemini key, GitHub tokens and webhook secret (#78); flaky runs and threshold, max fix attempts and the test/verify timeout, read at call time and clamped to safe bounds (`config.BOUNDS`). The unused `CIDRA_ENABLE_RATE_LIMIT_BACKOFF` and `limits.AUTO_REMOVE` are removed. Tested through the settings API in `tests/server/test_settings_apply.py`.
 - **G-25 · "Verified" was judged from the log, not the per-test report** — Closed 2026-10-19. Reproduction and verification read the failed tests from the run's pytest JUnit report, which lists every test; the log's FAILED lines, cut to a 16 KB tail, decide only when there is no readable report. Before, a run with many failures could push the target or a regression out of the tail: on the real sandbox, 400 already-failing tests made a genuine failure read as "not the CI failure". Tested there (`tests/integration/test_junit_results.py`) and in `tests/unit/test_junit_verdict.py`.
 - **G-21 · Release** — Closed 2026-10-19. `LICENSE` (MIT) is in the repository; 0.3.0 and 0.3.1 are on PyPI with `sandbox/Dockerfile`, the Action is tagged `v1` and listed on the Marketplace. CI's package job and the release job check every wheel for the Dockerfile before it can ship (`scripts/check_package.py`). The v0.2.0 release title ("Node.js Support") is left as published.
 - **G-24 · CI environment variables did not reach a command after `cd ... &&`** — Closed 2026-10-19. `env_prefix` exports the workflow's variables (`export K=V; ...`) instead of putting them inline, where they applied to `cd` only. Tested in the real sandbox with `cd sub && pytest` (`tests/integration/test_ci_env_sandbox.py`).
