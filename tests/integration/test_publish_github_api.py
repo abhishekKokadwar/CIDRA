@@ -9,7 +9,6 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import pytest
 
 import cidra.config as cfg
-from cidra.integrations import github_write
 from cidra.nodes import publish
 
 pytestmark = pytest.mark.req("M4-PUBLISH")
@@ -52,8 +51,7 @@ def github(monkeypatch):
     FakeGitHub.comments, FakeGitHub.refuse, FakeGitHub.calls = {}, False, []
     server = ThreadingHTTPServer(("127.0.0.1", 0), FakeGitHub)
     threading.Thread(target=server.serve_forever, daemon=True).start()
-    monkeypatch.setattr(github_write, "GITHUB_API", f"http://127.0.0.1:{server.server_port}")
-    monkeypatch.setattr(github_write, "GITHUB_TOKEN", "wtok")
+    monkeypatch.setattr(cfg, "GITHUB_API", f"http://127.0.0.1:{server.server_port}")
     monkeypatch.setattr(cfg, "GITHUB_TOKEN", "wtok")
     yield FakeGitHub
     server.shutdown()
