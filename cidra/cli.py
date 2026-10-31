@@ -17,6 +17,14 @@ from cidra.graph import build_graph
 log = logging.getLogger("cidra.cli")
 
 
+def _safe_console() -> None:
+    """A character the console cannot show (a verdict's ✅ on a Windows code page)
+    is replaced, not a crash after the work is done."""
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(errors="replace")
+
+
 def _setup_logging():
     logging.basicConfig(level=logging.INFO,
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -254,6 +262,9 @@ def check_pr_run(args) -> int:
         return 1
     source = args.source or os.getenv("CIDRA_SOURCE_DIR") or "."
     try:
+        # The commit itself, not a branch name: the evidence and its rerun command name it.
+        base = subprocess.run(["git", "-C", source, "rev-parse", "--verify", f"{base}^{{commit}}"],
+                              capture_output=True, text=True, check=True).stdout.strip()
         diff = _read_patch(argparse.Namespace(branch=head, patch=None, sha=base, source=source))
     except (OSError, subprocess.CalledProcessError) as e:
         print(f"Could not read the pull request's diff (is the checkout's history deep enough?): "
@@ -300,6 +311,7 @@ def dashboard_run(args):
 
 
 def main():
+    _safe_console()
     _setup_logging()
     
     parser = argparse.ArgumentParser(description="CIDRA - Autonomous CI Repair Agent")
