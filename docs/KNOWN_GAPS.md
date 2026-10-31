@@ -66,6 +66,9 @@ is an off-by-one no structural rule can see.
 **Unblock / fix:** not a gate rule. Candidates: run the project's whole test suite at verify
 time where the CI does, or ask for tests a wrong fix would fail. Measured the same way.
 **Done when:** false "verified" is zero over two measured runs, judged by held-out tests.
+**Status 2026-11-01:** M3 closed with this gap open: the built-in loop does not meet the
+target, and no further paid runs are planned. It is measured again for agent patches in the
+M7 pilot, as a number to report, not a promise.
 
 ---
 
