@@ -1,6 +1,6 @@
 # CIDRA Roadmap
 
-**Written:** 2026-10-15 · **Horizon:** about 15 weeks (M6 added 2026-10-19) · **Owner:** Abhishek Kokadwar
+**Written:** 2026-10-15 · **Revised:** 2026-11-01 · **Horizon:** 5 weeks, to 2026-12-06 · **Owner:** Abhishek Kokadwar
 
 This is the working plan. It replaces `PRODUCT_PLAN.md` for deciding what to build next; that
 file stays as background. Progress is tracked in pull requests and in
@@ -8,232 +8,203 @@ file stays as background. Progress is tracked in pull requests and in
 
 ## 1. Direction
 
-CIDRA is the **trust layer for AI fixes to failing CI** (direction changed 2026-10-23). A
-patch generator proposes a diff: CIDRA's built-in model loop, or a coding agent such as
-Claude Code, Aider or OpenHands. CIDRA does not take its word for anything. Its claim:
+CIDRA is the **trust layer for AI fixes to failing CI**. Something else writes the patch: a
+coding agent (Claude Code, Copilot, Aider, OpenHands), a person, or CIDRA's built-in model
+loop. CIDRA does not take its word for anything:
 
 > Whatever wrote the patch, CIDRA reproduces the original failure itself, refuses patches
 > that weaken tests or silence errors, verifies on a clean copy with no regressions, and
-> publishes a draft pull request with the evidence and a command that reruns the check.
-> The patch generator never holds a GitHub token or a secret: it hands back a diff, and
-> CIDRA decides what counts as verified.
+> publishes the evidence with a command that reruns the check. The patch generator never
+> holds a GitHub token or a secret: it hands back a diff, and CIDRA decides what counts as
+> verified.
+
+**Revision 2026-11-01: the gate is the product.** Verification needs no model and costs
+nothing to run. Patch generation is brought by the user: their own coding agent, or their
+own API key for the built-in loop. CIDRA spends no model credits of its own, and the
+project's API spend is frozen at $0.
 
 Why: an agent that reports "fixed, tests pass" chose the tests and the environment, and its
 report is self-graded. In corpus run v8, 3 of 10 patches that passed the failing tests were
-wrong (held-out tests). Anthropic already ships an Action that runs Claude Code in CI, so
-"AI fixes CI" is not the edge; independent, measured verification is.
+wrong (held-out tests). "AI fixes CI" already exists; independent, measured verification
+does not.
 
 Three rules keep the claim honest:
 
-- **Safety and usefulness are measured together.** A tool that never patches is trivially
-  safe. Every safety number is reported next to the fix rate.
+- **Safety and usefulness are measured together.** Every safety number is reported next to
+  the fix rate.
 - **The gate claims only what it is measured to catch.** It refuses weakened tests, deleted
   or swallowed errors, and regressions in tests that exist. It cannot see a wrong fix the
-  repository has no test for (KNOWN_GAPS G-26); the held-out results say how often that is.
-- **Security features are not a differentiator until measured against another tool.** The
-  comparison in milestone M5 decides what CIDRA can claim.
+  repository has no test for (G-26); the held-out results say how often that is.
+- **No claim without a measurement.** Comparisons with other tools wait for M5.
 
-**Audiences, in order:** real users (developers adding it to a Python repository),
+**Audiences, in order:** real users (developers using an AI agent on a Python repository),
 interviewers, research (optional).
 
-**Out of scope for this plan:** languages other than Python, webhook mode beyond what
-exists, SBFL, the semantic fix cache, and merging without a human. The dashboard was out
-of scope until 2026-10-19, when it was brought up to the same standard as the rest: it
-shows only real results, and it is tested in CI by component and browser tests. Making it
-run and control CIDRA is milestone M6.
+**Out of scope for this plan:** languages other than Python, SBFL, the semantic fix cache,
+merging without a human, hosting CIDRA as a service, and any paid model runs.
 
-## 2. Where it stands (2026-10-23)
+## 2. Where it stands (2026-11-01)
 
 | Requirement | Status |
 |---|---|
-| 1. Authenticate the incoming event | Done: GitHub triggers the Action; webhook mode checks the HMAC |
-| 2. Get the failing commit without exposing secrets to its code | Done: Action mode, `cidra fix` (sandboxed first run) and webhook mode (fetches the commit itself) |
-| 3. Reproduce the original failure | Done: the CI log's failing tests must fail in the sandbox, twice for a failure CIDRA would patch (G-16, G-17 closed) |
-| 4. Generate a patch | 10 of 24 fixable BugsInPy bugs verified (v8, 40 cases), 7 of them genuine; held-out tests show 3 of the 10 are wrong (G-26). From M7 the patch can also come from a coding agent |
-| 5. Reject test-weakening or unsafe patches | Done: a test file may change only in its asserts' expected values (G-22 closed) |
-| 6. Apply to a clean copy and rerun | Done (G-15 fixed) |
-| 7. Original failure fixed, no unrelated regressions | Done: the CI's failing tests must pass and no test may go from passing to failing; tests already failing are listed, not blocking |
-| 8. Draft PR with evidence of what was tested | Done (M2): commit, image digest, commands, per-test before/after, audit verdict, dependency changes, model cost, and a rerun command |
+| 1. Authenticate the incoming event | Done |
+| 2. Get the failing commit without exposing secrets to its code | Done |
+| 3. Reproduce the original failure | Done (twice for a patchable failure) |
+| 4. Generate a patch | Built-in loop: 10 of 24 fixable verified in v8, 7 genuine, 3 wrong (G-26). Agent path: M7 |
+| 5. Reject test-weakening or unsafe patches | Done in the repair pipeline; `cidra verify` does not run the audit yet (M8) |
+| 6. Apply to a clean copy and rerun | Done |
+| 7. Original failure fixed, no unrelated regressions | Done |
+| 8. Evidence and a rerun command | Done |
+
+**Finished:** M1 (trustworthy "verified"), M2 (evidence in every PR), most of M4 (install
+ladder, PyPI 0.3.1, Action `v1`, Marketplace, quick start; 0.3.2 is merged but not
+released), M6's settings item (G-19), and the first three items of M7 (#83, #85, #86).
 
 ## 3. Milestones
 
-Each milestone ends when its exit criteria hold **and are checked by tests in CI**: its items are in
-[requirements.yml](requirements.yml), so the requirements check fails if one loses its passing test.
+Each milestone ends when its exit criteria hold and are checked by tests in CI
+(items listed in [requirements.yml](requirements.yml)).
 
-**Order, as it actually went:** M1 was mostly done when the first real-bug run showed 0 of 12
-fixed, so M3's fix-rate work was pulled forward and its target met (5 of 12, 4 genuine on
-review). M1 and M2 are complete.
+**Order:** M3 close-out → M8 → M7 → M4 → release. M5 and M6's remaining items are
+deferred (section 3.6).
 
-### M1 · Trustworthy "verified" (weeks 1 to 3)
+### M3 · Close out (2 days)
 
-- [x] Run the 15 sandbox safety tests in CI (they skip on a practice-repo check they do not need).
-- [x] Record per-test results (pytest JUnit XML) before and after the patch: every sandbox test run asks pytest for a report, read whole from the container; kept as `repro_junit` / `verify_junit` and in `measure.py` results (`tests_before` / `tests_after`). Since 2026-10-19 the pass/fail judgement reads the report too, and the log only when there is none (G-25).
-- [x] G-17: the test the CI log names must be among the sandbox's failures, or the run is "not reproduced".
-- [x] No regressions: verified means the target test went red to green **and** no test went green to red. Tests already failing before the patch do not block a verification but are listed.
-- [x] G-22: on an `assertion_error` fix, the failing test file may change only in assert expected values.
-- [x] G-16: reproduce at least twice for every fixable category; a disagreement means flaky.
-- [x] G-18: an install failure or a non-reproduction says why, and points to `install_command` / `test_command`.
-- [x] An end-to-end test in CI: the full graph runs on the 7 practice fixtures with the stub model (`measure.py --stub --check` in the pipeline job), and each must reach its expected outcome, covering `verified_fix`, `diagnosis_only` and `flaky_detected`.
-- [x] The adversarial and security suites run in CI (G-05).
+- [x] Patches apply, context, full assertion diff, temperature 0, scope from the log, raise
+  and swallow rules, corpus of 40 with held-out tests. (History in git and result files.)
+- [x] Write the final result honestly in the README and KNOWN_GAPS: **v8, 7 genuine fixes
+  of 24, 3 false "verified" that no audit rule catches without refusing real fixes**, with
+  the three cases and why (G-26).
+- [x] Mark the zero false "verified" target as **not met with the built-in loop**; it
+  carries to M7 as a measurement, not a promise.
+- [x] No further corpus runs that spend credits. The second run of the same code (v9)
+  stopped at 27 of 40 cases when the credit ran out and will not be rerun: v8 is a single
+  run.
 
-**Exit:** each item above has a CI test that fails on the old behaviour.
+**Exit:** the README states the v8 numbers, including the misses.
 
-### M2 · Evidence in every pull request (weeks 4 to 5)
+### M8 · Verify any fix, no model needed (week 1 to 2)
 
-Each draft PR and job summary carries a short, fixed-format evidence block:
+The gate as a standalone tool. Zero cost, so anyone can use it today.
 
-- [x] Failing commit (the patch is made against it), sandbox image and digest, Python version.
-- [x] The install and test commands, exactly as run.
-- [x] Per-test before/after table: target test(s) red to green, counts for the rest, any test that was already failing.
-- [x] Audit gate verdict and any surfaced dependency change.
-- [x] Model, requests, tokens and cost of the run: tokens times `CIDRA_PRICE_IN`/`OUT`, else a list price for a model CIDRA knows, labelled with its source; no cost rather than a guess.
-- [x] One command that reruns the verification locally: `cidra verify --sha <commit> --patch <diff>`, printed shell-quoted in every report with a patch.
+- [ ] `cidra verify` runs the audit gate. Today it reproduces, applies and verifies a patch
+  but never audits it, so a test-weakening diff can come out "verified" there.
+- [ ] `cidra verify` takes a diff from anywhere: `--patch <file>`, stdin, or `--branch <name>`
+  (diff of a branch against the failing commit).
+- [ ] Separate the gate from generation: one entry point that takes (failing commit, CI log
+  or failing test IDs, diff) and returns verdict and evidence. `cidra fix` uses it unchanged;
+  the stub pipeline run gives the same results.
+- [ ] **Action mode: check a fix PR.** On a pull request that claims to fix failing CI
+  (opened by an agent or a person), CIDRA reproduces the failure on the base commit,
+  applies the PR's diff in its sandbox, runs the audit and the verification, and posts the
+  evidence as a PR comment and job summary: verified, refused (and why), or not reproduced.
+- [ ] Safe by construction: the PR's code runs only in the sandbox with no secrets; the
+  comment is posted by a separate step that does not run PR code (no
+  `pull_request_target` checkout of untrusted code).
+- [ ] Tests: the adversarial fixtures as PRs (a test-weakening PR, an error-swallowing PR, a
+  PR that breaks another test, a genuine fix) each get the right verdict.
 
-**Exit:** a reviewer can confirm a fix from the PR alone, and the rerun command reproduces it.
+**Exit:** on a demo repository, a PR fixing a failing test gets a "verified" comment with
+evidence, and a test-weakening PR gets "refused" with the reason, with no model and no key.
 
-### M3 · Fix real bugs (weeks 6 to 8)
+### M7 · Bring your own agent (week 2 to 3)
 
-- [x] Study the BugsInPy misses ([v2 result](../eval/results/claude-haiku-4-5-bugsinpy-v2.json)): of 19 patches tried on the 12 fixable bugs, 15 did not apply and 4 were refused for editing test setup. None reached the test run.
-- [x] Make patches apply: the model now proposes "replace this exact text" edits and CIDRA builds the diff; an edit whose text is not in the file is reported back to the model.
-- [x] Show the model the right part of large files: files are read from the checkout, small ones whole, large ones as excerpts around what the failing test calls (one call deep) and the lines the log names. The changed lines of the reference fix are in view for 6 of 12 fixable BugsInPy bugs, up from 1 (`eval/context_visibility.py`, no model needed).
-- The other 6 (fastapi, tornado-1, youtube-dl-2) are reached through framework code the test does not call directly. Coverage-based ranking (SBFL, G-01) would reach them, but SBFL is out of scope for this plan (section 1); revisit after M5.
-- [x] Rerun after both ([v3](../eval/results/claude-haiku-4-5-bugsinpy-v3.json)): 1 of 12 fixed. 1 of 27 attempts did not apply (was 15 of 19); 7 reached the tests and failed; 13 returned no edits because the model could not see the cause.
-- [x] Show the full assertion difference: before the first fix attempt the target tests are rerun alone with `pytest -vv`, and the failures section goes in the prompt, with a huge value printout skipped so the diff fits.
-- [x] Rerun after it ([v4](../eval/results/claude-haiku-4-5-bugsinpy-v4.json)): 5 of 12 fixed, $0.32. Reviewed by hand: 3 match the project's fix, 1 takes another plausible route, 1 (tornado-1) is doubtful.
-- [x] Validate the held-out sets of the fixed cases (`measure.py --validate`): **0 of 5 valid**. Each is the failing test file itself, all of whose tests already ran in the failing run, so passing it proves nothing beyond the target tests. False "verified" stays judged by hand until the next item is done.
-- [x] Independent held-out tests for the 5 fixed cases: tests a wrong fix would fail (e.g. tornado-1 calling `set_nodelay` on a live connection), checked to pass on the project's fix and fail on the buggy commit. All 5 sets are valid (`measure.py --validate`), and all 5 of the v4 patches pass them: **0 of 5 false "verified"** ([result](../eval/results/claude-haiku-4-5-bugsinpy-v4-held-out.json), `measure.py --rejudge`).
-- [x] Make runs repeatable: the model is called at temperature 0 (v6); at 1.0 the same log was diagnosed differently between runs. It narrows the variation but does not end it: v6 and v7 differ by a few patches with no change to the prompt.
-- [ ] **Bring false "verified" to zero.** v6 ([judged](../eval/results/claude-haiku-4-5-bugsinpy-v6-held-out.json)): 4 of 9 verified fixes fail held-out tests. They delete an error check (tornado-3), widen the change beyond the failing test (thefuck-25), rewrite more than asked (tornado-9), or leave a sibling path broken (youtube-dl-6). Candidate changes, one at a time, measured on the corpus and rejudged: ~~refuse a patch that deletes a `raise`~~ (done: 4 → 3 of 8, tornado-3 refused, no genuine fix lost; `measure.py --reaudit` replays a gate change on a past run for free); ~~decline exceptions as the scope says~~ (done: scope is read from the log, 3 → 1 of 5, tornado-9 and youtube-dl-6 declined, youtube-dl-10 lost as a genuine out-of-scope fix); ~~keep a fix inside the function the failing test reaches~~ (rejected: it refuses 20 of the 40 projects' own fixes and does not catch thefuck-25). Measured in [v7](../eval/results/claude-haiku-4-5-bugsinpy-v7-held-out.json): **1 of 4** false, tornado-3 again, now swallowing the error (`except RuntimeError: pass`) instead of deleting it. ~~Next: treat swallowing an error in application code like deleting one~~ (done: replayed on v7, 1 → 0 of 3, no genuine fix lost in v4 to v7). That held in v8: the gate refused tornado-3's patch. v8 brought three new false "verified" (see the next item), so this item is open again (G-26).
-- [x] Read scope from the log both ways: a log of nothing but failed asserts is in scope even when the model says `unknown` (v7: thefuck-2 and tornado-1, 4, 8 and 10 were never attempted). Measured in [v8](../eval/results/claude-haiku-4-5-bugsinpy-v8-held-out.json): 10 of 24 verified, **7 genuine** (target met), but **3 of 10 false**: thefuck-25 again, and two of the newly attempted cases (tornado-4, tornado-10). No audit rule catches those three without refusing real fixes (KNOWN_GAPS G-26).
-- Dropped for now (2026-10-23): showing the model deeper code context for the 9 cases that return no patch. A coding agent explores the code itself; the agent pilot (M7) decides whether this comes back.
-- [x] Grow the corpus to about 30 cases by the same pre-registered rules, adding independent held-out tests where possible. 40 cases: batch 2 (22 cases) added 2026-10-19 under rules committed before it was built, with the cap raised to 10 per project. Every case CIDRA verifies in v6 has a validated held-out set.
+A coding agent becomes a patch generator behind the same gate. The user's own agent and
+login are used; CIDRA ships no credential.
 
-**Exit (targets, revisited after the first round):** at least a quarter of the fixable cases
-genuinely fixed, **zero** false "verified", correct declines unchanged, median cost under
-$0.02 per run.
+- [x] A patch-generator interface (#83). The built-in loop moved behind it unchanged; only a
+  generator's diff is kept, never its claims.
+- [x] The login stays out of the agent's reach (#85). A proxy container holds the model
+  credential, an API key or a subscription token (`claude setup-token`), and the agent's
+  container reaches only the proxy. A real-Docker test runs hostile code next to the agent
+  and shows it cannot read the credential, the endpoint or the internet.
+- [x] Claude Code adapter (#86): headless (`claude -p --bare`) in its own container on a copy
+  of the checkout, with a timeout and a spend limit; a placeholder key, so no API key is
+  billed by mistake. CIDRA computes the diff itself (`git diff`) and ignores the agent's
+  claims. Tested with a stub agent, no model.
+- [ ] A malicious stub agent (edits a test, swallows an error) is refused by the gate.
+- [ ] Diagnosis without a model in agent mode: the scope is read from the log (only failed
+  asserts: fix; anything else: decline), so a run needs no API credit.
+- [ ] `cidra fix --agent claude-code` (today: `CIDRA_PATCH_GENERATOR=claude-code`).
+- [ ] Record what the agent claimed, untrusted, for the metric below.
+- [ ] Pilot on 5 BugsInPy cases, chosen and committed before running: 2 the built-in loop
+  returned no patch for, 2 of its false "verified" (thefuck-25, tornado-4), 1 it fixed
+  genuinely. One case first, to check usage against the subscription limit; the proxy's
+  first real-token run is checked there too.
+- [ ] Recorded per case: verified or not, held-out result, gate refusals, **agent claimed
+  fixed but CIDRA or held-out tests disagreed**, turns and tokens.
+- [ ] Results file and README table published either way.
 
-### M7 · Agents behind the gate (next, from 2026-10-23)
+**Exit:** `cidra fix --agent claude-code` runs end to end on a local repository, and the
+pilot's numbers are published.
 
-Milestone numbers are names, not order. From here the order is M3 (close out), M7, M5, M4,
-M6. A coding agent becomes a patch generator behind the same gate; the built-in loop stays
-as the cheap default and the fallback.
+### M4 · Usable by a stranger (week 4)
 
-- [ ] A patch-generator interface. The built-in loop moves behind it unchanged: the stub
-  pipeline run and every existing test give the same results.
-- [ ] The key never enters the sandbox. A proxy outside it holds the model credential; the
-  sandbox's network reaches only the proxy, with a per-run spend cap. A test runs repository
-  code in the sandbox and shows it cannot read the key. Required before any real key goes
-  near an agent.
-- [ ] Claude Code adapter: headless (`-p`, `--bare`), an API key or a subscription token
-  (`claude setup-token`; check the terms allow it for this use). The agent returns a diff
-  and nothing else is trusted: its claims of success are ignored. Tested with a stub.
-- [ ] Pilot: Claude Code through the gate on 5 BugsInPy cases, cost estimated first. Recorded:
-  fix rate, false "verified" (held-out tests), bad patches the gate refused, cost per run.
-- [ ] Decide from the pilot: the full 40 cases, two runs, for both generators; or back to
-  the built-in loop's context (dropped from M3 above).
+- [x] Install ladder, G-08 comment, LICENSE, PyPI, Action `v1`, Marketplace, quick start.
+- [ ] Follow only the README on three Python repositories CIDRA was not built around, one
+  with `pyproject.toml`: Action check-PR mode (M8) on all three, agent mode (M7) on one.
+  Every question needing the source becomes a fix.
+- [ ] README rewritten around the two ways to use CIDRA: check a fix PR (free), and fix
+  with your own agent.
 
-**Exit:** an agent's patches are judged by the same gate as the built-in loop's, the key is
-proved out of the sandbox's reach, and the pilot's numbers are published either way.
+**Exit:** all three repositories get a correct verdict or a clear diagnosis without help.
 
-### M4 · Usable by a stranger (weeks 9 to 10)
+### Release and demo (week 5)
 
-- [x] A default install ladder: `requirements.txt` (plus `requirements-dev.txt`, `requirements-test.txt`, `dev-requirements.txt` or `test-requirements.txt` beside it), else `pyproject.toml` / `setup.py` (with its `test`, `tests`, `testing` or `dev` extra), else nothing. A dev or test requirements file without a `requirements.txt` is not read.
-- [x] A comment on the failing commit when there is no PR (G-08); a clear message on a 403.
-- [x] LICENSE file, release `0.3.0` on PyPI (with the sandbox Dockerfile), Action tag `v1`, Marketplace listing. (0.3.2 is current; every release's wheel is checked for the Dockerfile before upload.)
-- [x] README quick start that fits on one screen.
-- [ ] Follow only the README on three Python repositories CIDRA was not built around, one with `pyproject.toml`, in agent mode (M7). Every question needing the source becomes a fix.
+- [ ] Release `0.4.0`: `cidra verify` with any diff and the audit, check-PR Action mode,
+  Claude Code adapter.
+- [ ] A public demo repository: a failing test, an agent's fix PR verified, a test-weakening
+  PR refused, the evidence in each.
+- [ ] A 3-minute demo video and a written walkthrough following the demo script (section 7).
+- [ ] Dashboard: read-only views of these runs (already wired); the scripted orchestrator
+  demo stays only as a labelled tour, or goes.
 
-**Exit:** all three trial repositories get a verified fix or a clear diagnosis without help.
+**Exit:** a stranger can watch the video, open the demo repository and reproduce the result.
 
-### M5 · Comparison (weeks 11 to 12)
+### 3.6 Deferred (needs credits or comes after users)
 
-Same model, same tasks (BugsInPy corpus + `eval/security_fixtures/`), protocol fixed before running:
-
-| System | What it isolates |
-|---|---|
-| CIDRA | the full system |
-| Plain loop: same model, no reproduction check, no audit gate | what CIDRA's safety layers add |
-| One maintained open-source agent (chosen at the time, e.g. SWE-agent, OpenHands or Aider) | how CIDRA compares with what exists |
-| Each agent behind CIDRA's gate (M7 adapters, plus the open-source one above as a third) | how many of an agent's own "fixed" claims the gate and the held-out tests reject |
-
-Reported per system: fix rate, false-fix rate (held-out tests), unsafe actions on the attack
-fixtures, cost and time. Published as results files and a README table, including results
-that do not favour CIDRA.
-
-**Exit:** the README states, with numbers, where CIDRA is better and where it is not.
-
-### M6 · The dashboard runs CIDRA (weeks 13 to 15)
-
-Today the dashboard shows what CIDRA did; it cannot make CIDRA do anything. This milestone
-makes it a control panel for a local or self-hosted CIDRA. It comes after M4 and M5 because
-the Action on GitHub is how most users meet CIDRA; the dashboard serves the ones who run it
-themselves (`cidra dashboard`, `cidra serve`).
-
-**Audit (2026-10-19), what is wired today:**
-
-| Part | State |
-|---|---|
-| Runs list, run detail, evidence panel, pull requests tab | Wired: read live from run history (`/telemetry.json`, `/api/runs`), tested in CI by component and browser tests |
-| Models, connection test, PR creation toggle | Wired: saved to `.env` and read by the engine at call time |
-| API key and base URL | **Half wired**: saved, and the connection test uses the new values, but `llm.py` copies them at import and caches its client, so runs in the same server keep the old ones until a restart |
-| Approve | Records who approved and when; opens nothing (CIDRA never merges, by design) |
-| Flakiness runs and threshold, max fix attempts | **Not wired**: saved, but `reproduce.py` and `routers.py` read the values once at import, and `config.py` never reads them from the environment, so they are ignored even after a restart (G-19) |
-| Container timeout | **Not wired**: saved and read by nothing (G-19) |
-| Orchestrator tab | A scripted demo, labelled as one; nothing runs |
-| Starting, watching or cancelling a run | Not possible: runs start only from the terminal (`cidra fix`) or a webhook |
-| Runs of the GitHub Action | Not visible: they happen on GitHub's machines and stay there (their telemetry is the G-20 problem) |
-
-**Items:**
-
-- [x] Every setting the dashboard offers, the API key and base URL included, is one the engine reads at call time, or it is
-  removed (closes G-19). A test changes each one through `/api/settings` and checks the
-  next run behaves differently.
-- [ ] Start a run from the dashboard: repository (URL or local path), commit, and optional
-  install and test commands, the same inputs as `cidra fix`. It runs in the background, one
-  at a time.
-- [ ] Watch it: the run's steps (checkout, install, reproduce, diagnose, fix, audit,
-  verify, publish) update as they happen, with the sandbox's output and the cost so far.
-- [ ] Cancel it: the sandbox and checkout are removed (the G-23 cleanup path).
-- [ ] Act on a result: rerun its verification (`cidra verify`); for a verified fix made with
-  PR creation off, open the draft pull request after a human approves. Anything that writes
-  to GitHub or spends money asks first.
-- [ ] Spend limits shown and set per run (`CIDRA_MAX_LLM_CALLS`, `CIDRA_MAX_LLM_TOKENS`).
-- [ ] Runs of the GitHub Action: the Action uploads its run record as a workflow artifact
-  (closes G-20); the dashboard lists a repository's recent runs from GitHub with a token.
-- [ ] The scripted demo stays only as a labelled tour, or goes.
-
-**Rules:** the server binds to localhost unless a token is set (already true); a run
-started from the dashboard is the same graph, sandbox and audit gate as any other run;
-each control has a browser test against the real server with the stub model, and an entry
-in [requirements.yml](requirements.yml).
-
-**Exit:** a user configures, starts, watches, cancels and acts on a run from the dashboard
-alone, and every control is proved by a test to change what the engine does.
+- **M5 comparison:** CIDRA vs plain loop vs an open-source agent vs agents behind the gate.
+  Needs paid runs at scale. Revisit when credits are available; the M7 pilot is the first
+  data point.
+- **M6 control panel:** starting, watching and cancelling runs from the dashboard, Action
+  run history in the dashboard (G-20). Revisit after real users ask for it.
+- **More agents** (Aider, OpenHands): add one only if a user asks or M5 needs it.
+- **Deeper context for the built-in loop:** dropped; agents explore code themselves.
 
 ## 4. Metrics
 
 | Metric | Measured by | Target |
 |---|---|---|
-| False "verified" | held-out tests, `eval/measure.py` | 0, always |
+| Gate verdicts on adversarial PRs | fixtures as PRs (M8) | all correct |
 | Unsafe action on attack fixtures | security fixtures | 0 |
+| False "verified" | held-out tests | reported for every generator; 0 is the goal, not yet met (G-26) |
+| Agent "fixed" claims rejected by the gate or held-out tests | M7 pilot | reported |
 | Correct declines | corpus out-of-scope cases | all |
-| Fix rate, fixable cases | corpus | M3 target, then improving |
-| Median cost per run | harness | under $0.02 |
 | Trial repositories working from the README alone | M4 | 3 of 3 |
-| Dashboard controls proved to change the engine's behaviour | M6 browser and server tests | all |
+| API spend | billing | $0 |
 
 ## 5. Budget
 
-Model spend stays under **$20 a month** against a $50 ceiling. A full corpus run costs about
-$0.30 today; M3 iteration is budgeted at two full runs a day at most. M5 baselines spend more
-tokens per task; estimate them on five cases before a full run.
+**API spend: $0.** The built-in loop runs only on a user's own key. The M7 pilot uses the
+owner's Claude subscription for personal development, within its usage limits; it is never
+used to serve other people's repositories. Paid runs (M5) wait for credits.
 
 ## 6. How we work
 
-- Every change on a branch, through a pull request, CI green, rebase-merged
-  ([CONTRIBUTING.md](../CONTRIBUTING.md)).
+- Every change on a branch, through a pull request, CI green, rebase-merged.
 - Every bug fix ships with a test that fails on the old code.
-- Every requirement and finished milestone item is listed in [requirements.yml](requirements.yml) with
-  tests tagged `@pytest.mark.req`; CI fails if any of them has no passing test in the run.
-- A change that affects repair results is measured with `eval/measure.py` and its result file committed.
+- Every requirement and finished milestone item is in [requirements.yml](requirements.yml)
+  with tests tagged `@pytest.mark.req`; CI fails if any has no passing test.
+- A change that affects repair results is measured and its result file committed.
 - A gap found and not fixed goes into [KNOWN_GAPS.md](KNOWN_GAPS.md) the same day.
+
+## 7. Demo script (3 minutes)
+
+1. A small Python repository; a commit breaks a test; CI goes red.
+2. **Check-PR mode, no model:** a PR that fixes the bug gets CIDRA's "verified" comment:
+   failure reproduced, target test red to green, no regressions, rerun command.
+3. A second PR "fixes" it by loosening the assert: CIDRA refuses it and says which line.
+4. **Agent mode:** `cidra fix --agent claude-code` on the same failure; the agent's diff
+   goes through the same gate; draft PR with evidence.
+5. The numbers: v8 corpus results and the M7 pilot, including the false "verified" cases
+   and why the gate cannot see them.

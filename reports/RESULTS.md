@@ -91,7 +91,10 @@ real fixes ([KNOWN_GAPS G-26](../docs/KNOWN_GAPS.md)):
 The silenced-error rules held in a real run: the gate refused v8's tornado-3
 patch, which both deleted the `raise` and caught the error to ignore it.
 A second run of the same code (v9) stopped after 27 of 40 cases when the API
-account ran out of credit; it is not published until it is complete.
+account ran out of credit. On the cases it reached it verified 5 (3 genuine)
+where v8 verified 8 (5 genuine). Its file was not kept, and with the project's
+API spend frozen at $0 (ROADMAP, 2026-11-01) it will not be rerun: v8 is the
+final measured run of the built-in loop, and a single sample.
 
 ## What is not measured
 
