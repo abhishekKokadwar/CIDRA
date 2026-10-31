@@ -238,7 +238,9 @@ gh pr diff <number> > fix.diff
 cidra verify --sha <failing commit> --patch fix.diff --target tests/test_calc.py::test_add
 ```
 
-It reproduces the failure in the sandbox, applies the patch to a clean copy, reruns the tests and prints each test before and after. It exits 0 only when the targets go from failing to passing and no test that passed now fails.
+It works for any fix, whoever wrote it: a coding agent, a person or CIDRA. The diff can also come from stdin (`gh pr diff <number> | cidra verify --patch - ...`) or a branch (`--branch <name>`, diffed against `--sha`).
+
+It first runs the audit gate, which refuses a diff that weakens the failing test or silences an error, before running anything. Then it reproduces the failure in the sandbox, applies the patch to a clean copy, reruns the tests and prints each test before and after. It exits 0 only when the targets go from failing to passing and no test that passed now fails. It needs no model and no key.
 
 ### Option C: Terminal User Interface (Rich TUI)
 

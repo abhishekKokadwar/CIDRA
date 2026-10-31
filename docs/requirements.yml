@@ -207,6 +207,10 @@
   title: cidra verify runs the audit gate before any sandbox work
   accept: A diff given to `cidra verify` goes through the same audit gate as the pipeline's patches, with the failing test named by --target standing in for a diagnosis. A diff that removes a failing test's assert or catches an error to ignore it is refused with its reasons and exit 1, before the sandbox is set up; a diff the gate accepts goes on to reproduction and verification.
 
+- id: M8-VERIFY-ANY-DIFF
+  title: cidra verify takes the fix from wherever it was written
+  accept: The diff comes from a file (--patch), stdin (--patch -) or a branch (--branch, diffed against --sha from their common ancestor); --patch and --branch together are a usage error. An empty diff or a branch that does not exist is an error with exit 1, never a pass, and stops before the sandbox.
+
 - id: M7-GENERATOR
   title: The patch generator is pluggable and untrusted
   accept: The patch is written by the generator named in CIDRA_PATCH_GENERATOR, read at call time, with CIDRA's built-in model loop as the default. Of what a generator returns only the diff and the reason there is none are kept; anything else it claims (a test result, "verified", an audit verdict) is dropped, and an unknown generator is an error, not a patch.

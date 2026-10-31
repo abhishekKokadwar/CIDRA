@@ -7,6 +7,7 @@ import argparse
 import json
 import logging
 import os
+import subprocess
 import sys
 import uuid
 from typing import Any, Optional
@@ -192,6 +193,18 @@ def _sandbox_log(run_id: str, source: str, sha: str) -> str:
     return result.stdout_tail + "\n" + result.stderr_tail
 
 
+def _read_patch(args) -> str:
+    """The diff to verify, from wherever it was written: a file, stdin (`--patch -`),
+    or a branch (`--branch`), diffed against the failing commit it was made from."""
+    import pathlib
+    if branch := getattr(args, "branch", None):
+        return subprocess.run(["git", "-C", args.source, "diff", "--no-color", f"{args.sha}...{branch}", "--"],
+                              capture_output=True, text=True, encoding="utf-8", check=True).stdout
+    if args.patch == "-":
+        return sys.stdin.read()
+    return pathlib.Path(args.patch).read_text(encoding="utf-8")
+
+
 def verify_run(args) -> int:
     """`cidra verify`: rerun a fix's verification in the sandbox, the way the
     pipeline did (ROADMAP M2), so a reviewer can check a fix without trusting
@@ -199,7 +212,6 @@ def verify_run(args) -> int:
     silenced error); then the failing tests must fail before it, pass after it,
     and no test that passed may fail. Exit 0 when verified, 1 otherwise.
     """
-    import pathlib
     from cidra.evidence import test_rows
     from cidra.nodes.audit import audit_patch
     from cidra.nodes.checkout import prepare_checkout, remove_checkout
@@ -207,7 +219,14 @@ def verify_run(args) -> int:
     from cidra.nodes.fix import verify_fix
     from cidra.nodes.reproduce import reproduce_once
 
-    patch = pathlib.Path(args.patch).read_text(encoding="utf-8")
+    try:
+        patch = _read_patch(args)
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"Could not read the patch: {getattr(e, 'stderr', None) or e}".strip())
+        return 1
+    if not patch.strip():
+        print("The patch is empty, so there is nothing to verify.")
+        return 1
     run_id = f"verify-{uuid.uuid4().hex[:8]}"
     state: Any = {"run_id": run_id, "install_command": args.install, "test_command": args.test,
                    "ci_failing_tests": args.target or []}
@@ -293,7 +312,9 @@ def main():
     
     # 'verify' command: rerun a fix's verification, as printed in the report's evidence
     verify_parser = subparsers.add_parser("verify", help="Rerun the verification of a fix in the sandbox")
-    verify_parser.add_argument("--patch", required=True, help="Diff file of the fix (e.g. `gh pr diff <n> > fix.diff`)")
+    fix_source = verify_parser.add_mutually_exclusive_group(required=True)
+    fix_source.add_argument("--patch", help="Diff file of the fix (e.g. `gh pr diff <n> > fix.diff`), or - for stdin")
+    fix_source.add_argument("--branch", help="A branch holding the fix, diffed against --sha")
     verify_parser.add_argument("--sha", default="HEAD", help="The failing commit the patch is made against")
     verify_parser.add_argument("--source", default=".", help="Path to the repository (default: current directory)")
     verify_parser.add_argument("--install", help="Install command (default: CIDRA_INSTALL_COMMAND)")
