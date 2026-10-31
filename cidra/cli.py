@@ -195,11 +195,13 @@ def _sandbox_log(run_id: str, source: str, sha: str) -> str:
 def verify_run(args) -> int:
     """`cidra verify`: rerun a fix's verification in the sandbox, the way the
     pipeline did (ROADMAP M2), so a reviewer can check a fix without trusting
-    the report. The failing tests must fail before the patch, pass after it,
+    the report. The patch must pass the audit gate first (no weakened test, no
+    silenced error); then the failing tests must fail before it, pass after it,
     and no test that passed may fail. Exit 0 when verified, 1 otherwise.
     """
     import pathlib
     from cidra.evidence import test_rows
+    from cidra.nodes.audit import audit_patch
     from cidra.nodes.checkout import prepare_checkout, remove_checkout
     from cidra.nodes.environment import close_session, install_deps, prepare_sandbox, session_for, workflow_python
     from cidra.nodes.fix import verify_fix
@@ -212,6 +214,12 @@ def verify_run(args) -> int:
     try:
         tree = prepare_checkout(run_id, args.source, args.sha)
         state.update(source_dir=str(tree), python_version=workflow_python(tree))
+        # The same gate as the pipeline's, before any sandbox work: a refused
+        # diff is never run, whatever wrote it (ROADMAP M8).
+        state.update(audit_patch({**state, "fix_diff": patch}))
+        if not state.get("patch_audit_ok"):
+            print("Refused by the audit gate:\n" + "\n".join(f"- {r}" for r in state.get("patch_audit_reasons") or []))
+            return 1
         state.update(prepare_sandbox(state))
         if state.get("env_ready") is not False:
             state.update(install_deps(state))
