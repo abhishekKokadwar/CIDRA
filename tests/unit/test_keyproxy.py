@@ -113,6 +113,19 @@ def test_the_run_stops_at_its_request_limit(proxy):
     assert len(Upstream.seen) == 2
 
 
+def test_a_refusal_arrives_as_a_status_even_while_a_large_request_is_sent(proxy):
+    # A prompt with source code runs to megabytes. Refusing before reading it
+    # dropped the connection on Windows: the caller saw an error, not the 403/429.
+    url = proxy(max_requests=0)
+    big = b'{"model": "m", "pad": "' + b"x" * 4_000_000 + b'"}'
+    for path, status in (("/v1/files", 403), ("/v1/messages", 429)):
+        req = urllib.request.Request(url + path, data=big, method="POST")
+        with pytest.raises(urllib.error.HTTPError) as e:
+            urllib.request.urlopen(req, timeout=10)
+        assert e.value.code == status
+    assert Upstream.seen == []
+
+
 def test_an_unreachable_endpoint_is_a_502_not_a_hang():
     server = _serve(make_handler("http://127.0.0.1:9", KEY))
     try:
