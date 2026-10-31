@@ -3,9 +3,11 @@ base is the failing commit and its diff is the fix. No Docker here: the gate is
 replaced by a recorder; tests/integration/test_check_pr_sandbox.py runs it for real."""
 
 import argparse
+import io
 import json
 import pathlib
 import subprocess
+import sys
 
 import pytest
 import yaml
@@ -66,6 +68,24 @@ def test_the_pull_requests_base_and_diff_come_from_the_event(repo, seen, monkeyp
         assert "Refused by CIDRA's audit gate" in written.read_text(encoding="utf-8")
         assert "it weakens a test" in written.read_text(encoding="utf-8")
     assert (tmp_path / "output.txt").read_text() == "verdict=refused\n"
+
+
+def test_a_branch_named_as_the_base_is_checked_at_its_commit(repo, seen):
+    # The evidence and its rerun command name the failing commit: a moving branch name would not do.
+    path, base, head = repo
+    subprocess.run(["git", "branch", "failing", base], cwd=path, check=True)
+    cli.check_pr_run(_args(source=str(path), base="failing", head=head))
+    assert seen[0]["sha"] == base
+
+
+def test_a_verdict_prints_on_a_console_that_cannot_show_its_emoji(monkeypatch):
+    # A Windows console's code page has no ✅: printing the verdict crashed after the check.
+    console = io.TextIOWrapper(io.BytesIO(), encoding="cp1252")
+    monkeypatch.setattr(sys, "stdout", console)
+    cli._safe_console()
+    print(gate.Verdict(gate.VERIFIED).markdown())
+    console.flush()
+    assert console.buffer.getvalue().startswith(b"? **Verified by CIDRA**")
 
 
 def test_a_pull_request_that_changes_nothing_is_not_verified_without_running(repo, seen, tmp_path):
