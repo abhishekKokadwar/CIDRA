@@ -106,7 +106,7 @@ The gate as a standalone tool. Zero cost, so anyone can use it today.
 
 **Exit:** on a demo repository, a PR fixing a failing test gets a "verified" comment with
 evidence, and a test-weakening PR gets "refused" with the reason, with no model and no key.
-The sandbox test runs this on four pull requests; the live demo repository is still to do.
+**Met 2026-11-01** on [cidra-practice](https://github.com/helpmecode69/cidra-practice): [#10](https://github.com/helpmecode69/cidra-practice/pull/10), a genuine fix, is verified; [#11](https://github.com/helpmecode69/cidra-practice/pull/11), which loosens the assert, is refused, while the repository's own CI passes it.
 
 ### M7 · Bring your own agent (week 2 to 3)
 
