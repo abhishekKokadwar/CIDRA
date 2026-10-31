@@ -75,6 +75,9 @@ def make_handler(upstream: str, key: str, auth: str = "x-api-key", max_requests:
             self._refuse(403, "only model calls are forwarded")
 
         def do_POST(self):
+            # Read the request whole before any answer: a refusal sent while the
+            # caller is still sending is a dropped connection, not a 403 or 429.
+            body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
             asked = urllib.parse.urlsplit(self.path)
             if asked.path not in ALLOWED_PATHS or asked.query not in ALLOWED_QUERIES:
                 return self._refuse(403, f"only model calls are forwarded, not {asked.path}")
@@ -83,7 +86,6 @@ def make_handler(upstream: str, key: str, auth: str = "x-api-key", max_requests:
                 if used[0] >= max_requests:
                     return self._refuse(429, f"this run's limit of {max_requests} model requests is reached")
                 used[0] += 1
-            body = self.rfile.read(int(self.headers.get("Content-Length") or 0))
             headers = {k.lower(): v for k, v in self.headers.items() if k.lower() not in _DROP_REQUEST}
             if auth == "bearer":
                 headers["authorization"] = f"Bearer {key}"
