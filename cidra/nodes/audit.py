@@ -418,7 +418,9 @@ def _run_context(state: DebugState) -> tuple[tuple, tuple]:
         missing.add(package)
 
     expectations: list = []
-    test_file = (getattr(analysis, "failing_test", None) or "").split("::")[0]
+    # The diagnosis names the failing test; without one (`cidra verify`), the CI's.
+    named = getattr(analysis, "failing_test", None) or next(iter(state.get("ci_failing_tests") or []), "")
+    test_file = named.split("::")[0]
     if test_file and (source := state.get("source_dir")):
         root = pathlib.Path(source).resolve()
         path = (root / test_file).resolve()
