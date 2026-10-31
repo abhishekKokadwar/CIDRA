@@ -50,6 +50,15 @@ def test_a_real_fix_verifies_and_shows_the_target_going_green(repo, capsys):
     assert "| `test_calc::test_add` (target) | failed | passed |" in out and "Verified." in out
 
 
+def test_the_verdict_and_its_evidence_as_a_pr_comment(repo):
+    from cidra import gate
+    verdict = gate.check(str(repo), "HEAD", GOOD, ["test_calc.py::test_add"],
+                         "pip install --quiet -r requirements.txt", "python -m pytest -q 2>&1")
+    text = verdict.markdown()
+    assert verdict.verified and text.startswith("✅ **Verified by CIDRA**")
+    assert "| `test_calc::test_add` (target) | failed | passed |" in text and "cidra verify --sha HEAD" in text
+
+
 def test_a_wrong_fix_does_not_verify(repo, capsys):
     # a * b: test_add (1*2 != 3) still fails, and test_zero still passes.
     assert _verify(repo, WRONG) == 1

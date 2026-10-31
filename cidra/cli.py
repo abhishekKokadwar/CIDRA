@@ -10,7 +10,7 @@ import os
 import subprocess
 import sys
 import uuid
-from typing import Any, Optional
+from typing import Optional
 
 from cidra.graph import build_graph
 
@@ -212,12 +212,8 @@ def verify_run(args) -> int:
     silenced error); then the failing tests must fail before it, pass after it,
     and no test that passed may fail. Exit 0 when verified, 1 otherwise.
     """
+    from cidra import gate
     from cidra.evidence import test_rows
-    from cidra.nodes.audit import audit_patch
-    from cidra.nodes.checkout import prepare_checkout, remove_checkout
-    from cidra.nodes.environment import close_session, install_deps, prepare_sandbox, session_for, workflow_python
-    from cidra.nodes.fix import verify_fix
-    from cidra.nodes.reproduce import reproduce_once
 
     try:
         patch = _read_patch(args)
@@ -227,46 +223,15 @@ def verify_run(args) -> int:
     if not patch.strip():
         print("The patch is empty, so there is nothing to verify.")
         return 1
-    run_id = f"verify-{uuid.uuid4().hex[:8]}"
-    state: Any = {"run_id": run_id, "install_command": args.install, "test_command": args.test,
-                   "ci_failing_tests": args.target or []}
-    try:
-        tree = prepare_checkout(run_id, args.source, args.sha)
-        state.update(source_dir=str(tree), python_version=workflow_python(tree))
-        # The same gate as the pipeline's, before any sandbox work: a refused
-        # diff is never run, whatever wrote it (ROADMAP M8).
-        state.update(audit_patch({**state, "fix_diff": patch}))
-        if not state.get("patch_audit_ok"):
-            print("Refused by the audit gate:\n" + "\n".join(f"- {r}" for r in state.get("patch_audit_reasons") or []))
-            return 1
-        state.update(prepare_sandbox(state))
-        if state.get("env_ready") is not False:
-            state.update(install_deps(state))
-        if state.get("env_ready") is False:
-            print(f"Could not set up the sandbox: {state.get('analysis_error')}")
-            return 1
-        state.update(reproduce_once(state))
-        if not state.get("reproduced"):
-            print(f"Not reproduced, so there is nothing to verify: {state.get('analysis_error')}")
-            return 1
-        session = session_for(run_id)
-        if session is None:
-            print("The sandbox session closed before the patch could be applied.")
-            return 1
-        applied = session.apply_patch(patch)
-        if not applied.passed:
-            print(f"The patch does not apply to {args.sha}:\n{(applied.stdout_tail or applied.stderr_tail)[-1000:]}")
-            return 1
-        state.update(verify_fix({**state, "patch_applied": True}))
-    except Exception as e:  # noqa: BLE001 - no Docker, no image, not a git repo
-        print(f"Could not run the verification: {e}")
-        return 1
-    finally:
-        close_session(run_id)
-        remove_checkout(run_id)
-    print("\n".join(test_rows(state)))
-    print("\nVerified." if state.get("verified") else f"\nNot verified: {state.get('verify_note')}")
-    return 0 if state.get("verified") else 1
+    verdict = gate.check(args.source, args.sha, patch, args.target or [], args.install, args.test)
+    if verdict.outcome == gate.REFUSED:
+        print("Refused by the audit gate:\n" + "\n".join(f"- {r}" for r in verdict.state.get("patch_audit_reasons") or []))
+    elif "verified" in verdict.state:  # the tests ran on the patched copy
+        print("\n".join(test_rows(verdict.state)))
+        print("\nVerified." if verdict.verified else f"\n{verdict.reason}")
+    else:
+        print(verdict.reason)
+    return 0 if verdict.verified else 1
 
 
 def dashboard_run(args):
