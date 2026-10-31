@@ -75,6 +75,31 @@ CIDRA runs when your CI fails on a Python repository tested with pytest. It repr
 
 The report appears on the pull request, or on the failing commit when there is none, and in the run's job summary. For the draft PR, also turn on Settings → Actions → General → "Allow GitHub Actions to create and approve pull requests". If your tests need more than the default install and `pytest -q`, set `install_command` and `test_command` ([details](#install-and-test-commands)).
 
+### Check a fix pull request (no model, no key)
+
+When a coding agent or a person opens a pull request that claims to fix failing tests, CIDRA can check it without trusting it. It reproduces the failure on the pull request's base commit, refuses a diff that weakens a test or silences an error, applies the diff to a clean copy, and requires every test that failed on the base to pass with nothing else breaking. The verdict is posted as a comment (updated on each push) and in the job summary, with the evidence and a command to rerun the check; the job fails unless the fix is verified.
+
+```yaml
+name: CIDRA check
+on: pull_request
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write       # post the verdict
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0         # the base commit is needed too
+          persist-credentials: false
+      - uses: abhishekKokadwar/CIDRA@main   # check-pr mode is not in a release yet
+        with:
+          mode: check-pr
+```
+
+The pull request's code runs only in CIDRA's sandbox, with no network and no secrets; the step that runs the check gets no token at all. A pull request from a fork gets a read-only token, so its verdict appears only in the job summary. Locally, `cidra check-pr --base <failing commit> --head <fix branch>` does the same.
+
 ---
 
 ## 1. Core Philosophy & The Triad of Trust

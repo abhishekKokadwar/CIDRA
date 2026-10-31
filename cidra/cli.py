@@ -234,6 +234,46 @@ def verify_run(args) -> int:
     return 0 if verdict.verified else 1
 
 
+def check_pr_run(args) -> int:
+    """`cidra check-pr`: the gate on a pull request that claims to fix failing CI
+    (ROADMAP M8). The base is the failing commit and the PR's diff is the fix:
+    the failure must reproduce on the base, the diff must pass the audit, and the
+    tests failing on the base must pass after it with nothing else breaking. No
+    model and no token: the verdict goes to the job summary, a step output and
+    --out, and a separate step posts it. Exit 0 only when verified."""
+    import pathlib
+    from cidra import gate
+
+    base, head = args.base, args.head
+    if not (base and head) and (event_path := os.getenv("GITHUB_EVENT_PATH")):
+        pr = json.loads(pathlib.Path(event_path).read_text(encoding="utf-8")).get("pull_request") or {}
+        base = base or (pr.get("base") or {}).get("sha")
+        head = head or (pr.get("head") or {}).get("sha")
+    if not (base and head):
+        print("check-pr needs a pull request: run it on a pull_request event, or pass --base and --head.")
+        return 1
+    source = args.source or os.getenv("CIDRA_SOURCE_DIR") or "."
+    try:
+        diff = _read_patch(argparse.Namespace(branch=head, patch=None, sha=base, source=source))
+    except (OSError, subprocess.CalledProcessError) as e:
+        print(f"Could not read the pull request's diff (is the checkout's history deep enough?): "
+              f"{getattr(e, 'stderr', None) or e}".strip())
+        return 1
+    if not diff.strip():
+        verdict = gate.Verdict(gate.NOT_VERIFIED, "The pull request changes nothing.")
+    else:
+        verdict = gate.check(source, base, diff, args.target or [])
+    text = verdict.markdown()
+    print(text)
+    for path in filter(None, (args.out, os.getenv("GITHUB_STEP_SUMMARY"))):
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(text + "\n")
+    if output := os.getenv("GITHUB_OUTPUT"):
+        with open(output, "a", encoding="utf-8") as f:
+            f.write(f"verdict={verdict.outcome}\n")
+    return 0 if verdict.verified else 1
+
+
 def dashboard_run(args):
     """Start the CIDRA web dashboard and FastAPI backend."""
     import uvicorn
@@ -286,6 +326,15 @@ def main():
     verify_parser.add_argument("--test", help="Test command (default: CIDRA_TEST_COMMAND)")
     verify_parser.add_argument("--target", action="append", help="A test that must go from failing to passing (repeatable)")
 
+    # 'check-pr' command: the gate on a pull request's diff, as the Action's check-pr mode
+    check_parser = subparsers.add_parser("check-pr", help="Check a pull request's fix with the gate, no model")
+    check_parser.add_argument("--base", help="The failing commit (default: the pull request's base, from the event)")
+    check_parser.add_argument("--head", help="The fix (default: the pull request's head, from the event)")
+    check_parser.add_argument("--source", help="Path to the repository (default: CIDRA_SOURCE_DIR, else .)")
+    check_parser.add_argument("--target", action="append", help="A test that must go from failing to passing "
+                                                                "(repeatable; default: every test failing on the base)")
+    check_parser.add_argument("--out", help="Also write the verdict as Markdown to this file")
+
     # 'dashboard' command for local web UI
     dash_parser = subparsers.add_parser("dashboard", help="Start the web dashboard & API server")
     dash_parser.add_argument("--port", type=int, default=8000, help="Port to serve on (default: 8000)")
@@ -301,6 +350,8 @@ def main():
         local_run(args)
     elif args.command == "verify":
         sys.exit(verify_run(args))
+    elif args.command == "check-pr":
+        sys.exit(check_pr_run(args))
     elif args.command == "dashboard":
         dashboard_run(args)
     else:

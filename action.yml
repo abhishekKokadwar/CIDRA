@@ -4,9 +4,21 @@ branding:
   icon: 'tool'
   color: 'green'
 inputs:
+  mode:
+    description: >-
+      "fix" (default): diagnose a failed CI run and propose a verified fix, with your model key.
+      "check-pr": check the fix in a pull request with the gate, on a pull_request event. No model
+      and no key: the failure must reproduce on the base, the diff must pass the audit, and the
+      tests failing on the base must pass with nothing else breaking. The job fails unless verified.
+    required: false
+    default: 'fix'
+  comment:
+    description: 'check-pr mode: post the verdict as a pull request comment, updated on each push (needs pull-requests: write).'
+    required: false
+    default: 'true'
   api_key:
-    description: 'API key for base_url'
-    required: true
+    description: 'API key for base_url. Needed in fix mode; check-pr mode uses no model.'
+    required: false
   model_analyze:
     description: 'Model for the diagnosis, for example claude-haiku-4-5. Unset: gemini-3.5-flash.'
     required: false
@@ -47,6 +59,11 @@ inputs:
       "PYTHONPATH=src pytest -q 2>&1". Defaults to "pytest -q 2>&1".
     required: false
 
+outputs:
+  verdict:
+    description: 'check-pr mode: verified, refused, not_verified, not_reproduced or error.'
+    value: ${{ steps.check.outputs.verdict }}
+
 runs:
   using: "composite"
   steps:
@@ -67,6 +84,7 @@ runs:
         docker build -t cidra-sandbox:base -f ${{ github.action_path }}/cidra/sandbox/Dockerfile ${{ github.action_path }}/cidra/sandbox
 
     - name: Run CIDRA
+      if: inputs.mode != 'check-pr'
       shell: bash
       env:
         CIDRA_API_KEY: ${{ inputs.api_key }}
@@ -82,3 +100,31 @@ runs:
         CIDRA_TEST_COMMAND: ${{ inputs.test_command }}
       run: |
         cidra action
+
+    # check-pr mode. The pull request's code runs only inside CIDRA's sandbox, which has
+    # no network and no secrets; this step gets no token at all.
+    - name: Check the pull request
+      id: check
+      if: inputs.mode == 'check-pr'
+      shell: bash
+      env:
+        CIDRA_SOURCE_DIR: ${{ inputs.source_dir }}
+        CIDRA_INSTALL_COMMAND: ${{ inputs.install_command }}
+        CIDRA_TEST_COMMAND: ${{ inputs.test_command }}
+      run: |
+        cidra check-pr --out "$RUNNER_TEMP/cidra-verdict.md"
+
+    # Posts the verdict. Runs no code from the pull request: only gh, with the token.
+    - name: Comment on the pull request
+      if: always() && inputs.mode == 'check-pr' && inputs.comment == 'true' && github.event.pull_request.number
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+        PR: ${{ github.event.pull_request.number }}
+      run: |
+        [ -s "$RUNNER_TEMP/cidra-verdict.md" ] || exit 0
+        body="$RUNNER_TEMP/cidra-verdict.md"
+        # One comment per pull request, updated on each push; the first push creates it.
+        gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --edit-last --body-file "$body" \
+          || gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file "$body" \
+          || echo "::warning::Could not comment on the pull request (one from a fork gets a read-only token); the verdict is in the job summary."

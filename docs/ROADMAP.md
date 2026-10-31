@@ -51,7 +51,7 @@ merging without a human, hosting CIDRA as a service, and any paid model runs.
 | 2. Get the failing commit without exposing secrets to its code | Done |
 | 3. Reproduce the original failure | Done (twice for a patchable failure) |
 | 4. Generate a patch | Built-in loop: 10 of 24 fixable verified in v8, 7 genuine, 3 wrong (G-26). Agent path: M7 |
-| 5. Reject test-weakening or unsafe patches | Done in the repair pipeline; `cidra verify` does not run the audit yet (M8) |
+| 5. Reject test-weakening or unsafe patches | Done, in the repair pipeline, `cidra verify` and check-PR mode |
 | 6. Apply to a clean copy and rerun | Done |
 | 7. Original failure fixed, no unrelated regressions | Done |
 | 8. Evidence and a rerun command | Done |
@@ -87,25 +87,26 @@ deferred (section 3.6).
 
 The gate as a standalone tool. Zero cost, so anyone can use it today.
 
-- [ ] `cidra verify` runs the audit gate. Today it reproduces, applies and verifies a patch
-  but never audits it, so a test-weakening diff can come out "verified" there.
-- [ ] `cidra verify` takes a diff from anywhere: `--patch <file>`, stdin, or `--branch <name>`
+- [x] `cidra verify` runs the audit gate (#91). It used to reproduce, apply and verify a
+  patch but never audit it, so a test-weakening diff could come out "verified" there.
+- [x] `cidra verify` takes a diff from anywhere (#92): `--patch <file>`, stdin, or `--branch <name>`
   (diff of a branch against the failing commit).
-- [ ] Separate the gate from generation: one entry point that takes (failing commit, CI log
+- [x] Separate the gate from generation (#94, `gate.check`): one entry point that takes (failing commit, CI log
   or failing test IDs, diff) and returns verdict and evidence. `cidra fix` uses it unchanged;
   the stub pipeline run gives the same results.
-- [ ] **Action mode: check a fix PR.** On a pull request that claims to fix failing CI
+- [x] **Action mode: check a fix PR** (`mode: check-pr`, `cidra check-pr`). On a pull request that claims to fix failing CI
   (opened by an agent or a person), CIDRA reproduces the failure on the base commit,
   applies the PR's diff in its sandbox, runs the audit and the verification, and posts the
   evidence as a PR comment and job summary: verified, refused (and why), or not reproduced.
-- [ ] Safe by construction: the PR's code runs only in the sandbox with no secrets; the
+- [x] Safe by construction: the PR's code runs only in the sandbox with no secrets; the
   comment is posted by a separate step that does not run PR code (no
   `pull_request_target` checkout of untrusted code).
-- [ ] Tests: the adversarial fixtures as PRs (a test-weakening PR, an error-swallowing PR, a
+- [x] Tests: the adversarial fixtures as PRs (a test-weakening PR, an error-swallowing PR, a
   PR that breaks another test, a genuine fix) each get the right verdict.
 
 **Exit:** on a demo repository, a PR fixing a failing test gets a "verified" comment with
 evidence, and a test-weakening PR gets "refused" with the reason, with no model and no key.
+The sandbox test runs this on four pull requests; the live demo repository is still to do.
 
 ### M7 · Bring your own agent (week 2 to 3)
 

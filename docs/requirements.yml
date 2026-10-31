@@ -211,6 +211,10 @@
   title: cidra verify takes the fix from wherever it was written
   accept: The diff comes from a file (--patch), stdin (--patch -) or a branch (--branch, diffed against --sha from their common ancestor); --patch and --branch together are a usage error. An empty diff or a branch that does not exist is an error with exit 1, never a pass, and stops before the sandbox.
 
+- id: M8-CHECK-PR
+  title: A fix pull request is checked by the gate, with no model and no key
+  accept: "`cidra check-pr`, and the Action's check-pr mode, take the pull request's base as the failing commit and its diff (from the event, or --base and --head) as the fix, and give one verdict per pull request: a genuine fix is verified; a diff that weakens the failing test or swallows an error is refused before it runs; a diff that breaks another test is not verified and names it; a pull request that changes nothing is not verified. The verdict goes to the job summary, a step output and a file, the exit code is 0 only when verified, and the Action posts it in a separate step that runs no code from the pull request, while the check step gets no token."
+
 - id: M8-GATE
   title: The gate is one entry point that needs no model
   accept: gate.check takes a repository, the failing commit, the diff and the tests that must go green, and returns a verdict (verified, refused, not verified, not reproduced, or could not run) with the run's state, using the pipeline's own audit, reproduction and verification steps. Its markdown is the PR comment or job summary, a headline and the evidence block with a rerun command; only a verified verdict claims success. A refused diff never reaches the sandbox. `cidra verify` is a wrapper around it.
