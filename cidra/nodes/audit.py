@@ -41,6 +41,7 @@ _FORBIDDEN_PATHS = (
     "AGENTS.md",
     "CLAUDE.md",
 )
+_HUNK = re.compile(r"@@ -(\d+)(?:,\d+)? \+(\d+)")
 _CI_YAML = re.compile(r"\.github/workflows/.*\.ya?ml$")
 
 # --- SR-14 pin files whose changes must be SURFACED, not silently applied. ---
@@ -66,6 +67,7 @@ class FileDiff:
     removed: list[str] = field(default_factory=list)
     is_deletion: bool = False
     is_new: bool = False
+    first_line: Optional[int] = None  # of the first changed line: old file for a removal, new for an addition
 
 
 @dataclass
@@ -78,11 +80,12 @@ class AuditVerdict:
 def _parse_diff(diff: str) -> list[FileDiff]:
     """Split a unified diff into per-file added/removed content lines.
 
-    Deliberately small: we only need the +/- payload lines and the file paths,
-    not a full patch model. Hunk headers and context lines are ignored.
+    Deliberately small: the +/- payload lines, the file paths and where the first
+    change is, not a full patch model.
     """
     files: list[FileDiff] = []
     cur: Optional[FileDiff] = None
+    old_no = new_no = 0
     for line in diff.splitlines():
         if line.startswith("--- "):
             old = line[4:].strip()
@@ -98,13 +101,28 @@ def _parse_diff(diff: str) -> list[FileDiff]:
             cur.is_new = cur.old_path == "/dev/null"
             files.append(cur)
             continue
-        if cur is None or line.startswith("@@") or line.startswith("diff "):
+        if cur is None or line.startswith("diff "):
+            continue
+        if line.startswith("@@"):
+            hunk = _HUNK.match(line)
+            if hunk:
+                old_no, new_no = int(hunk[1]), int(hunk[2])
             continue
         if line.startswith("+") and not line.startswith("+++"):
             cur.added.append(line[1:])
+            cur.first_line = cur.first_line or new_no
+            new_no += 1
         elif line.startswith("-") and not line.startswith("---"):
             cur.removed.append(line[1:])
+            cur.first_line = cur.first_line or old_no
+            old_no += 1
+        else:
+            old_no, new_no = old_no + 1, new_no + 1
     return files
+
+
+def _where(f: FileDiff) -> str:
+    return f"'{f.path}' line {f.first_line}" if f.first_line else f"'{f.path}'"
 
 
 def _strip_prefix(path: str) -> str:
@@ -294,7 +312,7 @@ def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None,
 
         # SR-13 — editing a test, or its fixtures, beyond its expected values.
         if (_is_test_path(f.path) or f.path.rsplit("/", 1)[-1] == "conftest.py") and not _expected_values_only(f):
-            reasons.append(f"SR-13: patch changes '{f.path}' beyond the expected values of its asserts "
+            reasons.append(f"SR-13: patch changes {_where(f)} beyond the expected values of its asserts "
                            "(a test's setup or fixtures must not be edited to make it pass)")
 
         # SR-13 — deleting or gutting a test.
@@ -309,7 +327,7 @@ def audit_diff(diff: str, limits: Optional[ContainmentLimits] = None,
                 if removed_asserts > added_asserts:
                     reasons.append(
                         f"SR-13: patch removes {removed_asserts - added_asserts} "
-                        f"assertion(s) from '{f.path}'")
+                        f"assertion(s) from {_where(f)}")
             if any(m in ln for ln in f.added for m in _SKIP_MARKERS):
                 reasons.append(f"SR-13: patch skips/xfails a test in '{f.path}'")
 

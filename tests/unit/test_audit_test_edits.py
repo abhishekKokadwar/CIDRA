@@ -69,3 +69,9 @@ def test_every_reference_fix_still_passes_the_gate():
             assert not _refused(patch["diff"]), answers
             checked += 1
     assert checked >= 20
+
+
+def test_the_refusal_names_the_line_of_the_test_it_changed():
+    # A reviewer goes straight to the edit: four context lines after the hunk's line 19.
+    [reason] = [r for r in audit_diff(FASTAPI_5_CHEAT).reasons if "beyond the expected values" in r]
+    assert "'tests/test_filter_pydantic_sub_model.py' line 23 " in reason
