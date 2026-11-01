@@ -110,6 +110,9 @@ class DebugState(TypedDict, total=False):
     verify_failing_tests: list[str]  # still failing after the patch (allowed only if failing before)
     regressions: list[str]  # failing after the patch, passing before it
     verify_note: Optional[str]  # why the last verification did not pass
+    # A coding agent's own claim, untrusted and read by no node: {"claimed": "fixed" |
+    # "not_fixed" | "none", "turns", "agent_error"}. Kept to measure claims against verdicts.
+    agent_claim: Optional[dict]
     failure_detail: Optional[str]  # the target tests rerun with -vv, for the fix prompt
     repro_junit: Optional[dict[str, str]]  # per-test outcome before the patch (pytest JUnit report)
     verify_junit: Optional[dict[str, str]]  # per-test outcome with the last patch applied

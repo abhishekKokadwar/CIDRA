@@ -221,7 +221,7 @@
 
 - id: M7-GENERATOR
   title: The patch generator is pluggable and untrusted
-  accept: The patch is written by the generator named in CIDRA_PATCH_GENERATOR, read at call time, with CIDRA's built-in model loop as the default. Of what a generator returns only the diff and the reason there is none are kept; anything else it claims (a test result, "verified", an audit verdict) is dropped, and an unknown generator is an error, not a patch.
+  accept: The patch is written by the generator named in CIDRA_PATCH_GENERATOR, read at call time, with CIDRA's built-in model loop as the default. Of what a generator returns only the diff and the reason there is none are kept; anything else it claims (a test result, "verified", an audit verdict) is dropped, except a coding agent's yes-or-no claim of success, kept as an untrusted label that no node reads (M7-AGENT-CLAIM). An unknown generator is an error, not a patch.
 
 - id: M7-KEY-PROXY
   title: The model key stays out of reach of repository code next to an agent
@@ -234,6 +234,14 @@
 - id: M7-LOG-DIAGNOSIS
   title: An agent run is diagnosed from the log with no model call
   accept: When the patch generator is not the built-in loop, the diagnosis is read from the CI log and makes no model call. A log whose every failure is a failed assert is in scope and handed to the agent with the failing tests; any other log is declined as outside CIDRA's scope and the agent never runs.
+
+- id: M7-AGENT-CLAIM
+  title: A coding agent's claim of success is recorded, never trusted
+  accept: "The agent is asked to end with `CLAIM: fixed` or `CLAIM: not fixed`. CIDRA keeps only the label (fixed, not_fixed, or none when there is no such line), the agent's turn count and its error flag, never the agent's words. No node reads the label, so it changes neither a verdict nor the report. The eval records it per case and lists the runs where the agent claimed fixed and CIDRA did not verify the patch, or the held-out tests failed it."
+
+- id: M7-CLI-AGENT
+  title: "`cidra fix --agent claude-code` runs a coding agent behind the gate"
+  accept: "`cidra fix --agent claude-code` makes Claude Code the patch generator for the run, the same as CIDRA_PATCH_GENERATOR=claude-code. With no model credential for it the run stops with a message naming CIDRA_AGENT_KEY before any sandbox work; an unknown agent name is refused."
 
 - id: G-20
   title: Exported telemetry never carries what the model was shown or said

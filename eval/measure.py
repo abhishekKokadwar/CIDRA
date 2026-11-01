@@ -107,7 +107,8 @@ from cidra.nodes.environment import (  # noqa: E402
 from cidra.sandbox import limits  # noqa: E402
 from cidra.sandbox.runner import Session  # noqa: E402
 from eval import corpus_repo  # noqa: E402
-from eval.attempts import attempts_from_updates, run_flaky_fixture, why_not_verified  # noqa: E402
+from eval.attempts import (  # noqa: E402
+    attempts_from_updates, claims_rejected, run_flaky_fixture, why_not_verified)
 
 # Per-fixture overrides the pipeline takes as run input.
 _RUN_OVERRIDES = ("install_command", "test_command", "python_version")
@@ -290,6 +291,7 @@ def run_fixture(fid: str) -> dict:
         "tests_before": state.get("repro_junit"),  # per-test outcome before the patch
         "tests_after": state.get("verify_junit"),  # and with the last patch applied
         "attempts": attempts_from_updates(updates),
+        "agent_claim": state.get("agent_claim"),  # what a coding agent said; never part of the verdict
     }
     if verified and state.get("fix_diff"):
         record["held_out_valid"] = validate_held_out(fx)["valid"]
@@ -324,6 +326,9 @@ def summarize(records: list[dict]) -> dict:
         "total_cost_usd": round(sum(r["cost_usd"] for r in records), 4),
         "median_cost_usd": round(statistics.median(r["cost_usd"] for r in records), 4) if records else None,
         "attempt_results": why_not_verified(records),
+        **({"agent_claimed_fixed": sum((r.get("agent_claim") or {}).get("claimed") == "fixed" for r in records),
+            "agent_claims_rejected": claims_rejected(records)}
+           if any(r.get("agent_claim") for r in records) else {}),
     }
 
 
