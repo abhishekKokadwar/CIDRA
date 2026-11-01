@@ -369,8 +369,10 @@ def builtin_patch(state: DebugState) -> dict:
 # Patch generators, by the name in config.PATCH_GENERATOR. Each takes the run's state
 # and returns a diff, or why there is none. Only these keys of what it returns are
 # read: whatever else it claims (a test result, "verified"), the gate decides.
+# `agent_claim` is an agent's own yes-or-no claim of success, kept as a label for
+# the eval only: no node reads it, so it cannot change a verdict or the report.
 GENERATORS = {"builtin": builtin_patch, "claude-code": claude_code_patch}
-_GENERATOR_KEYS = ("fix_diff", "patch_applied", "apply_error", "analysis_error")
+_GENERATOR_KEYS = ("fix_diff", "patch_applied", "apply_error", "analysis_error", "agent_claim")
 
 
 def generate_fix(state: DebugState) -> dict:

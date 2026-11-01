@@ -85,3 +85,11 @@ def run_flaky_fixture(fid: str, run, tries: int = FLAKY_FIXTURE_TRIES) -> dict:
         if record["outcome"] == "flaky_detected":
             break
     return record
+
+
+def claims_rejected(records: list[dict]) -> list[str]:
+    """Runs where the agent claimed "fixed" and CIDRA did not verify it, or the
+    held-out tests failed what CIDRA verified (ROADMAP M7 metric)."""
+    return [r["fixture"] for r in records
+            if (r.get("agent_claim") or {}).get("claimed") == "fixed"
+            and (not r["verified"] or (r["held_out_valid"] and not (r["held_out"] or {}).get("passed")))]
