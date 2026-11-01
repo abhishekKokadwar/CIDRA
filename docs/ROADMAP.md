@@ -50,7 +50,7 @@ merging without a human, hosting CIDRA as a service, and any paid model runs.
 | 1. Authenticate the incoming event | Done |
 | 2. Get the failing commit without exposing secrets to its code | Done |
 | 3. Reproduce the original failure | Done (twice for a patchable failure) |
-| 4. Generate a patch | Built-in loop: 10 of 24 fixable verified in v8, 7 genuine, 3 wrong (G-26). Agent path: M7 |
+| 4. Generate a patch | Built-in loop: 10 of 24 fixable verified in v8, 7 genuine, 3 wrong (G-26). Agent path: built, tested with stub agents; the real-agent pilot is next (M7) |
 | 5. Reject test-weakening or unsafe patches | Done, in the repair pipeline, `cidra verify` and check-PR mode |
 | 6. Apply to a clean copy and rerun | Done |
 | 7. Original failure fixed, no unrelated regressions | Done |
@@ -58,7 +58,7 @@ merging without a human, hosting CIDRA as a service, and any paid model runs.
 
 **Finished:** M1 (trustworthy "verified"), M2 (evidence in every PR), most of M4 (install
 ladder, PyPI 0.3.1, Action `v1`, Marketplace, quick start; 0.3.2 is merged but not
-released), M6's settings item (G-19), and the first three items of M7 (#83, #85, #86).
+released), M6's settings item (G-19), M8, and every M7 item before the pilot.
 
 ## 3. Milestones
 
@@ -123,15 +123,20 @@ login are used; CIDRA ships no credential.
   of the checkout, with a timeout and a spend limit; a placeholder key, so no API key is
   billed by mistake. CIDRA computes the diff itself (`git diff`) and ignores the agent's
   claims. Tested with a stub agent, no model.
-- [ ] A malicious stub agent (edits a test, swallows an error) is refused by the gate.
-- [ ] Diagnosis without a model in agent mode: the scope is read from the log (only failed
-  asserts: fix; anything else: decline), so a run needs no API credit.
-- [ ] `cidra fix --agent claude-code` (today: `CIDRA_PATCH_GENERATOR=claude-code`).
-- [ ] Record what the agent claimed, untrusted, for the metric below.
-- [ ] Pilot on 5 BugsInPy cases, chosen and committed before running: 2 the built-in loop
-  returned no patch for, 2 of its false "verified" (thefuck-25, tornado-4), 1 it fixed
-  genuinely. One case first, to check usage against the subscription limit; the proxy's
-  first real-token run is checked there too.
+- [x] A malicious stub agent is refused by the gate (#98): seven tricks through the whole
+  pipeline in real Docker, from a loosened assert (refused at its line) to an empty diff
+  that claims success. A subscription login never reaches the sandbox or the agent (#99).
+- [x] Diagnosis without a model in agent mode (#97): the scope is read from the log (only
+  failed asserts: fix; anything else: decline), so a run needs no API credit.
+- [x] `cidra fix --agent claude-code`; a missing credential stops the run before any sandbox work.
+- [x] Record what the agent claimed, untrusted: the agent ends with `CLAIM: fixed` or
+  `CLAIM: not fixed`; only that label is kept (`agent_claim`), no node reads it, and
+  `eval/measure.py` lists the runs where the claim and the verdict disagree.
+- [ ] Pilot on 5 BugsInPy cases, chosen and committed before running
+  ([eval/pilot_m7.json](../eval/pilot_m7.json)): 2 the built-in loop returned no patch for
+  (fastapi-10, youtube-dl-2), 2 of its false "verified" (thefuck-25, tornado-4), 1 it fixed
+  genuinely (thefuck-2). thefuck-2 first, alone, to check usage against the subscription
+  limit; the proxy's first real-token run is checked there too.
 - [ ] Recorded per case: verified or not, held-out result, gate refusals, **agent claimed
   fixed but CIDRA or held-out tests disagreed**, turns and tokens.
 - [ ] Results file and README table published either way.

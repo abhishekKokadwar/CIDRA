@@ -1,0 +1,40 @@
+{
+  "purpose": "ROADMAP M7 pilot: Claude Code behind the gate on 5 BugsInPy cases, chosen and committed before any run.",
+  "chosen_at": "2026-11-01",
+  "generator": "claude-code",
+  "baseline": "eval/results/claude-haiku-4-5-bugsinpy-v8.json (built-in loop) and its -held-out.json",
+  "order": "bip-thefuck-2 runs alone first, to check one run's share of the subscription limit and the proxy's first real-token run; the other four only if that run was reasonable.",
+  "run_first": "python eval/measure.py --corpus eval/corpus --label claude-code-pilot-m7 --out eval/results/claude-code-pilot-m7-thefuck-2.json bip-thefuck-2",
+  "run_rest": "python eval/measure.py --corpus eval/corpus --label claude-code-pilot-m7 --out eval/results/claude-code-pilot-m7-rest.json bip-thefuck-25 bip-tornado-4 bip-fastapi-10 bip-youtube-dl-2",
+  "env": "CIDRA_PATCH_GENERATOR=claude-code, CIDRA_AGENT_AUTH=bearer, CIDRA_AGENT_KEY in .env",
+  "cases": [
+    {
+      "fixture": "bip-thefuck-2",
+      "v8": "genuine fix",
+      "why": "the built-in loop fixed it genuinely; small, assert-only log, extra held-out tests"
+    },
+    {
+      "fixture": "bip-thefuck-25",
+      "v8": "false verified",
+      "why": "named by the roadmap; held-out tests caught the built-in loop's patch (G-26)"
+    },
+    {
+      "fixture": "bip-tornado-4",
+      "v8": "false verified",
+      "why": "named by the roadmap; held-out tests caught the built-in loop's patch (G-26)"
+    },
+    {
+      "fixture": "bip-fastapi-10",
+      "v8": "no patch (empty_patch x3)",
+      "why": "rule: of the seven cases v8 returned no patch for, the first in alphabetical order per project, keras excluded (8-minute install)"
+    },
+    {
+      "fixture": "bip-youtube-dl-2",
+      "v8": "no patch (empty_patch x3)",
+      "why": "same rule, the other project"
+    }
+  ],
+  "notes": [
+    "bip-fastapi-10 and bip-youtube-dl-2 have no extra held-out tests, only the fix commit's own; if measure.py finds the held-out set not valid, a verified patch there is reported as unjudged, not as genuine."
+  ]
+}
