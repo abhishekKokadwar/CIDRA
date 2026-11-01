@@ -6,6 +6,7 @@ the change with git: that diff is the agent's whole contribution. What the agent
 says about it (tests run, "fixed") is never read; the gate decides.
 """
 
+import logging
 from pathlib import Path
 
 from docker.errors import DockerException, NotFound
@@ -16,6 +17,8 @@ from cidra.nodes.environment import env_prefix, session_for
 from cidra.sandbox import limits
 from cidra.sandbox.runner import AgentNetwork, _create, _exec_with_timeout, _tail, _tar_bytes, ensure_agent_image
 from cidra.state import DebugState
+
+log = logging.getLogger(__name__)
 
 PROMPT = """A CI run failed on this repository. Fix the code under test so the failing tests pass.
 
@@ -104,5 +107,8 @@ def claude_code_patch(state: DebugState) -> dict:
         return {"fix_diff": None, "analysis_error": f"could not read the agent's changes: {_tail(diff_err)[-300:]}"}
     if not diff.strip():
         why = "timed out" if code is None else f"exited {code}"
-        return {"fix_diff": None, "analysis_error": f"the coding agent changed nothing ({why}): {_tail(err or out)[-300:]}"}
+        # What the agent says ("fixed, all tests pass") is not evidence, so the
+        # report never quotes it: the operator's log keeps it for debugging.
+        log.info("the coding agent changed nothing (%s): %s", why, _tail(err or out)[-300:])
+        return {"fix_diff": None, "analysis_error": f"the coding agent changed nothing ({why})"}
     return {"fix_diff": diff.decode("utf-8", "replace")}
