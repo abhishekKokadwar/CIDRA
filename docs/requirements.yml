@@ -231,6 +231,10 @@
   title: Claude Code writes the patch, CIDRA reads it
   accept: With CIDRA_PATCH_GENERATOR=claude-code, Claude Code runs headless and bare in a container on the key proxy's network, with the checkout, the run's installed packages, the failing tests and the rules the gate enforces, and a placeholder key. The patch is the git diff of what it changed, without test-run leftovers; what it prints is not read. Its model calls are counted by the proxy from the replies and priced with cache tokens. No key is an error before any container starts.
 
+- id: M7-LOG-DIAGNOSIS
+  title: An agent run is diagnosed from the log with no model call
+  accept: When the patch generator is not the built-in loop, the diagnosis is read from the CI log and makes no model call. A log whose every failure is a failed assert is in scope and handed to the agent with the failing tests; any other log is declined as outside CIDRA's scope and the agent never runs.
+
 - id: G-20
   title: Exported telemetry never carries what the model was shown or said
   accept: The telemetry CIDRA exports (the dashboard's /telemetry.json and the bot's uploaded artifact) holds counts, latency and the validated diagnosis, but no system or user prompt, raw model output or CI log; the full state with prompts is kept only in files git ignores.

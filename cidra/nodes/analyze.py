@@ -64,6 +64,23 @@ def analyze_region(error_region: str) -> Analysis:
     )
 
 
+def analysis_from_log(state: DebugState) -> Analysis:
+    """The diagnosis with no model, for runs whose patch an agent writes: in scope
+    only when every failure in the log is a failed assert, unknown (declined)
+    otherwise. The agent finds the file itself; the gate checks what it changed."""
+    log = state.get("raw_log") or ""
+    asserts = failures_are_asserts(log) is True
+    first = next(iter(first_error_lines(log)), "")
+    return Analysis(
+        category="assertion_error" if asserts else "unknown",
+        confidence=1.0 if asserts else 0.0,
+        evidence=(first or "no failed assert in the log")[:500],
+        proposed_action="hand the failing tests to the agent" if asserts
+        else "decline: the log shows no failed assert, outside CIDRA's scope",
+        failing_test=next(iter(state.get("ci_failing_tests") or []), None),
+    )
+
+
 def analyze(state: DebugState) -> dict:
     attempts = state.get("analysis_attempts", 0) + 1
     if not (state.get("error_region") or "").strip():
@@ -74,6 +91,8 @@ def analyze(state: DebugState) -> dict:
             "analysis": None,
             "analysis_error": state.get("analysis_error") or "no CI log to analyse",
         }
+    if config.PATCH_GENERATOR != "builtin":  # an agent run spends no model credit on diagnosis
+        return {"analysis_attempts": attempts, "analysis": analysis_from_log(state), "analysis_error": None}
     try:
         analysis = analyze_region(state.get("error_region", ""))
     except Exception as e:  # network, rate limit, or ValidationError on a bad shape
