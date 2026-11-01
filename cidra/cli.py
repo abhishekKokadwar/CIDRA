@@ -134,10 +134,23 @@ def action_run():
         sys.exit(1)
 
 
+def _use_agent(name: Optional[str]) -> None:
+    """`--agent claude-code`: that agent writes the patch (CIDRA_PATCH_GENERATOR).
+    With no credential for it, stop before any sandbox work."""
+    if not name:
+        return
+    from cidra import config
+    os.environ["CIDRA_PATCH_GENERATOR"] = config.PATCH_GENERATOR = name
+    if not (config.AGENT_KEY or config.API_KEY):
+        sys.exit(f"--agent {name} needs a model credential: set CIDRA_AGENT_KEY "
+                 "(an API key, or a `claude setup-token` token with CIDRA_AGENT_AUTH=bearer)")
+
+
 def local_run(args):
     """Execution path for local developer usage."""
     log.info("Running in Local CLI mode")
-    
+    _use_agent(getattr(args, "agent", None))
+
     run_id = args.run_id or f"local-{uuid.uuid4().hex[:8]}"
     repo = args.repo or "local/dev"
     sha = args.sha or "HEAD"
@@ -323,6 +336,8 @@ def main():
     fix_parser.add_argument("--repo", type=str, help="Repository name (e.g., owner/repo)")
     fix_parser.add_argument("--sha", type=str, help="Commit SHA")
     fix_parser.add_argument("--run-id", type=str, help="Optional run ID")
+    fix_parser.add_argument("--agent", choices=["claude-code"],
+                            help="A coding agent writes the patch, behind the same gate (default: the built-in loop)")
     
     # 'action' command for GitHub Actions
     subparsers.add_parser("action", help="Run CIDRA as a GitHub Action (relies on env vars)")
