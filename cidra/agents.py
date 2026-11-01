@@ -3,10 +3,14 @@
 The agent edits a copy of the checkout in its own container, on a network that
 reaches only the model-key proxy (sandbox.runner.AgentNetwork). CIDRA then reads
 the change with git: that diff is the agent's whole contribution. What the agent
-says about it (tests run, "fixed") is never read; the gate decides.
+says about it (tests run, "fixed") is never evidence; the gate decides. Only its
+yes-or-no claim of success is kept, as a label in `agent_claim`, to measure how
+often an agent says "fixed" and CIDRA disagrees. Nothing in the pipeline reads it.
 """
 
+import json
 import logging
+import re
 from pathlib import Path
 
 from docker.errors import DockerException, NotFound
@@ -27,6 +31,8 @@ Rules:
 - Make the smallest change that fixes the cause. No refactors, no unrelated edits.
 - Do not silence the error: no deleting a raise, no except clause that ignores it.
 - Do not commit. Leave your changes in the working tree.
+- End your reply with one line, exactly `CLAIM: fixed` if you believe the failing tests now pass,
+  else `CLAIM: not fixed`.
 
 You can run the tests with: {test_command}
 
@@ -38,6 +44,26 @@ Failing tests:
 # Never part of the diff: files a test run leaves behind.
 _NOT_CHANGES = ["--", ".", ":!**/__pycache__/**", ":!.pytest_cache/**", ":!**/*.pyc"]
 _GIT = ["git", "-c", "user.name=cidra", "-c", "user.email=cidra@localhost"]
+_CLAIM = re.compile(r"^\W*CLAIM:\s*(fixed|not fixed)\W*$", re.IGNORECASE | re.MULTILINE)
+
+
+def claim_from_output(out: bytes) -> dict:
+    """The agent's own verdict, as a label: "fixed", "not_fixed" or "none" (it gave
+    no CLAIM line), with its turn count and error flag when it printed Claude Code's
+    JSON. Its words are not kept, so they can reach neither the report nor the gate."""
+    text = out.decode("utf-8", "replace")
+    turns = error = None
+    try:
+        reply = json.loads(text)
+        if isinstance(reply, dict):
+            text = str(reply.get("result") or "")
+            turns = reply.get("num_turns") if isinstance(reply.get("num_turns"), int) else None
+            error = reply.get("is_error") if isinstance(reply.get("is_error"), bool) else None
+    except ValueError:
+        pass  # not Claude Code's JSON: read the raw output
+    found = _CLAIM.findall(text)
+    claimed = found[-1].lower().replace(" ", "_") if found else "none"
+    return {"claimed": claimed, "turns": turns, "agent_error": error}
 
 
 def prompt_for(state: DebugState) -> str:
@@ -103,12 +129,14 @@ def claude_code_patch(state: DebugState) -> dict:
                 record_usage(usage, tool_name="claude-code")
     except (DockerException, RuntimeError) as e:
         return {"fix_diff": None, "analysis_error": f"the coding agent did not run: {e}"[:500]}
+    claim = claim_from_output(out)
     if diff_code != 0:
-        return {"fix_diff": None, "analysis_error": f"could not read the agent's changes: {_tail(diff_err)[-300:]}"}
+        return {"fix_diff": None, "agent_claim": claim,
+                "analysis_error": f"could not read the agent's changes: {_tail(diff_err)[-300:]}"}
     if not diff.strip():
         why = "timed out" if code is None else f"exited {code}"
         # What the agent says ("fixed, all tests pass") is not evidence, so the
         # report never quotes it: the operator's log keeps it for debugging.
         log.info("the coding agent changed nothing (%s): %s", why, _tail(err or out)[-300:])
-        return {"fix_diff": None, "analysis_error": f"the coding agent changed nothing ({why})"}
-    return {"fix_diff": diff.decode("utf-8", "replace")}
+        return {"fix_diff": None, "agent_claim": claim, "analysis_error": f"the coding agent changed nothing ({why})"}
+    return {"fix_diff": diff.decode("utf-8", "replace"), "agent_claim": claim}
