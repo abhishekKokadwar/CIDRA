@@ -58,7 +58,7 @@ def test_the_claim_is_kept_and_everything_else_it_says_is_still_dropped(monkeypa
 
 
 def test_no_node_reads_the_claim_so_it_cannot_change_a_verdict_or_the_report():
-    readers = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "cidra").rglob("*.py")
+    readers = sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / "cidra").rglob("*.py")
                      if "agent_claim" in p.read_text(encoding="utf-8"))
     # written by the agent adapter, passed through by generate_fix, declared in the state
     assert readers == ["cidra/agents.py", "cidra/nodes/fix.py", "cidra/state.py"]
