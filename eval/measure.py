@@ -95,7 +95,9 @@ os.environ["CIDRA_FIX_CACHE"] = str(ROOT / "worktrees" / "measure_fix_cache.json
 os.environ.pop("GITHUB_STEP_SUMMARY", None)
 if ARGS.stub:
     os.environ.update({"CIDRA_BASE_URL": f"http://127.0.0.1:{STUB_PORT}/v1", "CIDRA_API_KEY": "fake",
-                       "CIDRA_MODEL_ANALYZE": "stub", "CIDRA_MODEL_FIX": "stub"})
+                       "CIDRA_MODEL_ANALYZE": "stub", "CIDRA_MODEL_FIX": "stub",
+                       # the stub stands in for the built-in loop's model: never a real agent from .env
+                       "CIDRA_PATCH_GENERATOR": "builtin"})
 
 from cidra import config  # noqa: E402
 from cidra.graph import build_graph  # noqa: E402

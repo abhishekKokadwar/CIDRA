@@ -10,6 +10,11 @@ import os
 
 import pytest
 
+# Before cidra.config loads the developer's .env (which never overrides the
+# environment): a local CIDRA_PATCH_GENERATOR=claude-code must not turn the suite's
+# built-in-loop tests into agent runs. Tests that want an agent set it themselves.
+os.environ["CIDRA_PATCH_GENERATOR"] = "builtin"
+
 _RESULTS: dict[str, dict] = {}
 
 
