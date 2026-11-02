@@ -42,6 +42,8 @@ def record_usage(usage: dict, tool_name: str = "agent") -> None:
     by the key proxy. Recorded like the others but with no prompt. Prompt tokens
     are in input-price units: a cache write costs 1.25 input tokens, a cache read
     0.1 (Anthropic's prices), so cost_of() prices them right."""
+    global _requests_sent
+    _requests_sent += 1  # each usage the proxy counted is one model call
     written, read = usage.get("cache_creation_input_tokens", 0), usage.get("cache_read_input_tokens", 0)
     prompt = round(usage.get("input_tokens", 0) + 1.25 * written + 0.1 * read)
     completion = usage.get("output_tokens", 0)
