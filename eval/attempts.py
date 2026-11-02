@@ -87,6 +87,19 @@ def run_flaky_fixture(fid: str, run, tries: int = FLAKY_FIXTURE_TRIES) -> dict:
     return record
 
 
+_RAW = ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens", "output_tokens")
+
+
+def agent_usage(telemetry: list[dict]) -> dict | None:
+    """A coding agent's model calls as the key proxy counted them: raw token counts
+    and the models it used, unweighted by price (ROADMAP M7 pilot)."""
+    calls = [c["usage"] for c in telemetry if c.get("usage")]  # only record_usage sets it
+    if not calls:
+        return None
+    return {"calls": len(calls), "models": sorted({c.get("model") or "unknown" for c in calls}),
+            **{k: sum(c.get(k, 0) for c in calls) for k in _RAW}}
+
+
 def claims_rejected(records: list[dict]) -> list[str]:
     """Runs where the agent claimed "fixed" and CIDRA did not verify it, or the
     held-out tests failed what CIDRA verified (ROADMAP M7 metric)."""
