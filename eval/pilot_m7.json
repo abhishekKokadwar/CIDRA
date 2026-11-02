@@ -6,7 +6,7 @@
   "order": "bip-thefuck-2 runs alone first, to check one run's share of the subscription limit and the proxy's first real-token run; the other four only if that run was reasonable.",
   "run_first": "python eval/measure.py --corpus eval/corpus --label claude-code-pilot-m7 --out eval/results/claude-code-pilot-m7-thefuck-2.json bip-thefuck-2",
   "run_rest": "python eval/measure.py --corpus eval/corpus --label claude-code-pilot-m7 --out eval/results/claude-code-pilot-m7-rest.json bip-thefuck-25 bip-tornado-4 bip-fastapi-10 bip-youtube-dl-2",
-  "env": "CIDRA_PATCH_GENERATOR=claude-code, CIDRA_AGENT_AUTH=bearer, CIDRA_AGENT_KEY in .env",
+  "env": "CIDRA_PATCH_GENERATOR=claude-code, CIDRA_AGENT_AUTH=bearer, CIDRA_AGENT_KEY in .env; MAX_FIX_ATTEMPTS=1, so each case starts the agent once and its usage is one run's",
   "cases": [
     {
       "fixture": "bip-thefuck-2",
